@@ -1,0 +1,13 @@
+language: go
+go:
+  - 1.1
+  - 1.2
+  - tip
+install:
+  - go get github.com/go-on/wrap
+  - go get github.com/go-on/wrap-contrib/helper
+  - go get github.com/go-on/wrap-contrib/wraps
+  - go get github.com/go-on/method
+  - go get github.com/go-on/wrap-contrib-testing/wrapstesting
+  - go get github.com/go-on/meta
+  - go get launchpad.net/gocheck
