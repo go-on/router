@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/go-on/method"
+	"github.com/go-on/wrap-contrib/wraps"
 	. "launchpad.net/gocheck"
 )
 
@@ -58,4 +59,33 @@ func (s *routerSuite) TestRouterIfMatchDoesNotMatch(c *C) {
 	mkEtaggedRouter().ServeHTTP(rec, req)
 	c.Assert(rec.Code, Equals, 412)
 	c.Assert(rec.Body.String(), Equals, "")
+}
+
+func (s *routerSuite) TestRouterEtaggedWithCustomWrappers(c *C) {
+
+	router := NewETagged()
+	router.AddWrappers(wraps.Before(webwrite("a")), wraps.Before(webwrite("b")))
+	router.AddWrappers(wraps.Before(webwrite("c")), wraps.Before(webwrite("d")))
+
+	router.MustHandle("/a", method.GET, webwrite("A"))
+	mount(router, "/")
+
+	rec, req := newTestRequest("GET", "/a")
+	router.ServeHTTP(rec, req)
+
+	c.Assert(rec.Code, Equals, 200)
+	c.Assert(rec.Body.String(), Equals, "abcdA")
+	c.Assert(rec.Header().Get("Etag"), Equals, "a723816c4715934926760bd61b8e6fae")
+
+	router2 := NewETagged()
+	router2.MustHandle("/a", method.GET, webwrite("abcdA"))
+	mount(router2, "/")
+
+	rec, req = newTestRequest("GET", "/a")
+	router2.ServeHTTP(rec, req)
+
+	c.Assert(rec.Code, Equals, 200)
+	c.Assert(rec.Body.String(), Equals, "abcdA")
+	c.Assert(rec.Header().Get("Etag"), Equals, "a723816c4715934926760bd61b8e6fae")
+
 }
