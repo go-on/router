@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-on/method"
 	"github.com/go-on/wrap"
+	"github.com/go-on/wrap-contrib-testing/wrapstesting"
 	"github.com/go-on/wrap-contrib/wraps"
 )
 
@@ -20,12 +21,23 @@ type Router struct {
 	mountPoint string
 }
 
-func New(wrapper ...wrap.Wrapper) (ø *Router) {
+//func New(wrapper ...wrap.Wrapper) (ø *Router) {
+func New() (ø *Router) {
 	ø = &Router{
-		wrapper:  wrapper,
+		wrapper:  []wrap.Wrapper{},
 		routes:   map[string]*Route{},
 		pathNode: newPathNode(),
 	}
+	return
+}
+
+func NewETagged() (ø *Router) {
+	ø = New()
+	ø.AddWrappers(
+		wrapstesting.IfNoneMatch,
+		wrapstesting.IfMatch(ø),
+		wrapstesting.ETag,
+	)
 	return
 }
 
@@ -33,7 +45,11 @@ func (r *Router) Route(path string) *Route {
 	return r.routes[path]
 }
 
-func (r *Router) Wrap(wrapper ...wrap.Wrapper) {
+// the given wrappers are near the inner call and called before the
+// etag and IfMatch and IfNoneMatch wrappers. wrappers around them
+// could be easily done by making a go-on/wrap.New() and use the Router
+// as final http.Handler surrounded by other middleware
+func (r *Router) AddWrappers(wrapper ...wrap.Wrapper) {
 	r.wrapper = append(r.wrapper, wrapper...)
 }
 
@@ -103,6 +119,9 @@ func (ø *Router) serveHTTP(w http.ResponseWriter, rq *http.Request) {
 }
 
 func (ø *Router) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
+	if ø.mountPoint == "" {
+		panic("router not mounted")
+	}
 	wraps.MethodOverride().ServeHandle(http.HandlerFunc(ø.serveHTTP), w, rq)
 }
 

@@ -33,7 +33,8 @@ func makeRouter(mw ...wrap.Wrapper) *Router {
 		{"/:sth/x", "SthX", 200},
 	}
 
-	router := New(mw...)
+	router := New()
+	router.AddWrappers(mw...)
 	for _, r := range corpus {
 		if r.code == 200 {
 			router.MustHandle(r.path, method.GET, webwrite(r.body))
@@ -232,12 +233,15 @@ func (s *routeSuite) TestRoutingVerbs(c *C) {
 }
 
 func (s *routeSuite) TestRoutingHandlerAndSubroutes(c *C) {
-	inner := New(wrr.Around(webwrite("~"), webwrite("~")))
+	inner := New()
+	inner.AddWrappers(wrr.Around(webwrite("~"), webwrite("~")))
 	inner.MustHandle("/b", method.POST, webwrite("B-POST"))
-	inner2 := New(wrr.Around(webwrite("~"), webwrite("~")))
+	inner2 := New()
+	inner2.AddWrappers(wrr.Around(webwrite("~"), webwrite("~")))
 	inner2.MustHandle("/b", method.POST, webwrite("B-POST"))
 
-	outer := New(wrr.Around(webwrite("#"), webwrite("#")))
+	outer := New()
+	outer.AddWrappers(wrr.Around(webwrite("#"), webwrite("#")))
 	outer.MustHandle("/a", method.POST, inner)
 	outer.MustHandle("/other", method.POST, inner2)
 
@@ -264,11 +268,13 @@ func (s *routeSuite) TestRoutingHandlerAndSubroutes(c *C) {
 }
 
 func (s *routeSuite) TestRoutingHandlerCombined(c *C) {
-	inner := New(wrr.Around(webwrite("~"), webwrite("~")))
+	inner := New()
+	inner.AddWrappers(wrr.Around(webwrite("~"), webwrite("~")))
 	inner.MustHandle("/", method.GET, webwrite("INNER-ROOT"))
 	inner.MustHandle("/a", method.GET|method.POST, webwrite("A-INNER-GET-POST"))
 
-	outer := New(wr.FilterBody(method.PATCH), wrr.Around(webwrite("#"), webwrite("#")))
+	outer := New()
+	outer.AddWrappers(wr.FilterBody(method.PATCH), wrr.Around(webwrite("#"), webwrite("#")))
 	outer.MustHandle("/a", method.GET|method.POST, webwrite("A-OUTER-GET-POST"))
 
 	outer.MustHandle("/inner", method.GET|method.POST, inner)
@@ -442,10 +448,12 @@ func (c *ctx) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *routeSuite) TestVarsSetStruct(c *C) {
 	ct := &ctx{}
-	r := New(
+	r := New()
+	r.AddWrappers(
 		wrr.Before(wr.HandlerMethod(ct.SetPath)),
 		wrr.Before(wr.HandlerMethod(ct.SetVars)),
-		wr.Context(ct))
+		wr.Context(ct),
+	)
 	r.MustHandle("/app/:app/hiho", method.GET, wr.HandlerMethod(ct.ServeHTTP))
 
 	router := mount(r, "/r")
