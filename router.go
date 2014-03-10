@@ -185,6 +185,11 @@ func (ø *Router) Mount(path string, m *http.ServeMux) error {
 		return err
 	}
 
+	if path == "/" {
+		m.Handle("/", ø)
+		return nil
+	}
+
 	// fmt.Printf("mount %s\n", ø.Path()+"/")
 	m.Handle(ø.Path()+"/", ø)
 	return nil
