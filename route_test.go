@@ -446,15 +446,19 @@ func (c *ctx) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("app: " + c.App + " path: " + c.path))
 }
 
+func mkCtx(wr http.ResponseWriter, req *http.Request) http.ResponseWriter {
+	return &ctx{ResponseWriter: wr}
+}
+
 func (s *routeSuite) TestVarsSetStruct(c *C) {
-	ct := &ctx{}
+	// ct := &ctx{}
 	r := New()
 	r.AddWrappers(
-		wrr.Before(wr.HandlerMethod(ct.SetPath)),
-		wrr.Before(wr.HandlerMethod(ct.SetVars)),
-		wr.Context(ct),
+		wr.Context(mkCtx),
+		wrr.Before(wr.HandlerMethod((*ctx).SetVars)),
+		wrr.Before(wr.HandlerMethod((*ctx).SetPath)),
 	)
-	r.MustHandle("/app/:app/hiho", method.GET, wr.HandlerMethod(ct.ServeHTTP))
+	r.MustHandle("/app/:app/hiho", method.GET, wr.HandlerMethod((*ctx).ServeHTTP))
 
 	router := mount(r, "/r")
 	rw, req := newTestRequest("GET", "/r/app/X/hiho")
