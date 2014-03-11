@@ -141,7 +141,11 @@ func (ø *Route) URLMap(params map[string]string) (string, error) {
 		}
 	}
 
-	return ø.router.Path() + "/" + strings.Join(segments, "/"), nil
+	if ø.router.Path() == "/" {
+		return "/" + strings.Join(segments, "/"), nil
+	} else {
+		return ø.router.Path() + "/" + strings.Join(segments, "/"), nil
+	}
 }
 
 var strTy = reflect.TypeOf("")
