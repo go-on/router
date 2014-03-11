@@ -1,0 +1,44 @@
+{
+  "github.com/go-on/meta": {
+    "VCM": "git",
+    "Rev": "9a850915065ac81b287e19b2a1dc5de9d4b84026",
+    "Parent": "github.com/go-on/router",
+    "Tag": "",
+    "RepoRoot": "github.com/go-on/meta"
+  },
+  "github.com/go-on/method": {
+    "VCM": "git",
+    "Rev": "51aefcaa853d9cc8f972c27a3686e6cba9d76ecf",
+    "Parent": "github.com/go-on/router",
+    "Tag": "",
+    "RepoRoot": "github.com/go-on/method"
+  },
+  "github.com/go-on/wrap": {
+    "VCM": "git",
+    "Rev": "45512f3218b0827b42b74f1333afed498eb01648",
+    "Parent": "github.com/go-on/router",
+    "Tag": "",
+    "RepoRoot": "github.com/go-on/wrap"
+  },
+  "github.com/go-on/wrap-contrib-testing/wrapstesting": {
+    "VCM": "git",
+    "Rev": "1bf1c278baee055202882878bbe38525cfe30afc",
+    "Parent": "github.com/go-on/router",
+    "Tag": "",
+    "RepoRoot": "github.com/go-on/wrap-contrib-testing"
+  },
+  "github.com/go-on/wrap-contrib/helper": {
+    "VCM": "git",
+    "Rev": "acb923956e0f18571675a9ce27dd00f765107908",
+    "Parent": "github.com/go-on/wrap-contrib-testing/wrapstesting",
+    "Tag": "",
+    "RepoRoot": "github.com/go-on/wrap-contrib"
+  },
+  "github.com/go-on/wrap-contrib/wraps": {
+    "VCM": "git",
+    "Rev": "acb923956e0f18571675a9ce27dd00f765107908",
+    "Parent": "github.com/go-on/router",
+    "Tag": "",
+    "RepoRoot": "github.com/go-on/wrap-contrib"
+  }
+}
