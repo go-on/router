@@ -1,0 +1,65 @@
+{
+  "github.com/go-on/fat": {
+    "VCM": "git",
+    "Rev": "1a155f29628b149355e65fd73f47d359764d1c98",
+    "Parent": "github.com/go-on/router/routerfat",
+    "Tag": "",
+    "RepoRoot": "github.com/go-on/fat"
+  },
+  "github.com/go-on/meta": {
+    "VCM": "git",
+    "Rev": "9a850915065ac81b287e19b2a1dc5de9d4b84026",
+    "Parent": "github.com/go-on/router/routerfat",
+    "Tag": "",
+    "RepoRoot": "github.com/go-on/meta"
+  },
+  "github.com/go-on/method": {
+    "VCM": "git",
+    "Rev": "f7f9bf0f8f3b4cac9aa8243db45d503133d6707d",
+    "Parent": "github.com/go-on/router",
+    "Tag": "",
+    "RepoRoot": "github.com/go-on/method"
+  },
+  "github.com/go-on/wrap": {
+    "VCM": "git",
+    "Rev": "45512f3218b0827b42b74f1333afed498eb01648",
+    "Parent": "github.com/go-on/router",
+    "Tag": "",
+    "RepoRoot": "github.com/go-on/wrap"
+  },
+  "github.com/go-on/wrap-contrib-testing/wrapstesting": {
+    "VCM": "git",
+    "Rev": "1bf1c278baee055202882878bbe38525cfe30afc",
+    "Parent": "github.com/go-on/router",
+    "Tag": "",
+    "RepoRoot": "github.com/go-on/wrap-contrib-testing"
+  },
+  "github.com/go-on/wrap-contrib/helper": {
+    "VCM": "git",
+    "Rev": "acb923956e0f18571675a9ce27dd00f765107908",
+    "Parent": "github.com/go-on/wrap-contrib-testing/wrapstesting",
+    "Tag": "",
+    "RepoRoot": "github.com/go-on/wrap-contrib"
+  },
+  "github.com/go-on/wrap-contrib/wraps": {
+    "VCM": "git",
+    "Rev": "acb923956e0f18571675a9ce27dd00f765107908",
+    "Parent": "github.com/go-on/router",
+    "Tag": "",
+    "RepoRoot": "github.com/go-on/wrap-contrib"
+  },
+  "github.com/metakeule/meta": {
+    "VCM": "git",
+    "Rev": "cc6146067011994ee2055ef4c16463cd6405d75d",
+    "Parent": "github.com/go-on/fat",
+    "Tag": "",
+    "RepoRoot": "github.com/metakeule/meta"
+  },
+  "github.com/metakeule/nil": {
+    "VCM": "git",
+    "Rev": "b40a66acd4786844053f3f3f8dfc28212c800fd8",
+    "Parent": "github.com/go-on/fat",
+    "Tag": "",
+    "RepoRoot": "github.com/metakeule/nil"
+  }
+}
