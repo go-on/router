@@ -18,19 +18,26 @@ type Route struct {
 	handler          map[method.Method]http.Handler
 	ressourceOptions string
 	path             string
+	originalPath     string
 	router           *Router
 }
 
 func newRoute(router *Router, path string) *Route {
+	// fmt.Println("creating route for path", path, "router", router.Path())
 	r := &Route{}
 	r.router = router
 	r.path = path
+	r.originalPath = path
 	r.handler = map[method.Method]http.Handler{}
 	return r
 }
 
 func (r *Route) Router() *Router {
 	return r.router
+}
+
+func (r *Route) Route() string {
+	return r.originalPath
 }
 
 func (r *Route) addHandler(handler http.Handler, v method.Method) error {
@@ -115,13 +122,16 @@ func (r *Route) getHandler(v string) http.Handler {
 
 // params are key/value pairs
 func (ø *Route) URL(params ...string) (string, error) {
+	// fmt.Printf("params: %#v\n", params)
 	if len(params)%2 != 0 {
 		panic("number of params must be even (pairs of key, value)")
 	}
 	vars := map[string]string{}
-	for i := 0; i < len(params)/2; i += 2 {
+	for i := 0; i < len(params); i += 2 {
 		vars[params[i]] = params[i+1]
 	}
+
+	// fmt.Printf("%s => url vars: %#v\n", ø.path, vars)
 
 	return ø.URLMap(vars)
 }

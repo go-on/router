@@ -413,7 +413,8 @@ func (vv *v) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	vars := &Vars{}
 	wr.UnWrap(rw, &vars)
 	vv.x = vars.Get("x")
-	vv.y = vars.Get("y")
+	// other variant, also req.URL.Query().Get(key) possible
+	vv.y = req.FormValue(":y")
 }
 
 func (s *routeSuite) TestVars(c *C) {
@@ -426,6 +427,7 @@ func (s *routeSuite) TestVars(c *C) {
 	//assertResponse(c, rw, "ADMIN", 200)
 	c.Assert(vv.x, Equals, "b")
 	c.Assert(vv.y, Equals, "d")
+	c.Assert(req.URL.Fragment, Equals, "/a/:x/c/:y")
 }
 
 type ctx struct {

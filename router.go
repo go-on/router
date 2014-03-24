@@ -61,7 +61,7 @@ func (r *Router) MountPoint() string {
 	return r.mountPoint
 }
 
-func (ø *Router) getFinalHander(path, method string) (h http.Handler, route *Route, wc map[string]string) {
+func (ø *Router) getFinalHandler(path, method string) (h http.Handler, route *Route, wc map[string]string) {
 	var leaf *pathLeaf
 	leaf, wc = ø.findLeaf(path)
 	if leaf == nil {
@@ -78,7 +78,7 @@ func (ø *Router) getFinalHander(path, method string) (h http.Handler, route *Ro
 
 	rt, isRouter := h.(*Router)
 	if isRouter {
-		return rt.getFinalHander(path, method)
+		return rt.getFinalHandler(path, method)
 	}
 
 	if method == "OPTIONS" {
@@ -103,7 +103,7 @@ func (ø *Router) serveHTTP(w http.ResponseWriter, rq *http.Request) {
 		method = "GET"
 	}
 
-	h, route, wc := ø.getFinalHander(rq.URL.Path, method)
+	h, route, wc := ø.getFinalHandler(rq.URL.Path, method)
 
 	if h == nil {
 		ø.serveNotFound(w, rq)
@@ -113,6 +113,13 @@ func (ø *Router) serveHTTP(w http.ResponseWriter, rq *http.Request) {
 	if method != "OPTIONS" {
 		h = route.router.wrapit(h)
 	}
+
+	q := rq.URL.Query()
+	for k, v := range wc {
+		q.Set(":"+k, v)
+	}
+	rq.URL.RawQuery = q.Encode()
+	rq.URL.Fragment = route.originalPath
 
 	h.ServeHTTP(&Vars{w, wc}, rq)
 	return
@@ -223,6 +230,11 @@ func (r *Router) submount(path string, parent *Router) error {
 	return r.registerRoutes()
 }
 
+// wrapper around a http.Handler generator to make it a http.Handler
+type RouterFunc func() http.Handler
+
+func (hc RouterFunc) ServeHTTP(rw http.ResponseWriter, req *http.Request) { hc().ServeHTTP(rw, req) }
+
 func (ø *Router) Handle(path string, v method.Method, handler http.Handler) (*Route, error) {
 	if ø.mountPoint != "" {
 		return nil, fmt.Errorf("can't register handlers: already mounted on %s", ø.Path())
@@ -285,9 +297,13 @@ func (r *Router) TRACE(path string, handler http.Handler) *Route {
 	return r.MustHandle(path, method.TRACE, handler)
 }
 
-func Mount(path string, r *Router) error {
-	return r.Mount(path, http.DefaultServeMux)
+func (r *Router) EachRoute(fn func(mountPoint string, route *Route)) {
+	for mP, rt := range r.routes {
+		fn(mP, rt)
+	}
 }
+
+func Mount(path string, r *Router) error { return r.Mount(path, http.DefaultServeMux) }
 
 func MustMount(path string, r *Router) {
 	err := Mount(path, r)

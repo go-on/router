@@ -21,17 +21,17 @@ func mkEtaggedRouter() *Router {
 func (s *routerSuite) TestRouterEtag(c *C) {
 	rec, req := newTestRequest("GET", "/a")
 	mkEtaggedRouter().ServeHTTP(rec, req)
-	c.Assert(rec.Header().Get("Etag"), Equals, "8bf623a6e5c2a6cd374f3f18c3d51145")
+	c.Assert(rec.Header().Get("Etag"), Equals, "7fc56270e7a70fa81a5935b72eacbe29")
 	c.Assert(rec.Code, Equals, 200)
 	c.Assert(rec.Body.String(), Equals, "A")
 }
 
 func (s *routerSuite) TestRouterIfNoneMatchDoesMatch(c *C) {
 	rec, req := newTestRequest("GET", "/a")
-	req.Header.Set("If-None-Match", `"8bf623a6e5c2a6cd374f3f18c3d51145"`)
+	req.Header.Set("If-None-Match", `"7fc56270e7a70fa81a5935b72eacbe29"`)
 	mkEtaggedRouter().ServeHTTP(rec, req)
 	c.Assert(rec.Code, Equals, 304)
-	c.Assert(rec.Header().Get("Etag"), Equals, "8bf623a6e5c2a6cd374f3f18c3d51145")
+	c.Assert(rec.Header().Get("Etag"), Equals, "7fc56270e7a70fa81a5935b72eacbe29")
 	c.Assert(rec.Body.String(), Equals, "")
 }
 
@@ -39,14 +39,14 @@ func (s *routerSuite) TestRouterIfNoneMatchDoesNotMatch(c *C) {
 	rec, req := newTestRequest("GET", "/a")
 	req.Header.Set("If-None-Match", `"nix"`)
 	mkEtaggedRouter().ServeHTTP(rec, req)
-	c.Assert(rec.Header().Get("Etag"), Equals, "8bf623a6e5c2a6cd374f3f18c3d51145")
+	c.Assert(rec.Header().Get("Etag"), Equals, "7fc56270e7a70fa81a5935b72eacbe29")
 	c.Assert(rec.Code, Equals, 200)
 	c.Assert(rec.Body.String(), Equals, "A")
 }
 
 func (s *routerSuite) TestRouterIfMatchDoesMatch(c *C) {
 	rec, req := newTestRequest("PATCH", "/a")
-	req.Header.Set("If-Match", `"8bf623a6e5c2a6cd374f3f18c3d51145"`)
+	req.Header.Set("If-Match", `"7fc56270e7a70fa81a5935b72eacbe29"`)
 	mkEtaggedRouter().ServeHTTP(rec, req)
 	c.Assert(rec.Header().Get("Etag"), Equals, "")
 	c.Assert(rec.Code, Equals, 200)
@@ -75,7 +75,7 @@ func (s *routerSuite) TestRouterEtaggedWithCustomWrappers(c *C) {
 
 	c.Assert(rec.Code, Equals, 200)
 	c.Assert(rec.Body.String(), Equals, "abcdA")
-	c.Assert(rec.Header().Get("Etag"), Equals, "a723816c4715934926760bd61b8e6fae")
+	c.Assert(rec.Header().Get("Etag"), Equals, "90c5f685703be163a3894ba83b6b57a2")
 
 	router2 := NewETagged()
 	router2.MustHandle("/a", method.GET, webwrite("abcdA"))
@@ -86,6 +86,6 @@ func (s *routerSuite) TestRouterEtaggedWithCustomWrappers(c *C) {
 
 	c.Assert(rec.Code, Equals, 200)
 	c.Assert(rec.Body.String(), Equals, "abcdA")
-	c.Assert(rec.Header().Get("Etag"), Equals, "a723816c4715934926760bd61b8e6fae")
+	c.Assert(rec.Header().Get("Etag"), Equals, "90c5f685703be163a3894ba83b6b57a2")
 
 }

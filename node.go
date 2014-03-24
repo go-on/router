@@ -56,14 +56,16 @@ func (pn *pathNode) inspect(indent int) string {
 */
 
 func (pn *pathNode) add(path string, v method.Method, handler http.Handler, router *Router) error {
-	return pn.addInternal(splitPath(path), v, handler, nil, router)
+	return pn.addInternal(path, splitPath(path), v, handler, nil, router)
 }
 
-func (pn *pathNode) addInternal(segments []string, v method.Method, handler http.Handler, wildcards []string, router *Router) error {
+func (pn *pathNode) addInternal(originalPath string, segments []string, v method.Method, handler http.Handler, wildcards []string, router *Router) error {
 	if len(segments) == 0 {
 		if pn.leaf == nil {
 			path := "/" + strings.Join(segments, "/")
-			pn.leaf = &pathLeaf{Route: newRoute(router, path), wildcards: wildcards}
+			rrt := newRoute(router, path)
+			rrt.originalPath = originalPath
+			pn.leaf = &pathLeaf{Route: rrt, wildcards: wildcards}
 		}
 		return pn.leaf.Route.addHandler(handler, v)
 
@@ -74,14 +76,14 @@ func (pn *pathNode) addInternal(segments []string, v method.Method, handler http
 		if pn.wildcard == nil {
 			pn.wildcard = newPathNode()
 		}
-		return pn.wildcard.addInternal(segments[1:], v, handler, append(wildcards, wcName), router)
+		return pn.wildcard.addInternal(originalPath, segments[1:], v, handler, append(wildcards, wcName), router)
 	}
 	subPn, ok := pn.edges[seg]
 	if !ok {
 		subPn = newPathNode()
 		pn.edges[seg] = subPn
 	}
-	return subPn.addInternal(segments[1:], v, handler, wildcards, router)
+	return subPn.addInternal(originalPath, segments[1:], v, handler, wildcards, router)
 
 }
 
