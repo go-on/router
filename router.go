@@ -303,13 +303,29 @@ func (r *Router) EachRoute(fn func(mountPoint string, route *Route)) {
 	}
 }
 
+func (r *Router) EachGETRoute(fn func(mountPoint string, route *Route)) {
+	for mP, rt := range r.routes {
+		if rt.getHandler("GET") != nil {
+			fn(mP, rt)
+		}
+	}
+}
+
+type RouteParameterFunc func(*Route) []map[string]string
+
+func (rpf RouteParameterFunc) Params(rt *Route) []map[string]string {
+	return rpf(rt)
+}
+
 type RouteParameter interface {
 	Params(*Route) []map[string]string
 }
 
-func (r *Router) AllPaths(paramSolver RouteParameter) (paths []string) {
+// the paths of all get routes
+func (r *Router) AllGETPaths(paramSolver RouteParameter) (paths []string) {
 	paths = []string{}
 	fn := func(mountPoint string, rt *Route) {
+
 		if rt.HasParams() {
 			paramsArr := paramSolver.Params(rt)
 
@@ -322,16 +338,24 @@ func (r *Router) AllPaths(paramSolver RouteParameter) (paths []string) {
 		}
 	}
 
-	r.EachRoute(fn)
+	r.EachGETRoute(fn)
 	return paths
 }
 
+// saves the results of all get routes
 func (r *Router) SavePages(paramSolver RouteParameter, mainHandler http.Handler, targetDir string) map[string]error {
-	return DumpPaths(mainHandler, r.AllPaths(paramSolver), targetDir)
+	return DumpPaths(mainHandler, r.AllGETPaths(paramSolver), targetDir)
+}
+
+func (r *Router) MustSavePages(paramSolver RouteParameter, mainHandler http.Handler, targetDir string) {
+	errs := r.SavePages(paramSolver, mainHandler, targetDir)
+	for _, err := range errs {
+		panic(err.Error())
+	}
 }
 
 // map[string][]interface{} is tag => []struct
-func (r *Router) PathsByStruct(parameters map[*Route]map[string][]interface{}) (paths []string) {
+func (r *Router) GETPathsByStruct(parameters map[*Route]map[string][]interface{}) (paths []string) {
 	paths = []string{}
 
 	fn := func(mountPoint string, route *Route) {
@@ -349,7 +373,7 @@ func (r *Router) PathsByStruct(parameters map[*Route]map[string][]interface{}) (
 		}
 	}
 
-	r.EachRoute(fn)
+	r.EachGETRoute(fn)
 	return
 }
 

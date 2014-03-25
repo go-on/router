@@ -1,6 +1,9 @@
 package router
 
 import (
+	"fmt"
+	"net/http"
+
 	"github.com/go-on/method"
 	"github.com/go-on/wrap-contrib/wraps"
 	. "launchpad.net/gocheck"
@@ -87,5 +90,41 @@ func (s *routerSuite) TestRouterEtaggedWithCustomWrappers(c *C) {
 	c.Assert(rec.Code, Equals, 200)
 	c.Assert(rec.Body.String(), Equals, "abcdA")
 	c.Assert(rec.Header().Get("Etag"), Equals, "90c5f685703be163a3894ba83b6b57a2")
+
+}
+
+func (s *routeSuite) TestAllGETPaths(c *C) {
+
+	router := New()
+	router.GET("/a", webwrite("a"))
+	rt := router.GET("/:b/:c/d", http.HandlerFunc(
+		func(rw http.ResponseWriter, req *http.Request) {
+			fmt.Fprintf(rw, "b: %s c: c", req.FormValue(":b"), req.FormValue(":c"))
+		}))
+
+	solver := RouteParameterFunc(func(route *Route) []map[string]string {
+		if route == rt {
+			return []map[string]string{
+				map[string]string{
+					"b": "b1",
+					"c": "c1",
+				},
+				map[string]string{
+					"b": "b2",
+					"c": "c2",
+				},
+			}
+		}
+		return nil
+	})
+
+	paths := router.AllGETPaths(solver)
+
+	c.Assert(len(paths), Equals, 3)
+	c.Assert(paths[0], Equals, "/a")
+	c.Assert(paths[1], Equals, "/b1/c1/d")
+	c.Assert(paths[2], Equals, "/b2/c2/d")
+
+	// fmt.Printf("paths: %v", paths)
 
 }
