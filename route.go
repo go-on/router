@@ -40,6 +40,10 @@ func (r *Route) Route() string {
 	return r.originalPath
 }
 
+func (r *Route) HasParams() bool {
+	return strings.ContainsRune(r.Route(), ':')
+}
+
 func (r *Route) addHandler(handler http.Handler, v method.Method) error {
 	_, has := r.handler[v]
 	if has {

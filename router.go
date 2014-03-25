@@ -303,6 +303,76 @@ func (r *Router) EachRoute(fn func(mountPoint string, route *Route)) {
 	}
 }
 
+type RouteParameter interface {
+	Params(*Route) []map[string]string
+}
+
+func (r *Router) AllPaths(paramSolver RouteParameter) (paths []string) {
+	paths = []string{}
+	fn := func(mountPoint string, rt *Route) {
+		if rt.HasParams() {
+			paramsArr := paramSolver.Params(rt)
+
+			for _, params := range paramsArr {
+				paths = append(paths, rt.MustURLMap(params))
+			}
+
+		} else {
+			paths = append(paths, rt.MustURL())
+		}
+	}
+
+	r.EachRoute(fn)
+	return paths
+}
+
+func (r *Router) SavePages(paramSolver RouteParameter, mainHandler http.Handler, targetDir string) map[string]error {
+	return DumpPaths(mainHandler, r.AllPaths(paramSolver), targetDir)
+}
+
+// map[string][]interface{} is tag => []struct
+func (r *Router) PathsByStruct(parameters map[*Route]map[string][]interface{}) (paths []string) {
+	paths = []string{}
+
+	fn := func(mountPoint string, route *Route) {
+		paramPairs := parameters[route]
+
+		// if route has : it has parameters
+		if route.HasParams() {
+			for tag, structs := range paramPairs {
+				for _, stru := range structs {
+					paths = append(paths, route.MustURLStruct(stru, tag))
+				}
+			}
+		} else {
+			paths = append(paths, route.MustURL())
+		}
+	}
+
+	r.EachRoute(fn)
+	return
+}
+
+func (r *Router) DynamicRoutes() (routes []*Route) {
+	routes = []*Route{}
+	for _, rt := range r.routes {
+		if rt.HasParams() {
+			routes = append(routes, rt)
+		}
+	}
+	return routes
+}
+
+func (r *Router) StaticRoutePaths() (paths []string) {
+	paths = []string{}
+	for _, rt := range r.routes {
+		if !rt.HasParams() {
+			paths = append(paths, rt.MustURL())
+		}
+	}
+	return paths
+}
+
 func Mount(path string, r *Router) error { return r.Mount(path, http.DefaultServeMux) }
 
 func MustMount(path string, r *Router) {
