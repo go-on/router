@@ -1,4 +1,4 @@
-package static
+package router
 
 import (
 	"fmt"
@@ -7,32 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-
-	"github.com/go-on/router"
 )
-
-// map[string][]interface{} is tag => []struct
-func PathsByStruct(r *router.Router, parameters map[*router.Route]map[string][]interface{}) (paths []string) {
-	paths = []string{}
-
-	fn := func(mountPoint string, route *router.Route) {
-		paramPairs := parameters[route]
-
-		// if route has : it has parameters
-		if r.HasParams() {
-			for tag, structs := range paramPairs {
-				for _, stru := range structs {
-					paths = append(paths, route.MustURLStruct(stru, tag))
-				}
-			}
-		} else {
-			paths = append(paths, route.MustURL())
-		}
-	}
-
-	r.EachRoute(fn)
-	return
-}
 
 func savePath(server http.Handler, p, targetDir string) error {
 	req, err := http.NewRequest("GET", p, nil)
