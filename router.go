@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-on/method"
 	"github.com/go-on/wrap"
-	"github.com/go-on/wrap-contrib-testing/wrapstesting"
+	// "github.com/go-on/wrap-contrib-testing/wrapstesting"
 	"github.com/go-on/wrap-contrib/wraps"
 )
 
@@ -34,9 +34,9 @@ func New() (ø *Router) {
 func NewETagged() (ø *Router) {
 	ø = New()
 	ø.AddWrappers(
-		wrapstesting.IfNoneMatch,
-		wrapstesting.IfMatch(ø),
-		wrapstesting.ETag,
+		wraps.IfNoneMatch,
+		wraps.IfMatch(ø),
+		wraps.ETag,
 	)
 	return
 }

@@ -274,7 +274,7 @@ func (s *routeSuite) TestRoutingHandlerCombined(c *C) {
 	inner.MustHandle("/a", method.GET|method.POST, webwrite("A-INNER-GET-POST"))
 
 	outer := New()
-	outer.AddWrappers(wr.FilterBody(method.PATCH), wrr.Around(webwrite("#"), webwrite("#")))
+	outer.AddWrappers(wrr.FilterBody(method.PATCH), wrr.Around(webwrite("#"), webwrite("#")))
 	outer.MustHandle("/a", method.GET|method.POST, webwrite("A-OUTER-GET-POST"))
 
 	outer.MustHandle("/inner", method.GET|method.POST, inner)
@@ -410,10 +410,7 @@ type v struct {
 }
 
 func (vv *v) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	vars := &Vars{}
-	wr.UnWrap(rw, &vars)
-	vv.x = vars.Get("x")
-	// other variant, also req.URL.Query().Get(key) possible
+	vv.x = req.FormValue(":x")
 	vv.y = req.FormValue(":y")
 }
 

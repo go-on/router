@@ -11,3 +11,4 @@ install:
   - go get github.com/go-on/wrap-contrib-testing/wrapstesting
   - go get github.com/go-on/meta
   - go get launchpad.net/gocheck
+  - go get github.com/go-on/html
