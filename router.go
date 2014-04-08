@@ -81,7 +81,8 @@ func (ø *Router) getFinalHandler(path, method string) (h http.Handler, route *R
 		return rt.getFinalHandler(path, method)
 	}
 
-	if method == "OPTIONS" {
+	// fmt.Println("method", method, "h", h)
+	if h == nil && method == "OPTIONS" {
 		h = route
 	}
 	return
@@ -99,11 +100,12 @@ func (ø *Router) wrapit(h http.Handler) http.Handler {
 
 func (ø *Router) serveHTTP(w http.ResponseWriter, rq *http.Request) {
 	method := rq.Method
-	if method == "HEAD" {
-		method = "GET"
-	}
-
 	h, route, wc := ø.getFinalHandler(rq.URL.Path, method)
+
+	if h == nil && method == "HEAD" {
+		method = "GET"
+		h, route, wc = ø.getFinalHandler(rq.URL.Path, method)
+	}
 
 	if h == nil {
 		ø.serveNotFound(w, rq)
@@ -121,7 +123,8 @@ func (ø *Router) serveHTTP(w http.ResponseWriter, rq *http.Request) {
 	rq.URL.RawQuery = q.Encode()
 	rq.URL.Fragment = route.originalPath
 
-	h.ServeHTTP(&Vars{w, wc}, rq)
+	//h.ServeHTTP(&Vars{w, wc}, rq)
+	h.ServeHTTP(w, rq)
 	return
 }
 
@@ -241,9 +244,11 @@ func (ø *Router) Handle(path string, v method.Method, handler http.Handler) (*R
 	}
 
 	rt, exists := ø.routes[path]
-	if exists && rt.getHandler(v.String()) != nil {
-		panic(fmt.Sprintf("handler for %s (%s) already exists", path, v))
-	}
+	/*
+		if exists && rt.getHandler(v.String()) != nil {
+			panic(fmt.Sprintf("handler for %s (%s) already exists", path, v))
+		}
+	*/
 	if !exists {
 		rt = newRoute(ø, path)
 	}

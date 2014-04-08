@@ -1,5 +1,6 @@
 package router
 
+/*
 import (
 	"net/http"
 	"reflect"
@@ -35,3 +36,4 @@ func (v *Vars) Has(key string) bool {
 	_, has := v.v[key]
 	return has
 }
+*/

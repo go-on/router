@@ -24,13 +24,13 @@ var _ = Suite(&routeSuite{})
 
 func makeRouter(mw ...wrap.Wrapper) *Router {
 	corpus := []routetest{
-		{"/a", "A", 200},
-		{"/b", "B", 200},
-		{"/x", "", 404},
-		{"/a/x", "AX", 200},
-		{"/a/b", "AB", 200},
-		{"/b/x", "BX", 200},
-		{"/:sth/x", "SthX", 200},
+		{"/a.html", "A", 200},
+		{"/b.html", "B", 200},
+		{"/x.html", "", 404},
+		{"/a/x.html", "AX", 200},
+		{"/a/b.html", "AB", 200},
+		{"/b/x.html", "BX", 200},
+		{"/:sth/x.html", "SthX", 200},
 	}
 
 	router := New()
@@ -45,13 +45,13 @@ func makeRouter(mw ...wrap.Wrapper) *Router {
 
 func (s *routeSuite) TestRouting(c *C) {
 	corpus := []routetest{
-		{"/a", "A", 200},
-		{"/b", "B", 200},
-		{"/x", "", 405},
-		{"/a/x", "AX", 200},
-		{"/b/x", "BX", 200},
-		{"/z/x", "SthX", 200},
-		{"/y", "", 405},
+		{"/a.html", "A", 200},
+		{"/b.html", "B", 200},
+		{"/x.html", "", 405},
+		{"/a/x.html", "AX", 200},
+		{"/b/x.html", "BX", 200},
+		{"/z/x.html", "SthX", 200},
+		{"/y.html", "", 405},
 	}
 
 	router := mount(makeRouter(), "/")
@@ -61,6 +61,12 @@ func (s *routeSuite) TestRouting(c *C) {
 		router.ServeHTTP(rw, req)
 		assertResponse(c, rw, r.body, r.code)
 	}
+}
+
+func (s *routeSuite) TestRouter(c *C) {
+	r := New()
+	rt := r.MustHandle("/hu", method.GET, webwrite("hu"))
+	c.Assert(rt.Router(), Equals, r)
 }
 
 func (s *routeSuite) TestDoubleRoute(c *C) {
@@ -73,20 +79,77 @@ func (s *routeSuite) TestDoubleRoute(c *C) {
 	}()
 
 	r.MustHandle("/hu", method.GET, webwrite("ho"))
+}
 
+func (s *routeSuite) TestURLWrongParams(c *C) {
+	r := New()
+	rt := r.MustHandle("/", method.GET, webwrite("hu"))
+	defer func() {
+		e := recover()
+		c.Assert(e, Not(Equals), nil)
+	}()
+	rt.URL("hu")
+}
+
+func (s *routeSuite) TestURLWrongParams2(c *C) {
+	r := New()
+	rt := r.MustHandle("/:hi", method.GET, webwrite("hu"))
+	defer func() {
+		e := recover()
+		c.Assert(e, Not(Equals), nil)
+	}()
+	rt.MustURL("hu", "ho")
+}
+
+func (s *routeSuite) TestURLMapWrongParams(c *C) {
+	r := New()
+	rt := r.MustHandle("/:hi", method.GET, webwrite("hu"))
+	defer func() {
+		e := recover()
+		c.Assert(e, Not(Equals), nil)
+	}()
+	rt.MustURLMap(map[string]string{"hu": "ho"})
+}
+
+func (s *routeSuite) TestURLStructWrongParams(c *C) {
+	r := New()
+	rt := r.MustHandle("/", method.GET, webwrite("hu"))
+	_, err := rt.URLStruct("hu", "ho")
+	c.Assert(err, Not(Equals), nil)
+}
+
+func (s *routeSuite) TestMustURLStructWrongParams(c *C) {
+	r := New()
+	rt := r.MustHandle("/", method.GET, webwrite("hu"))
+	defer func() {
+		e := recover()
+		c.Assert(e, Not(Equals), nil)
+	}()
+	rt.MustURLStruct("hu", "ho")
+}
+
+func (s *routeSuite) TestNotExistingMethod(c *C) {
+	r := New()
+	r.MustHandle("/", method.POST, webwrite("hu"))
+	router := mount(r, "/")
+
+	rw, req := newTestRequest("GETTO", "/")
+	router.ServeHTTP(rw, req)
+	c.Assert(rw.Body.String(), Equals, "")
+	c.Assert(rw.Code, Equals, 405)
 }
 
 func (s *routeSuite) TestRoutingMiddlewareMounted(c *C) {
 	corpus := []routetest{
-		{"/mount/a", "#A#", 200},
-		{"/mount/b", "#B#", 200},
-		{"/mount/x", "", 405},
-		{"/mount/a/x", "#AX#", 200},
-		{"/mount/b/x", "#BX#", 200},
-		{"/mount/z/x", "#SthX#", 200},
-		{"/mount/y", "", 405},
-		{"/a", "", 405},
-		{"/z/x", "", 405},
+		{"/mount/a.html", "#A#", 200},
+		{"/mount/b.html", "#B#", 200},
+		{"/mount/x.html", "", 405},
+		{"/mount/a/x.html", "#AX#", 200},
+		{"/mount/b/x.html", "#BX#", 200},
+		{"/mount/z/x.html", "#SthX#", 200},
+		{"/mount/y.html", "", 405},
+		{"/a.html", "", 405},
+		{"/z/x.html", "", 405},
 	}
 
 	router := mount(makeRouter(wrr.Around(webwrite("#"), webwrite("#"))), "/mount")
@@ -99,13 +162,13 @@ func (s *routeSuite) TestRoutingMiddlewareMounted(c *C) {
 
 func (s *routeSuite) TestRoutingMiddleware(c *C) {
 	corpus := []routetest{
-		{"/a", "#A#", 200},
-		{"/b", "#B#", 200},
-		{"/x", "", 405},
-		{"/a/x", "#AX#", 200},
-		{"/b/x", "#BX#", 200},
-		{"/z/x", "#SthX#", 200},
-		{"/y", "", 405},
+		{"/a.html", "#A#", 200},
+		{"/b.html", "#B#", 200},
+		{"/x.html", "", 405},
+		{"/a/x.html", "#AX#", 200},
+		{"/b/x.html", "#BX#", 200},
+		{"/z/x.html", "#SthX#", 200},
+		{"/y.html", "", 405},
 	}
 
 	router := mount(makeRouter(wrr.Around(webwrite("#"), webwrite("#"))), "/")
@@ -119,15 +182,15 @@ func (s *routeSuite) TestRoutingMiddleware(c *C) {
 
 func (s *routeSuite) TestRoutingMounted(c *C) {
 	corpus := []routetest{
-		{"/mount/a", "A", 200},
-		{"/mount/b", "B", 200},
-		{"/mount/x", "", 405},
-		{"/mount/a/x", "AX", 200},
-		{"/mount/b/x", "BX", 200},
-		{"/mount/z/x", "SthX", 200},
-		{"/mount/y", "", 405},
-		{"/a", "", 405},
-		{"/z/x", "", 405},
+		{"/mount/a.html", "A", 200},
+		{"/mount/b.html", "B", 200},
+		{"/mount/x.html", "", 405},
+		{"/mount/a/x.html", "AX", 200},
+		{"/mount/b/x.html", "BX", 200},
+		{"/mount/z/x.html", "SthX", 200},
+		{"/mount/y.html", "", 405},
+		{"/a.html", "", 405},
+		{"/z/x.html", "", 405},
 	}
 
 	router := mount(makeRouter(), "/mount")
@@ -141,24 +204,24 @@ func (s *routeSuite) TestRoutingMounted(c *C) {
 
 func (s *routeSuite) TestRoutingSubroutes(c *C) {
 	corpus := []routetest{
-		{"/outer/a", "A", 200},
-		{"/outer/b", "B", 200},
-		{"/outer/x", "", 405},
-		{"/outer/a/x", "AX", 200},
-		{"/outer/b/x", "BX", 200},
-		{"/outer/z/x", "SthX", 200},
-		{"/outer/y", "", 405},
-		{"/a", "", 405},
-		{"/z/x", "", 405},
+		{"/outer/a.html", "A", 200},
+		{"/outer/b.html", "B", 200},
+		{"/outer/x.html", "", 405},
+		{"/outer/a/x.html", "AX", 200},
+		{"/outer/b/x.html", "BX", 200},
+		{"/outer/z/x.html", "SthX", 200},
+		{"/outer/y.html", "", 405},
+		{"/a.html", "", 405},
+		{"/z/x.html", "", 405},
 
-		{"/outer/inner/a", "A", 200},
-		{"/outer/inner/b", "B", 200},
-		{"/outer/inner/a/x", "AX", 200},
-		{"/outer/inner/b/x", "BX", 200},
-		{"/outer/inner/z/x", "SthX", 200},
-		{"/outer/inner/y", "", 405},
-		{"/inner/a", "", 405},
-		{"/inner/z/x", "", 405},
+		{"/outer/inner/a.html", "A", 200},
+		{"/outer/inner/b.html", "B", 200},
+		{"/outer/inner/a/x.html", "AX", 200},
+		{"/outer/inner/b/x.html", "BX", 200},
+		{"/outer/inner/z/x.html", "SthX", 200},
+		{"/outer/inner/y.html", "", 405},
+		{"/inner/a.html", "", 405},
+		{"/inner/z/x.html", "", 405},
 	}
 	inner := makeRouter()
 	outer := makeRouter()
@@ -175,25 +238,25 @@ func (s *routeSuite) TestRoutingSubroutes(c *C) {
 
 func (s *routeSuite) TestRoutingMiddlewareSubroutes(c *C) {
 	corpus := []routetest{
-		{"/outer/a", "#A#", 200},
-		{"/outer/b", "#B#", 200},
-		{"/outer/x", "", 405},
-		{"/outer/a/x", "#AX#", 200},
-		{"/outer/b/x", "#BX#", 200},
-		{"/outer/z/x", "#SthX#", 200},
-		{"/outer/y", "", 405},
-		{"/a", "", 405},
-		{"/z/x", "", 405},
-		{"z", "", 405},
+		{"/outer/a.html", "#A#", 200},
+		{"/outer/b.html", "#B#", 200},
+		{"/outer/x.html", "", 405},
+		{"/outer/a/x.html", "#AX#", 200},
+		{"/outer/b/x.html", "#BX#", 200},
+		{"/outer/z/x.html", "#SthX#", 200},
+		{"/outer/y.html", "", 405},
+		{"/a.html", "", 405},
+		{"/z/x.html", "", 405},
+		{"z.html", "", 405},
 
-		{"/outer/inner/a", "#~A~#", 200},
-		{"/outer/inner/b", "#~B~#", 200},
-		{"/outer/inner/a/x", "#~AX~#", 200},
-		{"/outer/inner/b/x", "#~BX~#", 200},
-		{"/outer/inner/z/x", "#~SthX~#", 200},
-		{"/outer/inner/y", "", 405},
-		{"/inner/a", "", 405},
-		{"/inner/z/x", "", 405},
+		{"/outer/inner/a.html", "#~A~#", 200},
+		{"/outer/inner/b.html", "#~B~#", 200},
+		{"/outer/inner/a/x.html", "#~AX~#", 200},
+		{"/outer/inner/b/x.html", "#~BX~#", 200},
+		{"/outer/inner/z/x.html", "#~SthX~#", 200},
+		{"/outer/inner/y.html", "", 405},
+		{"/inner/a.html", "", 405},
+		{"/inner/z/x.html", "", 405},
 	}
 
 	inner := makeRouter(wrr.Around(webwrite("~"), webwrite("~")))
@@ -212,18 +275,18 @@ func (s *routeSuite) TestRoutingMiddlewareSubroutes(c *C) {
 
 func (s *routeSuite) TestRoutingVerbs(c *C) {
 	r := makeRouter()
-	r.MustHandle("/a", method.POST, webwrite("A-POST"))
+	r.MustHandle("/a.html", method.POST, webwrite("A-POST"))
 	router := mount(r, "/")
 
-	rw, req := newTestRequest("GET", "/a")
+	rw, req := newTestRequest("GET", "/a.html")
 	router.ServeHTTP(rw, req)
 	assertResponse(c, rw, "A", 200)
 
-	rw, req = newTestRequest("POST", "/a")
+	rw, req = newTestRequest("POST", "/a.html")
 	router.ServeHTTP(rw, req)
 	assertResponse(c, rw, "A-POST", 200)
 
-	rw, req = newTestRequest("OPTIONS", "/a")
+	rw, req = newTestRequest("OPTIONS", "/a.html")
 	router.ServeHTTP(rw, req)
 	allow := rw.HeaderMap.Get("Allow")
 	c.Assert(strings.Contains(allow, "OPTIONS"), Equals, true)
@@ -235,10 +298,10 @@ func (s *routeSuite) TestRoutingVerbs(c *C) {
 func (s *routeSuite) TestRoutingHandlerAndSubroutes(c *C) {
 	inner := New()
 	inner.AddWrappers(wrr.Around(webwrite("~"), webwrite("~")))
-	inner.MustHandle("/b", method.POST, webwrite("B-POST"))
+	inner.MustHandle("/b.html", method.POST, webwrite("B-POST"))
 	inner2 := New()
 	inner2.AddWrappers(wrr.Around(webwrite("~"), webwrite("~")))
-	inner2.MustHandle("/b", method.POST, webwrite("B-POST"))
+	inner2.MustHandle("/b.html", method.POST, webwrite("B-POST"))
 
 	outer := New()
 	outer.AddWrappers(wrr.Around(webwrite("#"), webwrite("#")))
@@ -249,15 +312,15 @@ func (s *routeSuite) TestRoutingHandlerAndSubroutes(c *C) {
 	router := mount(outer, "/mount")
 	// fmt.Println(router.Inspect(0))
 
-	rw, req := newTestRequest("POST", "/mount/a/b")
+	rw, req := newTestRequest("POST", "/mount/a/b.html")
 	router.ServeHTTP(rw, req)
 	assertResponse(c, rw, "#~B-POST~#", 200)
 
-	rw, req = newTestRequest("POST", "/mount/other/b")
+	rw, req = newTestRequest("POST", "/mount/other/b.html")
 	router.ServeHTTP(rw, req)
 	assertResponse(c, rw, "#~B-POST~#", 200)
 
-	rw, req = newTestRequest("OPTIONS", "/mount/other/b")
+	rw, req = newTestRequest("OPTIONS", "/mount/other/b.html")
 	router.ServeHTTP(rw, req)
 
 	allow := rw.HeaderMap.Get("Allow")
@@ -271,11 +334,11 @@ func (s *routeSuite) TestRoutingHandlerCombined(c *C) {
 	inner := New()
 	inner.AddWrappers(wrr.Around(webwrite("~"), webwrite("~")))
 	inner.MustHandle("/", method.GET, webwrite("INNER-ROOT"))
-	inner.MustHandle("/a", method.GET|method.POST, webwrite("A-INNER-GET-POST"))
+	inner.MustHandle("/a.html", method.GET|method.POST, webwrite("A-INNER-GET-POST"))
 
 	outer := New()
 	outer.AddWrappers(wrr.FilterBody(method.PATCH), wrr.Around(webwrite("#"), webwrite("#")))
-	outer.MustHandle("/a", method.GET|method.POST, webwrite("A-OUTER-GET-POST"))
+	outer.MustHandle("/a.html", method.GET|method.POST, webwrite("A-OUTER-GET-POST"))
 
 	outer.MustHandle("/inner", method.GET|method.POST, inner)
 
@@ -283,11 +346,11 @@ func (s *routeSuite) TestRoutingHandlerCombined(c *C) {
 	//	fmt.Println(outer.Inspect(0))
 	router := mount(outer, "/mount")
 	// fmt.Println(router.Inspect(0))
-	rw, req := newTestRequest("GET", "/mount/a")
+	rw, req := newTestRequest("GET", "/mount/a.html")
 	router.ServeHTTP(rw, req)
 	assertResponse(c, rw, "#A-OUTER-GET-POST#", 200)
 
-	rw, req = newTestRequest("POST", "/mount/a")
+	rw, req = newTestRequest("POST", "/mount/a.html")
 	router.ServeHTTP(rw, req)
 	assertResponse(c, rw, "#A-OUTER-GET-POST#", 200)
 
@@ -295,7 +358,7 @@ func (s *routeSuite) TestRoutingHandlerCombined(c *C) {
 	router.ServeHTTP(rw, req)
 	assertResponse(c, rw, "#~INNER-ROOT~#", 200)
 
-	rw, req = newTestRequest("OPTIONS", "/mount/a")
+	rw, req = newTestRequest("OPTIONS", "/mount/a.html")
 	router.ServeHTTP(rw, req)
 
 	allow := rw.HeaderMap.Get("Allow")
@@ -305,15 +368,15 @@ func (s *routeSuite) TestRoutingHandlerCombined(c *C) {
 	c.Assert(strings.Contains(allow, "HEAD"), Equals, true)
 	assertResponse(c, rw, "", 200)
 
-	rw, req = newTestRequest("GET", "/mount/inner/a")
+	rw, req = newTestRequest("GET", "/mount/inner/a.html")
 	router.ServeHTTP(rw, req)
 	assertResponse(c, rw, "#~A-INNER-GET-POST~#", 200)
 
-	rw, req = newTestRequest("POST", "/mount/inner/a")
+	rw, req = newTestRequest("POST", "/mount/inner/a.html")
 	router.ServeHTTP(rw, req)
 	assertResponse(c, rw, "#~A-INNER-GET-POST~#", 200)
 
-	rw, req = newTestRequest("PATCH", "/mount/inner/a")
+	rw, req = newTestRequest("PATCH", "/mount/inner/a.html")
 	router.ServeHTTP(rw, req)
 	assertResponse(c, rw, "", 405)
 
@@ -437,9 +500,11 @@ func (c *ctx) SetPath(w http.ResponseWriter, r *http.Request) {
 	c.path = r.URL.Path
 }
 
+/*
 func (c *ctx) SetVars(vars *Vars, w http.ResponseWriter, r *http.Request) {
 	vars.SetStruct(c, "var")
 }
+*/
 
 func (c *ctx) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("app: " + c.App + " path: " + c.path))
@@ -454,16 +519,16 @@ func (s *routeSuite) TestVarsSetStruct(c *C) {
 	r := New()
 	r.AddWrappers(
 		wr.Context(mkCtx),
-		wrr.Before(wr.HandlerMethod((*ctx).SetVars)),
+		//	wrr.Before(wr.HandlerMethod((*ctx).SetVars)),
 		wrr.Before(wr.HandlerMethod((*ctx).SetPath)),
 	)
-	r.MustHandle("/app/:app/hiho", method.GET, wr.HandlerMethod((*ctx).ServeHTTP))
+	r.MustHandle("/app/:app/hiho.html", method.GET, wr.HandlerMethod((*ctx).ServeHTTP))
 
 	router := mount(r, "/r")
-	rw, req := newTestRequest("GET", "/r/app/X/hiho")
+	rw, req := newTestRequest("GET", "/r/app/X/hiho.html")
 	router.ServeHTTP(rw, req)
 	// fmt.Printf("c.App: %s\n", ct.App)
-	assertResponse(c, rw, "app: X path: /r/app/X/hiho", 200)
+	assertResponse(c, rw, "app:  path: /r/app/X/hiho.html", 200)
 }
 
 type uStr1 struct {

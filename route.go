@@ -108,12 +108,12 @@ func (r *Route) getHandler(v string) http.Handler {
 		return nil
 	}
 
-	if ver == method.OPTIONS {
-		return r
-	}
-
 	h, exists := r.handler[ver]
 	if !exists {
+		if ver == method.OPTIONS {
+			return r
+		}
+
 		for vb, h := range r.handler {
 			if vb&ver != 0 {
 				return h
