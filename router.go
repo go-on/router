@@ -2,6 +2,7 @@ package router
 
 import (
 	"fmt"
+	"github.com/go-on/menu"
 	"net/http"
 	"path"
 	"path/filepath"
@@ -324,6 +325,45 @@ func (rpf RouteParameterFunc) Params(rt *Route) []map[string]string {
 
 type RouteParameter interface {
 	Params(*Route) []map[string]string
+}
+
+type MenuParameter interface {
+	Params(*Route) []map[string]string
+
+	// Text returns the menu text for the given route with the given
+	// parameters
+	Text(rt *Route, params map[string]string) string
+}
+
+type MenuAdder interface {
+	// Add adds the given item somewhere. Where might be decided
+	// by looking at the given route
+	Add(item menu.Leaf, rt *Route, params map[string]string)
+}
+
+// Menu creates a menu item for each route via solver
+// and adds it via appender
+func (r *Router) Menu(adder MenuAdder, solver MenuParameter) {
+	fn := func(mountPoint string, rt *Route) {
+		if rt.HasParams() {
+			paramsArr := solver.Params(rt)
+			for _, params := range paramsArr {
+				adder.Add(
+					menu.Item(solver.Text(rt, params), rt.MustURLMap(params)),
+					rt,
+					params,
+				)
+			}
+
+		} else {
+			adder.Add(
+				menu.Item(solver.Text(rt, nil), rt.MustURL()),
+				rt,
+				nil,
+			)
+		}
+	}
+	r.EachGETRoute(fn)
 }
 
 // the paths of all get routes
