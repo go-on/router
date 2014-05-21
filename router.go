@@ -15,11 +15,12 @@ import (
 )
 
 type Router struct {
-	pathNode   *pathNode
-	wrapper    []wrap.Wrapper
-	routes     map[string]*Route
-	parent     *Router
-	mountPoint string
+	pathNode        *pathNode
+	wrapper         []wrap.Wrapper
+	routes          map[string]*Route
+	parent          *Router
+	mountPoint      string
+	FallbackHandler http.Handler
 }
 
 //func New(wrapper ...wrap.Wrapper) (ø *Router) {
@@ -109,6 +110,10 @@ func (ø *Router) serveHTTP(w http.ResponseWriter, rq *http.Request) {
 	}
 
 	if h == nil {
+		if ø.FallbackHandler != nil {
+			ø.FallbackHandler.ServeHTTP(w, rq)
+			return
+		}
 		ø.serveNotFound(w, rq)
 		return
 	}
