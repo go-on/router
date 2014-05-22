@@ -1,8 +1,8 @@
 {
   "Exports": {
-    "MustSet": "func (*github.com/go-on/router.Vars,interface{},string)",
+    "MustSet": "func (map[string]string,interface{},string)",
     "MustUrl": "func (*github.com/go-on/router.Route,interface{},string) string",
-    "Set": "func (*github.com/go-on/router.Vars,interface{},string) error",
+    "Set": "func (map[string]string,interface{},string) error",
     "Url": "func (*github.com/go-on/router.Route,interface{},string)(string,error)",
     "init": ""
   },
@@ -33,19 +33,17 @@
     "github.com/go-on/meta.Struct": "type Struct struct {Value *reflect.Value}",
     "github.com/go-on/meta.StructByValue": "func (reflect.Value)(*Struct,error)",
     "github.com/go-on/meta.init": "",
+    "github.com/go-on/router.*Route.HasParams": "(*Route) HasParams() bool",
     "github.com/go-on/router.*Route.MustURL": "(*Route) MustURL(...string) string",
     "github.com/go-on/router.*Route.MustURLMap": "(*Route) MustURLMap(map[string]string) string",
     "github.com/go-on/router.*Route.MustURLStruct": "(*Route) MustURLStruct(interface{},string) string",
+    "github.com/go-on/router.*Route.Route": "(*Route) Route() string",
     "github.com/go-on/router.*Route.Router": "(*Route) Router() *Router",
     "github.com/go-on/router.*Route.ServeHTTP": "(*Route) ServeHTTP(net/http.ResponseWriter,*net/http.Request)",
     "github.com/go-on/router.*Route.URL": "(*Route) URL(...string)(string,error)",
     "github.com/go-on/router.*Route.URLMap": "(*Route) URLMap(map[string]string)(string,error)",
     "github.com/go-on/router.*Route.URLStruct": "(*Route) URLStruct(interface{},string)(string,error)",
-    "github.com/go-on/router.*Vars.Get": "(*Vars) Get(string) string",
-    "github.com/go-on/router.*Vars.Has": "(*Vars) Has(string) bool",
-    "github.com/go-on/router.*Vars.SetStruct": "(*Vars) SetStruct(interface{},string) error",
     "github.com/go-on/router.Route": "type Route struct{}",
-    "github.com/go-on/router.Vars": "type Vars struct { net/http.ResponseWriter}",
     "github.com/go-on/router.init": ""
   },
   "Path": "github.com/go-on/router/routerfat"

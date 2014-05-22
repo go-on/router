@@ -1,10 +1,10 @@
 package routerfat
 
 import (
-	"reflect"
 	. "github.com/go-on/fat"
 	"github.com/go-on/meta"
 	"github.com/go-on/router"
+	"reflect"
 )
 
 var strTy = reflect.TypeOf("")
@@ -37,7 +37,7 @@ func MustUrl(rt *router.Route, øfatstruct interface{}, tag string) string {
 	return u
 }
 
-func Set(vars *router.Vars, ptrToStruct interface{}, key string) (err error) {
+func Set(vars map[string]string, ptrToStruct interface{}, key string) (err error) {
 	var stru *meta.Struct
 	stru, err = meta.StructByValue(reflect.ValueOf(ptrToStruct))
 	if err != nil {
@@ -47,8 +47,8 @@ func Set(vars *router.Vars, ptrToStruct interface{}, key string) (err error) {
 		if err != nil {
 			return
 		}
-		if vars.Has(tagVal) {
-			vv := vars.Get(tagVal)
+		if vv, has := vars[tagVal]; has {
+			// vv := vars.Get(tagVal)
 			fatfld, isFat := f.Value.Interface().(*Field)
 			if isFat {
 				err = fatfld.ScanString(vv)
@@ -62,7 +62,7 @@ func Set(vars *router.Vars, ptrToStruct interface{}, key string) (err error) {
 	return
 }
 
-func MustSet(vars *router.Vars, ptrToStruct interface{}, key string) {
+func MustSet(vars map[string]string, ptrToStruct interface{}, key string) {
 	err := Set(vars, ptrToStruct, key)
 	if err != nil {
 		panic(err.Error())

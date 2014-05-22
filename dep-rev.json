@@ -1,14 +1,14 @@
 {
   "github.com/go-on/menu": {
     "VCM": "git",
-    "Rev": "a1e51cb9fced9af49d3010b4d7cc59a0b0de7670",
+    "Rev": "b5bb0314aec73ba5f8b6720c61d548f6efd864a8",
     "Parent": "github.com/go-on/router",
     "Tag": "",
     "RepoRoot": "github.com/go-on/menu"
   },
   "github.com/go-on/meta": {
     "VCM": "git",
-    "Rev": "9a850915065ac81b287e19b2a1dc5de9d4b84026",
+    "Rev": "de7cdc5a7a1d8e49adf524c7fac4d51b4bce010f",
     "Parent": "github.com/go-on/router",
     "Tag": "",
     "RepoRoot": "github.com/go-on/meta"

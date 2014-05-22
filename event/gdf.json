@@ -1,0 +1,14 @@
+{
+  "Exports": {
+    "Event": "type Event interface {Param() interface{}; Return(interface{}); Returned() interface{}}",
+    "EventString": "type EventString string",
+    "EventString.Handle": "(EventString) Handle((Event))",
+    "EventString.Throw": "(EventString) Throw(interface{}) Event",
+    "EventString.UnHandle": "(EventString) UnHandle()",
+    "New": "func (string) EventString",
+    "Watch": "func ()",
+    "init": ""
+  },
+  "Imports": {},
+  "Path": "github.com/go-on/router/event"
+}

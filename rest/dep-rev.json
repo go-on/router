@@ -1,11 +1,4 @@
 {
-  "github.com/go-on/fat": {
-    "VCM": "git",
-    "Rev": "98d07ac0c8c22aa1ac2e54fff46ebf0ebf9ad446",
-    "Parent": "github.com/go-on/router/routerfat",
-    "Tag": "",
-    "RepoRoot": "github.com/go-on/fat"
-  },
   "github.com/go-on/menu": {
     "VCM": "git",
     "Rev": "b5bb0314aec73ba5f8b6720c61d548f6efd864a8",
@@ -16,14 +9,14 @@
   "github.com/go-on/meta": {
     "VCM": "git",
     "Rev": "de7cdc5a7a1d8e49adf524c7fac4d51b4bce010f",
-    "Parent": "github.com/go-on/router/routerfat",
+    "Parent": "github.com/go-on/router",
     "Tag": "",
     "RepoRoot": "github.com/go-on/meta"
   },
   "github.com/go-on/method": {
     "VCM": "git",
     "Rev": "820d1f16559d7eaffc9a05c819fefe831656ddf6",
-    "Parent": "github.com/go-on/router",
+    "Parent": "github.com/go-on/router/rest",
     "Tag": "",
     "RepoRoot": "github.com/go-on/method"
   },
@@ -47,12 +40,5 @@
     "Parent": "github.com/go-on/router",
     "Tag": "",
     "RepoRoot": "github.com/go-on/wrap-contrib"
-  },
-  "github.com/metakeule/nil": {
-    "VCM": "git",
-    "Rev": "b40a66acd4786844053f3f3f8dfc28212c800fd8",
-    "Parent": "github.com/go-on/fat",
-    "Tag": "",
-    "RepoRoot": "github.com/metakeule/nil"
   }
 }
