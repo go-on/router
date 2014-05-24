@@ -11,6 +11,15 @@ type staticSuite struct{}
 
 var _ = Suite(&staticSuite{})
 
+func containsString(a []string, s string) bool {
+	for _, as := range a {
+		if as == s {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *staticSuite) TestRouting(c *C) {
 	router := mount(makeRouter(), "/")
 	paramSolver := RouteParameterFunc(func(r *Route) []map[string]string {
@@ -28,12 +37,13 @@ func (s *staticSuite) TestRouting(c *C) {
 	paths := router.AllGETPaths(paramSolver)
 
 	c.Assert(len(paths), Equals, 6)
-	c.Assert(paths[0], Equals, "/a.html")
-	c.Assert(paths[1], Equals, "/b.html")
-	c.Assert(paths[2], Equals, "/a/x.html")
-	c.Assert(paths[3], Equals, "/a/b.html")
-	c.Assert(paths[4], Equals, "/b/x.html")
-	c.Assert(paths[5], Equals, "/hu/x.html")
+
+	c.Assert(containsString(paths, "/a.html"), Equals, true)
+	c.Assert(containsString(paths, "/b.html"), Equals, true)
+	c.Assert(containsString(paths, "/a/x.html"), Equals, true)
+	c.Assert(containsString(paths, "/a/b.html"), Equals, true)
+	c.Assert(containsString(paths, "/b/x.html"), Equals, true)
+	c.Assert(containsString(paths, "/hu/x.html"), Equals, true)
 
 	tmpDir := filepath.Join(os.Getenv("GOPATH"), "src", "github.com", "go-on", "router", "temp")
 
