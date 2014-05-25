@@ -20,6 +20,12 @@ func containsString(a []string, s string) bool {
 	return false
 }
 
+func (s *staticSuite) TestTransformLink(c *C) {
+	c.Assert(transformLink("http://abc.de"), Equals, "http://abc.de")
+	c.Assert(transformLink("/abc.de"), Equals, "/abc.de")
+	c.Assert(transformLink("/abc"), Equals, "/abc.html")
+}
+
 func (s *staticSuite) TestRouting(c *C) {
 	router := mount(makeRouter(), "/")
 	paramSolver := RouteParameterFunc(func(r *Route) []map[string]string {
