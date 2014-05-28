@@ -7,6 +7,7 @@ import (
 	"html"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	// "net/http/httptest"
 	"os"
 	"path/filepath"
@@ -52,6 +53,8 @@ func staticRedirect(location string) string {
 	return fmt.Sprintf(staticRedirectTemplate, location, location, location)
 }
 
+var htmlContentType = regexp.MustCompile("html")
+
 func savePath(server http.Handler, p, targetDir string) error {
 	req, err := http.NewRequest("GET", p, nil)
 	if req.Body != nil {
@@ -71,17 +74,25 @@ func savePath(server http.Handler, p, targetDir string) error {
 		buf.Header().Set("Location", transformLink(loc))
 	}
 
-	x, err := transform.NewFromReader(&buf.Buffer)
-	if err != nil {
-		return err
-	}
-	err = x.Apply(transform.CopyAnd(transform.TransformAttrib("href", transformLink)), "a")
+	contentType := buf.Header().Get("Content-Type")
+	var body = buf.Buffer.String()
 
-	if err != nil {
-		return err
-	}
+	if contentType == "" || htmlContentType.MatchString(contentType) {
 
-	var body = x.String()
+		// if contentType
+
+		x, err := transform.NewFromReader(&buf.Buffer)
+		if err != nil {
+			return err
+		}
+		err = x.Apply(transform.CopyAnd(transform.TransformAttrib("href", transformLink)), "a")
+
+		if err != nil {
+			return err
+		}
+
+		body = x.String()
+	}
 
 	/*
 		buf.WriteHeadersTo(rw)
