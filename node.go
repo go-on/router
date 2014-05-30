@@ -20,10 +20,6 @@ type pathNode struct {
 	leaf *pathLeaf
 }
 
-// For the route /admin/forums/:forum_id:\d.*/suggestions/:suggestion_id:\d.*
-// We'd have wildcards = ["forum_id", "suggestion_id"]
-// For the route /admin/forums/:forum_id/suggestions/:suggestion_id:\d.*
-// We'd have wildcards = ["forum_id", "suggestion_id"]
 // For the route /admin/forums/:forum_id/suggestions/:suggestion_id
 // We'd have wildcards = ["forum_id", "suggestion_id"]
 type pathLeaf struct {

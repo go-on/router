@@ -104,6 +104,13 @@ func TestRoutes(t *testing.T) {
 			get:   "/site2/123",
 			vars:  map[string]string{"id": "123"},
 		},
+		/*
+			{
+				route: "/withwildcard/*",
+				get:   "/withwildcard/huho",
+				vars:  map[string]string{"hiho": "123"},
+			},
+		*/
 	}
 
 	n := newPathNode()

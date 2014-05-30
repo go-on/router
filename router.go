@@ -157,7 +157,7 @@ func (ø *Router) findLeaf(url string) (leaf *pathLeaf, wc map[string]string) {
 }
 
 // route not found boils down to method not allowed.
-// I find this allows a better seperation  between a missing route (405, Method not allowed) and
+// I think this allows a better seperation  between a missing route (405, Method not allowed) and
 // a missing entity (such as a missing page served by a cms or a missing entity requested via REST
 // API call). Method not allowed errors (missing routes) should be tracked, because:
 //
