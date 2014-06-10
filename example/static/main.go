@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/go-on/router/example/static/site"
 	"net/http"
 	"os"
 	"path/filepath"
-	"github.com/go-on/router/example/static/site"
 
 	"github.com/go-on/router"
 )
