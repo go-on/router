@@ -66,7 +66,7 @@ func (s *routeSuite) TestRouting(c *C) {
 func (s *routeSuite) TestRouter(c *C) {
 	r := New()
 	rt := r.MustHandle("/hu", method.GET, webwrite("hu"))
-	c.Assert(rt.Router(), Equals, r)
+	c.Assert(rt.router, Equals, r)
 }
 
 func (s *routeSuite) TestDoubleRoute(c *C) {

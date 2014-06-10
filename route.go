@@ -10,31 +10,47 @@ import (
 	"github.com/go-on/method"
 )
 
+type MountPather interface {
+	MountPath() string
+}
+
 /*
 a Router should only know its subroutes and have a pointer to its parent router
 */
 
+// TODO: have an inner Route that is decoupled from handler and router,
+// that has only a mounter/pather that resolvs to a mount path and
+// method.Methods (method package should get rid of net/http dependency)
+// this inner Route should be used to define real routes at the first place.
+// the mounter/pather should be used by the Router
 type Route struct {
 	handler          map[method.Method]http.Handler
 	ressourceOptions string
-	path             string
+	mountedpath      string
 	originalPath     string
-	router           *Router
+	//router           *Router
+	router MountPather
 }
 
 func newRoute(router *Router, path string) *Route {
 	// fmt.Println("creating route for path", path, "router", router.Path())
 	r := &Route{}
 	r.router = router
-	r.path = path
+	r.mountedpath = path
 	r.originalPath = path
 	r.handler = map[method.Method]http.Handler{}
 	return r
 }
 
+func (r *Route) SetHandler(m method.Method, h http.Handler) {
+	r.handler[m] = h
+}
+
+/*
 func (r *Route) Router() *Router {
 	return r.router
 }
+*/
 
 func (r *Route) Route() string {
 	return r.originalPath
@@ -142,7 +158,7 @@ func (ø *Route) URL(params ...string) (string, error) {
 
 // params are key/values
 func (ø *Route) URLMap(params map[string]string) (string, error) {
-	segments := splitPath(ø.path)
+	segments := splitPath(ø.mountedpath)
 
 	for i := range segments {
 		wc, wcName := isWildcard(segments[i])
@@ -155,10 +171,10 @@ func (ø *Route) URLMap(params map[string]string) (string, error) {
 		}
 	}
 
-	if ø.router.Path() == "/" {
+	if ø.router.MountPath() == "/" {
 		return "/" + strings.Join(segments, "/"), nil
 	} else {
-		return ø.router.Path() + "/" + strings.Join(segments, "/"), nil
+		return ø.router.MountPath() + "/" + strings.Join(segments, "/"), nil
 	}
 }
 
