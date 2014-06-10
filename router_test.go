@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-on/method"
+	"github.com/go-on/router/route"
 	"github.com/go-on/wrap-contrib/wraps"
 	. "launchpad.net/gocheck"
 )
@@ -77,9 +78,9 @@ func (s *routerSuite) TestEachRoute(c *C) {
 
 	mount(r, "/hi")
 
-	rts := map[string]*Route{}
+	rts := map[string]*route.Route{}
 
-	r.EachRoute(func(mountPoint string, route *Route) {
+	r.EachRoute(func(mountPoint string, route *route.Route) {
 		// fmt.Println(mountPoint)
 		rts[mountPoint] = route
 	})
@@ -244,8 +245,8 @@ func (s *routeSuite) TestAllGETPaths(c *C) {
 			fmt.Fprintf(rw, "b: %s c: c", req.FormValue(":b"), req.FormValue(":c"))
 		}))
 
-	solver := RouteParameterFunc(func(route *Route) []map[string]string {
-		if route == rt {
+	solver := RouteParameterFunc(func(rout *route.Route) []map[string]string {
+		if rout == rt {
 			return []map[string]string{
 				map[string]string{
 					"b": "b1",

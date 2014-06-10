@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-on/method"
+	"github.com/go-on/router/route"
 	"github.com/go-on/wrap"
 	wr "github.com/go-on/wrap-contrib-testing/wrapstesting"
 	wrr "github.com/go-on/wrap-contrib/wraps"
@@ -66,7 +67,7 @@ func (s *routeSuite) TestRouting(c *C) {
 func (s *routeSuite) TestRouter(c *C) {
 	r := New()
 	rt := r.MustHandle("/hu", method.GET, webwrite("hu"))
-	c.Assert(rt.router, Equals, r)
+	c.Assert(rt.Router, Equals, r)
 }
 
 func (s *routeSuite) TestDoubleRoute(c *C) {
@@ -88,7 +89,7 @@ func (s *routeSuite) TestURLWrongParams(c *C) {
 		e := recover()
 		c.Assert(e, Not(Equals), nil)
 	}()
-	rt.URL("hu")
+	URL(rt, "hu")
 }
 
 func (s *routeSuite) TestURLWrongParams2(c *C) {
@@ -98,7 +99,7 @@ func (s *routeSuite) TestURLWrongParams2(c *C) {
 		e := recover()
 		c.Assert(e, Not(Equals), nil)
 	}()
-	rt.MustURL("hu", "ho")
+	MustURL(rt, "hu", "ho")
 }
 
 func (s *routeSuite) TestURLMapWrongParams(c *C) {
@@ -108,13 +109,13 @@ func (s *routeSuite) TestURLMapWrongParams(c *C) {
 		e := recover()
 		c.Assert(e, Not(Equals), nil)
 	}()
-	rt.MustURLMap(map[string]string{"hu": "ho"})
+	MustURLMap(rt, map[string]string{"hu": "ho"})
 }
 
 func (s *routeSuite) TestURLStructWrongParams(c *C) {
 	r := New()
 	rt := r.MustHandle("/", method.GET, webwrite("hu"))
-	_, err := rt.URLStruct("hu", "ho")
+	_, err := URLStruct(rt, "hu", "ho")
 	c.Assert(err, Not(Equals), nil)
 }
 
@@ -125,7 +126,7 @@ func (s *routeSuite) TestMustURLStructWrongParams(c *C) {
 		e := recover()
 		c.Assert(e, Not(Equals), nil)
 	}()
-	rt.MustURLStruct("hu", "ho")
+	MustURLStruct(rt, "hu", "ho")
 }
 
 func (s *routeSuite) TestNotExistingMethod(c *C) {
@@ -401,10 +402,10 @@ func (s *routeSuite) TestRoutingSubRouteRoot(c *C) {
 
 func (s *routeSuite) TestMassiveRoutes(c *C) {
 	var inner = New()
-	var route *Route
+	var rt *route.Route
 
 	for i := 0; i < 10000; i++ {
-		route = inner.MustHandle(fmt.Sprintf("/r%d", i), method.GET, webwrite(fmt.Sprintf("r%d", i)))
+		rt = inner.MustHandle(fmt.Sprintf("/r%d", i), method.GET, webwrite(fmt.Sprintf("r%d", i)))
 	}
 
 	index := New()
@@ -414,8 +415,8 @@ func (s *routeSuite) TestMassiveRoutes(c *C) {
 	router := mount(index, "/index")
 
 	// fmt.Println("new request")
-	_ = route
-	c.Assert(route.MustURL(), Equals, "/index/admin/r9999")
+	_ = rt
+	c.Assert(MustURL(rt), Equals, "/index/admin/r9999")
 	// fmt.Println("serving")
 
 	// for i := 0; i < 20000; i++ {
@@ -430,7 +431,7 @@ func (s *routeSuite) TestMassiveRoutingNested(c *C) {
 	var inner = New()
 	var r *Router
 	inner.MustHandle("/admin", method.GET, webwrite("ADMIN"))
-	var route *Route
+	var route *route.Route
 	// var r2 *Route
 
 	for i := 0; i < 10001; i++ {
@@ -456,7 +457,7 @@ func (s *routeSuite) TestMassiveRoutingNested(c *C) {
 	//fmt.Println(router.MustURL(r2))
 	// fmt.Println("new request")
 
-	c.Assert(route.MustURL(), Equals, "/index/admin/r10000")
+	c.Assert(MustURL(route), Equals, "/index/admin/r10000")
 	// fmt.Println("serving")
 
 	// for i := 0; i < 20000; i++ {
@@ -550,21 +551,21 @@ func (s *routeSuite) TestURL(c *C) {
 	mount(index1, "/index1")
 	mount(index2, "/index2")
 
-	url1 := route1.MustURL()
+	url1 := MustURL(route1)
 	c.Assert(url1, Equals, "/index1/admin1/x")
-	url2 := route3.MustURL()
+	url2 := MustURL(route3)
 	c.Assert(url2, Equals, "/index2/admin2/x")
 
-	url3 := route2.MustURL("y", "p")
+	url3 := MustURL(route2, "y", "p")
 	c.Assert(url3, Equals, "/index1/admin1/p/z")
 
-	url4 := route4.MustURL("y", "p")
+	url4 := MustURL(route4, "y", "p")
 	c.Assert(url4, Equals, "/index2/admin2/p/z")
 
-	_, err := route2.URL()
+	_, err := URL(route2)
 	c.Assert(err, NotNil)
 
 	str1 := uStr1{"q"}
-	url5 := route2.MustURLStruct(&str1, "urltest")
+	url5 := MustURLStruct(route2, &str1, "urltest")
 	c.Assert(url5, Equals, "/index1/admin1/q/z")
 }

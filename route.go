@@ -8,11 +8,14 @@ import (
 
 	"github.com/go-on/meta"
 	"github.com/go-on/method"
+	"github.com/go-on/router/route"
 )
 
+/*
 type MountPather interface {
 	MountPath() string
 }
+*/
 
 /*
 a Router should only know its subroutes and have a pointer to its parent router
@@ -23,28 +26,30 @@ a Router should only know its subroutes and have a pointer to its parent router
 // method.Methods (method package should get rid of net/http dependency)
 // this inner Route should be used to define real routes at the first place.
 // the mounter/pather should be used by the Router
+/*
 type Route struct {
-	handler          map[method.Method]http.Handler
-	ressourceOptions string
-	mountedpath      string
-	originalPath     string
+	Handlers         map[method.Method]http.Handler
+	RessourceOptions string
+	MountedPath      string
+	OriginalPath     string
 	//router           *Router
-	router MountPather
+	Router MountPather
 }
 
-func newRoute(router *Router, path string) *Route {
+func NewRoute(path string) *Route {
 	// fmt.Println("creating route for path", path, "router", router.Path())
 	r := &Route{}
-	r.router = router
-	r.mountedpath = path
-	r.originalPath = path
-	r.handler = map[method.Method]http.Handler{}
+	// r.Router = router
+	r.MountedPath = path
+	r.OriginalPath = path
+	r.Handlers = map[method.Method]http.Handler{}
 	return r
 }
 
 func (r *Route) SetHandler(m method.Method, h http.Handler) {
-	r.handler[m] = h
+	r.Handlers[m] = h
 }
+*/
 
 /*
 func (r *Route) Router() *Router {
@@ -52,22 +57,26 @@ func (r *Route) Router() *Router {
 }
 */
 
-func (r *Route) Route() string {
-	return r.originalPath
+/*
+func Route(r *Route) string {
+	return r.OriginalPath
+}
+*/
+
+func HasParams(r *route.Route) bool {
+	return strings.ContainsRune(r.OriginalPath, ':')
 }
 
-func (r *Route) HasParams() bool {
-	return strings.ContainsRune(r.Route(), ':')
-}
-
-func (r *Route) addHandler(handler http.Handler, v method.Method) error {
-	_, has := r.handler[v]
+/*
+func (r *Route) AddHandler(handler http.Handler, v method.Method) error {
+	_, has := r.Handlers[v]
 	if has {
 		return fmt.Errorf("handler for method %s already defined", v)
 	}
-	r.handler[v] = handler
+	r.Handlers[v] = handler
 	return nil
 }
+*/
 
 /*
 func (r *Route) inspect(indent int) string {
@@ -80,9 +89,13 @@ func (r *Route) inspect(indent int) string {
 }
 */
 
+type OptionsServer struct {
+	*route.Route
+}
+
 // serves the OPTIONS
-func (r *Route) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	if r.ressourceOptions == "" {
+func (r *OptionsServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	if r.RessourceOptions == "" {
 		opts := map[method.Method]bool{method.OPTIONS: true}
 		allow := []string{}
 		all := []method.Method{
@@ -95,7 +108,7 @@ func (r *Route) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 
 		for _, m := range all {
-			for vb, _ := range r.handler {
+			for vb, _ := range r.Handlers {
 				if vb&m != 0 {
 					opts[m] = true
 				}
@@ -112,25 +125,25 @@ func (r *Route) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			}
 		}
 
-		r.ressourceOptions = strings.Join(allow, ",")
+		r.RessourceOptions = strings.Join(allow, ",")
 	}
-	rw.Header().Set("Allow", r.ressourceOptions)
+	rw.Header().Set("Allow", r.RessourceOptions)
 }
 
-func (r *Route) getHandler(v string) http.Handler {
+func getHandler(r *route.Route, v string) http.Handler {
 	v = strings.TrimSpace(strings.ToUpper(v))
 	ver, ok := method.StringToMethod[v]
 	if !ok {
 		return nil
 	}
 
-	h, exists := r.handler[ver]
+	h, exists := r.Handlers[ver]
 	if !exists {
 		if ver == method.OPTIONS {
-			return r
+			return &OptionsServer{r}
 		}
 
-		for vb, h := range r.handler {
+		for vb, h := range r.Handlers {
 			if vb&ver != 0 {
 				return h
 			}
@@ -141,7 +154,7 @@ func (r *Route) getHandler(v string) http.Handler {
 }
 
 // params are key/value pairs
-func (ø *Route) URL(params ...string) (string, error) {
+func URL(ø *route.Route, params ...string) (string, error) {
 	// fmt.Printf("params: %#v\n", params)
 	if len(params)%2 != 0 {
 		panic("number of params must be even (pairs of key, value)")
@@ -153,12 +166,12 @@ func (ø *Route) URL(params ...string) (string, error) {
 
 	// fmt.Printf("%s => url vars: %#v\n", ø.path, vars)
 
-	return ø.URLMap(vars)
+	return URLMap(ø, vars)
 }
 
 // params are key/values
-func (ø *Route) URLMap(params map[string]string) (string, error) {
-	segments := splitPath(ø.mountedpath)
+func URLMap(ø *route.Route, params map[string]string) (string, error) {
+	segments := splitPath(ø.MountedPath)
 
 	for i := range segments {
 		wc, wcName := isWildcard(segments[i])
@@ -171,16 +184,16 @@ func (ø *Route) URLMap(params map[string]string) (string, error) {
 		}
 	}
 
-	if ø.router.MountPath() == "/" {
+	if ø.Router.MountPath() == "/" {
 		return "/" + strings.Join(segments, "/"), nil
 	} else {
-		return ø.router.MountPath() + "/" + strings.Join(segments, "/"), nil
+		return ø.Router.MountPath() + "/" + strings.Join(segments, "/"), nil
 	}
 }
 
 var strTy = reflect.TypeOf("")
 
-func (ø *Route) URLStruct(paramStruct interface{}, tagKey string) (string, error) {
+func URLStruct(ø *route.Route, paramStruct interface{}, tagKey string) (string, error) {
 	val := reflect.ValueOf(paramStruct)
 	params := map[string]string{}
 	stru, err := meta.StructByValue(val)
@@ -194,27 +207,27 @@ func (ø *Route) URLStruct(paramStruct interface{}, tagKey string) (string, erro
 
 	stru.EachTag(tagKey, fn)
 
-	return ø.URLMap(params)
+	return URLMap(ø, params)
 }
 
-func (ø *Route) MustURLMap(params map[string]string) string {
-	u, err := ø.URLMap(params)
+func MustURLMap(ø *route.Route, params map[string]string) string {
+	u, err := URLMap(ø, params)
 	if err != nil {
 		panic(err.Error())
 	}
 	return u
 }
 
-func (ø *Route) MustURLStruct(paramStruct interface{}, tagKey string) string {
-	u, err := ø.URLStruct(paramStruct, tagKey)
+func MustURLStruct(ø *route.Route, paramStruct interface{}, tagKey string) string {
+	u, err := URLStruct(ø, paramStruct, tagKey)
 	if err != nil {
 		panic(err.Error())
 	}
 	return u
 }
 
-func (ø *Route) MustURL(params ...string) string {
-	u, err := ø.URL(params...)
+func MustURL(ø *route.Route, params ...string) string {
+	u, err := URL(ø, params...)
 	if err != nil {
 		panic(err.Error())
 	}

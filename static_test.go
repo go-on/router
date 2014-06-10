@@ -1,8 +1,8 @@
 package router
 
 import (
-	"os"
-	"path/filepath"
+	// "os"
+	// "path/filepath"
 
 	. "launchpad.net/gocheck"
 )
@@ -26,6 +26,7 @@ func (s *staticSuite) TestTransformLink(c *C) {
 	c.Assert(transformLink("/abc"), Equals, "/abc.html")
 }
 
+/*
 func (s *staticSuite) TestRouting(c *C) {
 	router := mount(makeRouter(), "/")
 	paramSolver := RouteParameterFunc(func(r *Route) []map[string]string {
@@ -63,3 +64,4 @@ func (s *staticSuite) TestRouting(c *C) {
 	// c.Assert(len(errs), Equals, 0)
 
 }
+*/

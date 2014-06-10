@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/go-on/method"
+	"github.com/go-on/router/route"
 )
 
 type pathNode struct {
@@ -27,7 +28,7 @@ type pathLeaf struct {
 	wildcards []string
 
 	// Pointer back to the route
-	*Route
+	*route.Route
 }
 
 func newPathNode() *pathNode {
@@ -59,11 +60,12 @@ func (pn *pathNode) addInternal(originalPath string, segments []string, v method
 	if len(segments) == 0 {
 		if pn.leaf == nil {
 			path := "/" + strings.Join(segments, "/")
-			rrt := newRoute(router, path)
-			rrt.originalPath = originalPath
+			rrt := route.NewRoute(path)
+			rrt.Router = router
+			rrt.OriginalPath = originalPath
 			pn.leaf = &pathLeaf{Route: rrt, wildcards: wildcards}
 		}
-		return pn.leaf.Route.addHandler(handler, v)
+		return pn.leaf.Route.AddHandler(handler, v)
 
 	}
 	seg := segments[0]

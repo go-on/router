@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/go-on/method"
+	"github.com/go-on/router/route"
 	"github.com/go-on/wrap"
 	// "github.com/go-on/wrap-contrib-testing/wrapstesting"
 	"github.com/go-on/wrap-contrib/wraps"
@@ -17,7 +18,7 @@ import (
 type Router struct {
 	pathNode   *pathNode
 	wrapper    []wrap.Wrapper
-	routes     map[string]*Route
+	routes     map[string]*route.Route
 	parent     *Router
 	mountPoint string
 }
@@ -26,7 +27,7 @@ type Router struct {
 func New() (ø *Router) {
 	ø = &Router{
 		wrapper:  []wrap.Wrapper{},
-		routes:   map[string]*Route{},
+		routes:   map[string]*route.Route{},
 		pathNode: newPathNode(),
 	}
 	return
@@ -42,7 +43,7 @@ func NewETagged() (ø *Router) {
 	return
 }
 
-func (r *Router) Route(path string) *Route {
+func (r *Router) Route(path string) *route.Route {
 	return r.routes[path]
 }
 
@@ -62,14 +63,14 @@ func (r *Router) MountPoint() string {
 	return r.mountPoint
 }
 
-func (ø *Router) getFinalHandler(path, method string) (h http.Handler, route *Route, wc map[string]string) {
+func (ø *Router) getFinalHandler(path, method string) (h http.Handler, route *route.Route, wc map[string]string) {
 	var leaf *pathLeaf
 	leaf, wc = ø.findLeaf(path)
 	if leaf == nil {
 		return
 	}
 
-	h = leaf.getHandler(method)
+	h = getHandler(leaf.Route, method)
 
 	if h == nil {
 		return
@@ -84,7 +85,7 @@ func (ø *Router) getFinalHandler(path, method string) (h http.Handler, route *R
 
 	// fmt.Println("method", method, "h", h)
 	if h == nil && method == "OPTIONS" {
-		h = route
+		h = &OptionsServer{route}
 	}
 	return
 }
@@ -118,7 +119,7 @@ func (ø *Router) serveHTTP(w http.ResponseWriter, rq *http.Request) {
 	}
 
 	if method != "OPTIONS" {
-		h = route.router.(*Router).wrapit(h)
+		h = route.Router.(*Router).wrapit(h)
 	}
 
 	q := rq.URL.Query()
@@ -126,7 +127,7 @@ func (ø *Router) serveHTTP(w http.ResponseWriter, rq *http.Request) {
 		q.Set(":"+k, v)
 	}
 	rq.URL.RawQuery = q.Encode()
-	rq.URL.Fragment = route.originalPath
+	rq.URL.Fragment = route.OriginalPath
 
 	//h.ServeHTTP(&Vars{w, wc}, rq)
 	h.ServeHTTP(w, rq)
@@ -220,7 +221,7 @@ func (r *Router) MustMount(path string, m *http.ServeMux) {
 
 func (r *Router) registerRoutes() error {
 	for p, rt := range r.routes {
-		for v, h := range rt.handler {
+		for v, h := range rt.Handlers {
 			err := r.pathNode.add(p, v, h, r)
 			if err != nil {
 				return fmt.Errorf("can't register %s %s", v.String(), p)
@@ -244,7 +245,41 @@ type RouterFunc func() http.Handler
 
 func (hc RouterFunc) ServeHTTP(rw http.ResponseWriter, req *http.Request) { hc().ServeHTTP(rw, req) }
 
-func (ø *Router) Handle(path string, v method.Method, handler http.Handler) (*Route, error) {
+func (ø *Router) MustRegisterRoute(rt *route.Route, v method.Method, handler http.Handler) {
+	err := ø.RegisterRoute(rt, v, handler)
+
+	if err != nil {
+		panic(err)
+	}
+
+}
+
+func (ø *Router) RegisterRoute(rt *route.Route, v method.Method, handler http.Handler) error {
+	rt.Router = ø
+	ø.routes[rt.OriginalPath] = rt
+	return ø.assocHandler(rt, v, handler)
+}
+
+func (ø *Router) assocHandler(rt *route.Route, v method.Method, handler http.Handler) error {
+	// rt.Router = ø
+	rtr, is := handler.(*Router)
+	if is {
+		err := rtr.submount(rt.OriginalPath, ø)
+		if err != nil {
+			return err
+		}
+	}
+
+	err := rt.AddHandler(handler, v)
+	if err != nil {
+		return err
+	}
+
+	// ø.routes[rt.OriginalPath] = rt
+	return err
+}
+
+func (ø *Router) Handle(path string, v method.Method, handler http.Handler) (*route.Route, error) {
 	if ø.mountPoint != "" {
 		return nil, fmt.Errorf("can't register handlers: already mounted on %s", ø.Path())
 	}
@@ -256,26 +291,16 @@ func (ø *Router) Handle(path string, v method.Method, handler http.Handler) (*R
 		}
 	*/
 	if !exists {
-		rt = newRoute(ø, path)
-	}
-	rtr, is := handler.(*Router)
-	if is {
-		err := rtr.submount(path, ø)
-		if err != nil {
-			return nil, err
-		}
+		rt = route.NewRoute(path)
+		rt.Router = ø
+		ø.routes[path] = rt
 	}
 
-	err := rt.addHandler(handler, v)
-	if err != nil {
-		return nil, err
-	}
-
-	ø.routes[path] = rt
+	err := ø.assocHandler(rt, v, handler)
 	return rt, err
 }
 
-func (r *Router) MustHandle(path string, v method.Method, handler http.Handler) *Route {
+func (r *Router) MustHandle(path string, v method.Method, handler http.Handler) *route.Route {
 	rt, err := r.Handle(path, v, handler)
 	if err != nil {
 		panic(err.Error())
@@ -283,78 +308,78 @@ func (r *Router) MustHandle(path string, v method.Method, handler http.Handler) 
 	return rt
 }
 
-func (r *Router) GET(path string, handler http.Handler) *Route {
+func (r *Router) GET(path string, handler http.Handler) *route.Route {
 	return r.MustHandle(path, method.GET, handler)
 }
-func (r *Router) POST(path string, handler http.Handler) *Route {
+func (r *Router) POST(path string, handler http.Handler) *route.Route {
 	return r.MustHandle(path, method.POST, handler)
 }
-func (r *Router) PUT(path string, handler http.Handler) *Route {
+func (r *Router) PUT(path string, handler http.Handler) *route.Route {
 	return r.MustHandle(path, method.PUT, handler)
 }
-func (r *Router) DELETE(path string, handler http.Handler) *Route {
+func (r *Router) DELETE(path string, handler http.Handler) *route.Route {
 	return r.MustHandle(path, method.DELETE, handler)
 }
-func (r *Router) PATCH(path string, handler http.Handler) *Route {
+func (r *Router) PATCH(path string, handler http.Handler) *route.Route {
 	return r.MustHandle(path, method.PATCH, handler)
 }
-func (r *Router) OPTIONS(path string, handler http.Handler) *Route {
+func (r *Router) OPTIONS(path string, handler http.Handler) *route.Route {
 	return r.MustHandle(path, method.OPTIONS, handler)
 }
-func (r *Router) HEAD(path string, handler http.Handler) *Route {
+func (r *Router) HEAD(path string, handler http.Handler) *route.Route {
 	return r.MustHandle(path, method.HEAD, handler)
 }
-func (r *Router) TRACE(path string, handler http.Handler) *Route {
+func (r *Router) TRACE(path string, handler http.Handler) *route.Route {
 	return r.MustHandle(path, method.TRACE, handler)
 }
 
-func (r *Router) EachRoute(fn func(mountPoint string, route *Route)) {
+func (r *Router) EachRoute(fn func(mountPoint string, route *route.Route)) {
 	for mP, rt := range r.routes {
 		fn(mP, rt)
 	}
 }
 
-func (r *Router) EachGETRoute(fn func(mountPoint string, route *Route)) {
+func (r *Router) EachGETRoute(fn func(mountPoint string, route *route.Route)) {
 	for mP, rt := range r.routes {
-		if rt.getHandler("GET") != nil {
+		if getHandler(rt, "GET") != nil {
 			fn(mP, rt)
 		}
 	}
 }
 
-type RouteParameterFunc func(*Route) []map[string]string
+type RouteParameterFunc func(*route.Route) []map[string]string
 
-func (rpf RouteParameterFunc) Params(rt *Route) []map[string]string {
+func (rpf RouteParameterFunc) Params(rt *route.Route) []map[string]string {
 	return rpf(rt)
 }
 
 type RouteParameter interface {
-	Params(*Route) []map[string]string
+	Params(*route.Route) []map[string]string
 }
 
 type MenuParameter interface {
-	Params(*Route) []map[string]string
+	Params(*route.Route) []map[string]string
 
 	// Text returns the menu text for the given route with the given
 	// parameters
-	Text(rt *Route, params map[string]string) string
+	Text(rt *route.Route, params map[string]string) string
 }
 
 type MenuAdder interface {
 	// Add adds the given item somewhere. Where might be decided
 	// by looking at the given route
-	Add(item menu.Leaf, rt *Route, params map[string]string)
+	Add(item menu.Leaf, rt *route.Route, params map[string]string)
 }
 
 // Menu creates a menu item for each route via solver
 // and adds it via appender
 func (r *Router) Menu(adder MenuAdder, solver MenuParameter) {
-	fn := func(mountPoint string, rt *Route) {
-		if rt.HasParams() {
+	fn := func(mountPoint string, rt *route.Route) {
+		if HasParams(rt) {
 			paramsArr := solver.Params(rt)
 			for _, params := range paramsArr {
 				adder.Add(
-					menu.Item(solver.Text(rt, params), rt.MustURLMap(params)),
+					menu.Item(solver.Text(rt, params), MustURLMap(rt, params)),
 					rt,
 					params,
 				)
@@ -362,7 +387,7 @@ func (r *Router) Menu(adder MenuAdder, solver MenuParameter) {
 
 		} else {
 			adder.Add(
-				menu.Item(solver.Text(rt, nil), rt.MustURL()),
+				menu.Item(solver.Text(rt, nil), MustURL(rt)),
 				rt,
 				nil,
 			)
@@ -374,17 +399,17 @@ func (r *Router) Menu(adder MenuAdder, solver MenuParameter) {
 // the paths of all get routes
 func (r *Router) AllGETPaths(paramSolver RouteParameter) (paths []string) {
 	paths = []string{}
-	fn := func(mountPoint string, rt *Route) {
+	fn := func(mountPoint string, rt *route.Route) {
 
-		if rt.HasParams() {
+		if HasParams(rt) {
 			paramsArr := paramSolver.Params(rt)
 
 			for _, params := range paramsArr {
-				paths = append(paths, rt.MustURLMap(params))
+				paths = append(paths, MustURLMap(rt, params))
 			}
 
 		} else {
-			paths = append(paths, rt.MustURL())
+			paths = append(paths, MustURL(rt))
 		}
 	}
 
@@ -405,21 +430,21 @@ func (r *Router) MustSavePages(paramSolver RouteParameter, mainHandler http.Hand
 }
 
 // map[string][]interface{} is tag => []struct
-func (r *Router) GETPathsByStruct(parameters map[*Route]map[string][]interface{}) (paths []string) {
+func (r *Router) GETPathsByStruct(parameters map[*route.Route]map[string][]interface{}) (paths []string) {
 	paths = []string{}
 
-	fn := func(mountPoint string, route *Route) {
+	fn := func(mountPoint string, route *route.Route) {
 		paramPairs := parameters[route]
 
 		// if route has : it has parameters
-		if route.HasParams() {
+		if HasParams(route) {
 			for tag, structs := range paramPairs {
 				for _, stru := range structs {
-					paths = append(paths, route.MustURLStruct(stru, tag))
+					paths = append(paths, MustURLStruct(route, stru, tag))
 				}
 			}
 		} else {
-			paths = append(paths, route.MustURL())
+			paths = append(paths, MustURL(route))
 		}
 	}
 
@@ -427,10 +452,10 @@ func (r *Router) GETPathsByStruct(parameters map[*Route]map[string][]interface{}
 	return
 }
 
-func (r *Router) DynamicRoutes() (routes []*Route) {
-	routes = []*Route{}
+func (r *Router) DynamicRoutes() (routes []*route.Route) {
+	routes = []*route.Route{}
 	for _, rt := range r.routes {
-		if rt.HasParams() {
+		if HasParams(rt) {
 			routes = append(routes, rt)
 		}
 	}
@@ -440,8 +465,8 @@ func (r *Router) DynamicRoutes() (routes []*Route) {
 func (r *Router) StaticRoutePaths() (paths []string) {
 	paths = []string{}
 	for _, rt := range r.routes {
-		if !rt.HasParams() {
-			paths = append(paths, rt.MustURL())
+		if !HasParams(rt) {
+			paths = append(paths, MustURL(rt))
 		}
 	}
 	return paths
