@@ -1,10 +1,11 @@
 package rest
 
 import (
-	"net/http"
 	"github.com/go-on/method"
+	"net/http"
 
 	"github.com/go-on/router"
+	"github.com/go-on/router/route"
 )
 
 type GetHandler interface {
@@ -32,8 +33,8 @@ type PatchHandler interface {
 	ItemPath() string
 }
 
-func Register(rt *router.Router, handler interface{}) (m map[method.Method]*router.Route) {
-	m = map[method.Method]*router.Route{}
+func Register(rt *router.Router, handler interface{}) (m map[method.Method]*route.Route) {
+	m = map[method.Method]*route.Route{}
 
 	if get, ok := handler.(GetHandler); ok {
 		m[method.GET] = rt.GET(get.ItemPath(), http.HandlerFunc(get.Get))
