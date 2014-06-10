@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/go-on/router"
+	"github.com/go-on/router/route"
 )
 
 type resolver struct {
@@ -16,7 +17,7 @@ type resolver struct {
 	root *menu.Node
 }
 
-func (rs *resolver) Text(rt *router.Route, params map[string]string) string {
+func (rs *resolver) Text(rt *route.Route, params map[string]string) string {
 	switch rt {
 	case site.DRoute:
 		return fmt.Sprintf("A: %s B: %s ", params["a"], params["b"])
@@ -25,11 +26,11 @@ func (rs *resolver) Text(rt *router.Route, params map[string]string) string {
 	case site.ARoute:
 		return "A"
 	default:
-		panic("unhandled route for text: " + rt.Route())
+		panic("unhandled route for text: " + rt.OriginalPath)
 	}
 }
 
-func (rs *resolver) Params(rt *router.Route) []map[string]string {
+func (rs *resolver) Params(rt *route.Route) []map[string]string {
 	switch rt {
 	case site.DRoute:
 		return []map[string]string{
@@ -39,11 +40,11 @@ func (rs *resolver) Params(rt *router.Route) []map[string]string {
 			map[string]string{"a": "a2", "b": "b2", "d": "d2.html"},
 		}
 	default:
-		panic("unhandled route: " + rt.Route())
+		panic("unhandled route: " + rt.OriginalPath)
 	}
 }
 
-func (rs *resolver) Add(l menu.Leaf, rt *router.Route, params map[string]string) {
+func (rs *resolver) Add(l menu.Leaf, rt *route.Route, params map[string]string) {
 	switch rt {
 	case site.DRoute:
 		b := params["b"]
