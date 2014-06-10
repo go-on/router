@@ -22,16 +22,16 @@ func (p *Person) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	p.Load(req)
 
 	switch req.URL.Fragment {
-	case ArticlesRoute.Route():
+	case ArticlesRoute.OriginalPath:
 		switch req.Method {
 		case method.GET.String():
 			(&Article{p, ""}).GETList(rw, req)
 		case method.POST.String():
 			(&Article{p, ""}).POST(rw, req)
 		}
-	case ArticleRoute.Route():
+	case ArticleRoute.OriginalPath:
 		(&Article{p, ""}).GET(rw, req)
-	case CommentsRoute.Route():
+	case CommentsRoute.OriginalPath:
 		a := &Article{p, ""}
 		a.Load(req)
 		(&Comment{a}).GETList(rw, req)

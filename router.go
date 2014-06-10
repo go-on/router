@@ -191,6 +191,9 @@ func (r *Router) trimmedUrl(url string) (trimmed string) {
 }
 
 func (ø *Router) Mount(path string, m *http.ServeMux) error {
+	if strings.Index(path, ":") > -1 {
+		return fmt.Errorf("mount on path with vars not allowed")
+	}
 	if ø.mountPoint != "" {
 		return fmt.Errorf("already mounted on %s", ø.Path())
 	}
@@ -232,6 +235,9 @@ func (r *Router) registerRoutes() error {
 }
 
 func (r *Router) submount(path string, parent *Router) error {
+	if strings.Index(path, ":") > -1 {
+		return fmt.Errorf("submount on path with vars not allowed")
+	}
 	if r.mountPoint != "" {
 		return fmt.Errorf("already mounted on %s", r.Path())
 	}

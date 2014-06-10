@@ -474,6 +474,8 @@ type v struct {
 }
 
 func (vv *v) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	// req.ParseForm()
+	// fmt.Printf("%#v\n", req.PostForm)
 	vv.x = req.FormValue(":x")
 	vv.y = req.FormValue(":y")
 }
@@ -489,6 +491,19 @@ func (s *routeSuite) TestVars(c *C) {
 	c.Assert(vv.x, Equals, "b")
 	c.Assert(vv.y, Equals, "d")
 	c.Assert(req.URL.Fragment, Equals, "/a/:x/c/:y")
+}
+
+func (s *routeSuite) TestVarsSubrouterPanic(c *C) {
+	vv := &v{}
+	r := New()
+	sub := New()
+	sub.MustHandle("/:y", method.GET, vv)
+	defer func() {
+		e := recover()
+		c.Assert(e, Not(Equals), nil)
+	}()
+
+	r.MustHandle("/a/:x/sub", method.GET, sub)
 }
 
 type ctx struct {
