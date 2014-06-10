@@ -4,12 +4,13 @@ import (
 	. "github.com/go-on/fat"
 	"github.com/go-on/meta"
 	"github.com/go-on/router"
+	"github.com/go-on/router/route"
 	"reflect"
 )
 
 var strTy = reflect.TypeOf("")
 
-func Url(rt *router.Route, øfatstruct interface{}, tag string) (string, error) {
+func Url(rt *route.Route, øfatstruct interface{}, tag string) (string, error) {
 	val := reflect.ValueOf(øfatstruct)
 	params := map[string]string{}
 	stru, err := meta.StructByValue(val)
@@ -26,10 +27,10 @@ func Url(rt *router.Route, øfatstruct interface{}, tag string) (string, error) 
 		}
 	}
 	stru.EachTag(tag, fn)
-	return rt.URLMap(params)
+	return router.URLMap(rt, params)
 }
 
-func MustUrl(rt *router.Route, øfatstruct interface{}, tag string) string {
+func MustUrl(rt *route.Route, øfatstruct interface{}, tag string) string {
 	u, err := Url(rt, øfatstruct, tag)
 	if err != nil {
 		panic(err.Error())
