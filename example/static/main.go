@@ -8,11 +8,12 @@ import (
 	"path/filepath"
 
 	"github.com/go-on/router"
+	"github.com/go-on/router/route"
 )
 
 type resolver struct{}
 
-func (rs resolver) Params(rt *router.Route) []map[string]string {
+func (rs resolver) Params(rt *route.Route) []map[string]string {
 	switch rt {
 	case site.DRoute:
 		return []map[string]string{
@@ -21,7 +22,7 @@ func (rs resolver) Params(rt *router.Route) []map[string]string {
 			map[string]string{"a": "a2", "b": "b2", "d": "d2.html"},
 		}
 	default:
-		panic("unhandled route: " + rt.Route())
+		panic("unhandled route: " + rt.OriginalPath)
 	}
 }
 
