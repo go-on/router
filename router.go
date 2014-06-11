@@ -317,26 +317,65 @@ func (r *Router) MustHandle(path string, v method.Method, handler http.Handler) 
 func (r *Router) GET(path string, handler http.Handler) *route.Route {
 	return r.MustHandle(path, method.GET, handler)
 }
+
+func (r *Router) GETFunc(path string, handler http.HandlerFunc) *route.Route {
+	return r.GET(path, handler)
+}
+
 func (r *Router) POST(path string, handler http.Handler) *route.Route {
 	return r.MustHandle(path, method.POST, handler)
 }
+
+func (r *Router) POSTFunc(path string, handler http.HandlerFunc) *route.Route {
+	return r.POST(path, handler)
+}
+
 func (r *Router) PUT(path string, handler http.Handler) *route.Route {
 	return r.MustHandle(path, method.PUT, handler)
 }
+
+func (r *Router) PUTFunc(path string, handler http.HandlerFunc) *route.Route {
+	return r.PUT(path, handler)
+}
+
 func (r *Router) DELETE(path string, handler http.Handler) *route.Route {
 	return r.MustHandle(path, method.DELETE, handler)
 }
+
+func (r *Router) DELETEFunc(path string, handler http.HandlerFunc) *route.Route {
+	return r.DELETE(path, handler)
+}
+
 func (r *Router) PATCH(path string, handler http.Handler) *route.Route {
 	return r.MustHandle(path, method.PATCH, handler)
 }
+
+func (r *Router) PATCHFunc(path string, handler http.HandlerFunc) *route.Route {
+	return r.PATCH(path, handler)
+}
+
 func (r *Router) OPTIONS(path string, handler http.Handler) *route.Route {
 	return r.MustHandle(path, method.OPTIONS, handler)
 }
+
+func (r *Router) OPTIONSFunc(path string, handler http.HandlerFunc) *route.Route {
+	return r.OPTIONS(path, handler)
+}
+
 func (r *Router) HEAD(path string, handler http.Handler) *route.Route {
 	return r.MustHandle(path, method.HEAD, handler)
 }
+
+func (r *Router) HEADFunc(path string, handler http.HandlerFunc) *route.Route {
+	return r.HEAD(path, handler)
+}
+
 func (r *Router) TRACE(path string, handler http.Handler) *route.Route {
 	return r.MustHandle(path, method.TRACE, handler)
+}
+
+func (r *Router) TRACEFunc(path string, handler http.HandlerFunc) *route.Route {
+	return r.TRACE(path, handler)
 }
 
 func (r *Router) EachRoute(fn func(mountPoint string, route *route.Route)) {

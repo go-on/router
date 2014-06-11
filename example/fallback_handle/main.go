@@ -18,7 +18,7 @@ func main() {
 	rt := router.New()
 
 	rt.GET("/", helper.Write("root"))
-	rt.GET("/missing", http.HandlerFunc(missing))
+	rt.GETFunc("/missing", missing)
 	rt.GET("/hu", helper.Write("hu"))
 
 	//http.Handle("/", rt)

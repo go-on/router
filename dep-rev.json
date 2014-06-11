@@ -1,7 +1,42 @@
 {
+  "code.google.com/p/go-html-transform/css/selector": {
+    "VCM": "hg",
+    "Rev": "78e179e3db65106fbb469b15bd30476078353139",
+    "Parent": "code.google.com/p/go-html-transform/html/transform",
+    "Tag": "",
+    "RepoRoot": "code.google.com/p/go-html-transform"
+  },
+  "code.google.com/p/go-html-transform/h5": {
+    "VCM": "hg",
+    "Rev": "78e179e3db65106fbb469b15bd30476078353139",
+    "Parent": "code.google.com/p/go-html-transform/css/selector",
+    "Tag": "",
+    "RepoRoot": "code.google.com/p/go-html-transform"
+  },
+  "code.google.com/p/go-html-transform/html/transform": {
+    "VCM": "hg",
+    "Rev": "78e179e3db65106fbb469b15bd30476078353139",
+    "Parent": "github.com/go-on/router",
+    "Tag": "",
+    "RepoRoot": "code.google.com/p/go-html-transform"
+  },
+  "code.google.com/p/go.net/html": {
+    "VCM": "hg",
+    "Rev": "65926d3a7d01d26b31f8e70a799044bcecb48775",
+    "Parent": "code.google.com/p/go-html-transform/h5",
+    "Tag": "",
+    "RepoRoot": "code.google.com/p/go.net"
+  },
+  "code.google.com/p/go.net/html/atom": {
+    "VCM": "hg",
+    "Rev": "65926d3a7d01d26b31f8e70a799044bcecb48775",
+    "Parent": "code.google.com/p/go-html-transform/h5",
+    "Tag": "",
+    "RepoRoot": "code.google.com/p/go.net"
+  },
   "github.com/go-on/menu": {
     "VCM": "git",
-    "Rev": "b5bb0314aec73ba5f8b6720c61d548f6efd864a8",
+    "Rev": "b94e8309d3ab1847408300b5a341bea12d6181b3",
     "Parent": "github.com/go-on/router",
     "Tag": "",
     "RepoRoot": "github.com/go-on/menu"
@@ -15,28 +50,28 @@
   },
   "github.com/go-on/method": {
     "VCM": "git",
-    "Rev": "820d1f16559d7eaffc9a05c819fefe831656ddf6",
+    "Rev": "69ae2f61e5aafe19fe2675e9013d52842fe7ca1d",
     "Parent": "github.com/go-on/router",
     "Tag": "",
     "RepoRoot": "github.com/go-on/method"
   },
   "github.com/go-on/wrap": {
     "VCM": "git",
-    "Rev": "dcf40db0babc36fd2a9edea0b0138b6101bf5faa",
+    "Rev": "de6412b27117eeb903bef6fc70170ad54b672ab1",
     "Parent": "github.com/go-on/router",
     "Tag": "",
     "RepoRoot": "github.com/go-on/wrap"
   },
   "github.com/go-on/wrap-contrib/helper": {
     "VCM": "git",
-    "Rev": "56c96387c10ff66cdfaee485da14fcf85a877e51",
-    "Parent": "github.com/go-on/wrap-contrib/wraps",
+    "Rev": "77513babeab57c100ef765a254f2afc1818a2b9b",
+    "Parent": "github.com/go-on/router",
     "Tag": "",
     "RepoRoot": "github.com/go-on/wrap-contrib"
   },
   "github.com/go-on/wrap-contrib/wraps": {
     "VCM": "git",
-    "Rev": "56c96387c10ff66cdfaee485da14fcf85a877e51",
+    "Rev": "77513babeab57c100ef765a254f2afc1818a2b9b",
     "Parent": "github.com/go-on/router",
     "Tag": "",
     "RepoRoot": "github.com/go-on/wrap-contrib"
