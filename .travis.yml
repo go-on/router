@@ -9,10 +9,8 @@ install:
   - go get github.com/go-on/wrap-contrib/wraps
   - go get github.com/go-on/method
   - go get github.com/go-on/wrap-contrib-testing/wrapstesting
-  - go get github.com/go-on/meta
-  - go get github.com/go-on/menu
   - go get launchpad.net/gocheck
-  - go get github.com/go-on/html
+  - go get github.com/go-on/lib/html
   - go get github.com/go-on/fat
   - go get code.google.com/p/go-html-transform/html/transform
   - go get github.com/gopherjs/gopherjs/js
