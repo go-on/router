@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-on/html"
-	"github.com/go-on/menu"
-	"github.com/go-on/menu/menuhtml"
+	"github.com/go-on/lib/html"
+	"github.com/go-on/lib/internal/menu"
+	"github.com/go-on/lib/internal/menu/menuhtml"
 	"github.com/go-on/router/example/static/site"
 	"os"
 

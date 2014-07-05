@@ -1,8 +1,8 @@
 package routerfat
 
 import (
-	. "github.com/go-on/fat"
-	"github.com/go-on/meta"
+	. "github.com/go-on/lib/internal/fat"
+	"github.com/go-on/lib/internal/meta"
 	"github.com/go-on/router"
 	"github.com/go-on/router/route"
 	"reflect"

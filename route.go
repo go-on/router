@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/go-on/meta"
+	"github.com/go-on/lib/internal/meta"
 	"github.com/go-on/method"
 	"github.com/go-on/router/route"
 )

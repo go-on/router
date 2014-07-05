@@ -264,9 +264,23 @@ func (s *routeSuite) TestAllGETPaths(c *C) {
 	paths := router.AllGETPaths(solver)
 
 	c.Assert(len(paths), Equals, 3)
-	c.Assert(paths[0], Equals, "/a")
-	c.Assert(paths[1], Equals, "/b1/c1/d")
-	c.Assert(paths[2], Equals, "/b2/c2/d")
+
+	contains := func(s string) bool {
+		for _, p := range paths {
+			if p == s {
+				return true
+			}
+		}
+		return false
+	}
+
+	c.Assert(contains("/a"), Equals, true)
+	c.Assert(contains("/b1/c1/d"), Equals, true)
+	c.Assert(contains("/b2/c2/d"), Equals, true)
+
+	// c.Assert(paths[0], Equals, "/a")
+	// c.Assert(paths[1], Equals, "/b1/c1/d")
+	// c.Assert(paths[2], Equals, "/b2/c2/d")
 
 	// fmt.Printf("paths: %v", paths)
 

@@ -476,8 +476,28 @@ type v struct {
 func (vv *v) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	// req.ParseForm()
 	// fmt.Printf("%#v\n", req.PostForm)
-	vv.x = req.FormValue(":x")
-	vv.y = req.FormValue(":y")
+	vv.x = GetRouteParam(req, "x")
+	vv.y = GetRouteParam(req, "y")
+}
+
+func (s *routeSuite) TestSecureParams(c *C) {
+	vv := &v{}
+	routerWithout := New()
+	routerWithout.GET("/", vv)
+	Mount("/a", routerWithout)
+	rw, req := newTestRequest("GET", "/a")
+	SetRouteParam(req, "x", "z")
+	routerWithout.ServeHTTP(rw, req)
+	c.Assert(vv.x, Equals, "z")
+
+	vv = &v{}
+	routerWith := NewMain()
+	routerWith.GET("/", vv)
+	Mount("/b", routerWith)
+	rw, req = newTestRequest("GET", "/b")
+	SetRouteParam(req, "x", "z")
+	routerWith.ServeHTTP(rw, req)
+	c.Assert(vv.x, Equals, "")
 }
 
 func (s *routeSuite) TestVars(c *C) {
@@ -490,7 +510,7 @@ func (s *routeSuite) TestVars(c *C) {
 	//assertResponse(c, rw, "ADMIN", 200)
 	c.Assert(vv.x, Equals, "b")
 	c.Assert(vv.y, Equals, "d")
-	c.Assert(req.URL.Fragment, Equals, "/a/:x/c/:y")
+	c.Assert(GetRouteDefinition(req), Equals, "/a/:x/c/:y")
 }
 
 func (s *routeSuite) TestVarsSubrouterPanic(c *C) {

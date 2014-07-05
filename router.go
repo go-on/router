@@ -2,7 +2,7 @@ package router
 
 import (
 	"fmt"
-	"github.com/go-on/menu"
+	"github.com/go-on/lib/internal/menu"
 	"net/http"
 	"path"
 	"path/filepath"
@@ -30,6 +30,19 @@ func New() (ø *Router) {
 		routes:   map[string]*route.Route{},
 		pathNode: newPathNode(),
 	}
+	return
+}
+
+// NewMain creates a new main wrapper that removes the "X-Route-Param-" and the "X-Route-Definition"
+// request header to close a possible security holes
+// also uses methodoverride middleware
+func NewMain() (ø *Router) {
+	ø = New()
+	ø.AddWrappers(
+		wraps.RemoveRequestHeader("X-Route-Definition"),
+		wraps.RemoveRequestHeader("X-Route-Param-"),
+		wraps.MethodOverride(),
+	)
 	return
 }
 
@@ -104,6 +117,70 @@ func (ø *Router) MountPath() string {
 	return ø.Path()
 }
 
+func SetRouteParam(req *http.Request, key, value string) {
+	req.Header.Set(fmt.Sprintf("X-Route-Param-%s", key), value)
+}
+
+func GetRouteParam(req *http.Request, key string) string {
+	return req.Header.Get(fmt.Sprintf("X-Route-Param-%s", key))
+}
+
+func SetRouteDefinition(req *http.Request, value string) {
+	req.Header.Set("X-Route-Definition", value)
+}
+
+func GetRouteDefinition(req *http.Request) string {
+	return req.Header.Get("X-Route-Definition")
+}
+
+func (ø *Router) RequestRoute(rq *http.Request) *route.Route {
+	method := rq.Method
+	h, route, _ := ø.getFinalHandler(rq.URL.Path, method)
+
+	if h == nil && method == "HEAD" {
+		method = "GET"
+		_, route, _ = ø.getFinalHandler(rq.URL.Path, method)
+	}
+
+	return route
+}
+
+func (ø *Router) Dispatch(rq *http.Request) http.Handler {
+	method := rq.Method
+	h, route, wc := ø.getFinalHandler(rq.URL.Path, method)
+
+	if h == nil && method == "HEAD" {
+		method = "GET"
+		h, route, wc = ø.getFinalHandler(rq.URL.Path, method)
+	}
+
+	if h == nil {
+		//return http.HandlerFunc(ø.serveNotFound)
+		return nil
+	}
+
+	if method != "OPTIONS" {
+		h = route.Router.(*Router).wrapit(h)
+	}
+
+	// RemoveRequestHeader
+
+	// rq.Header.Set("X-Route-Param-", value)
+
+	// q := rq.URL.Query()
+	for k, v := range wc {
+		SetRouteParam(rq, k, v)
+		// q.Set(":"+k, v)
+	}
+	//rq.URL.RawQuery = q.Encode()
+	// rq.URL.Fragment = route.OriginalPath
+	SetRouteDefinition(rq, route.OriginalPath)
+
+	//h.ServeHTTP(&Vars{w, wc}, rq)
+	//h.ServeHTTP(w, rq)
+	return h
+}
+
 func (ø *Router) serveHTTP(w http.ResponseWriter, rq *http.Request) {
 	method := rq.Method
 	h, route, wc := ø.getFinalHandler(rq.URL.Path, method)
@@ -122,12 +199,18 @@ func (ø *Router) serveHTTP(w http.ResponseWriter, rq *http.Request) {
 		h = route.Router.(*Router).wrapit(h)
 	}
 
-	q := rq.URL.Query()
+	// RemoveRequestHeader
+
+	// rq.Header.Set("X-Route-Param-", value)
+
+	// q := rq.URL.Query()
 	for k, v := range wc {
-		q.Set(":"+k, v)
+		SetRouteParam(rq, k, v)
+		// q.Set(":"+k, v)
 	}
-	rq.URL.RawQuery = q.Encode()
-	rq.URL.Fragment = route.OriginalPath
+	//rq.URL.RawQuery = q.Encode()
+	// rq.URL.Fragment = route.OriginalPath
+	SetRouteDefinition(rq, route.OriginalPath)
 
 	//h.ServeHTTP(&Vars{w, wc}, rq)
 	h.ServeHTTP(w, rq)
@@ -135,10 +218,12 @@ func (ø *Router) serveHTTP(w http.ResponseWriter, rq *http.Request) {
 }
 
 func (ø *Router) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
+	// fmt.Printf("method %#v\n", rq.Method)
 	if ø.mountPoint == "" {
 		panic("router not mounted")
 	}
-	wraps.MethodOverride().ServeHandle(http.HandlerFunc(ø.serveHTTP), w, rq)
+	//	wraps.MethodOverride().ServeHandle(http.HandlerFunc(ø.serveHTTP), w, rq)
+	ø.serveHTTP(w, rq)
 }
 
 func (ø *Router) findLeaf(url string) (leaf *pathLeaf, wc map[string]string) {
