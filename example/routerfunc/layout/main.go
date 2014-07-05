@@ -1,35 +1,38 @@
 package main
 
 import (
-	. "github.com/go-on/html"
-	. "github.com/go-on/html/tag"
+	. "github.com/go-on/lib/html"
+	. "github.com/go-on/lib/internal/shared"
+	ph "github.com/go-on/lib/internal/shared/placeholder"
+	"github.com/go-on/lib/internal/template/placeholder"
 	"github.com/go-on/router"
-	"github.com/go-on/template"
 	"net/http"
 )
 
 var (
-	header = Text("header").Placeholder()
-	body   = Html("body").Placeholder()
+	header = ph.New(Text("header"))
+	body   = ph.New(HTMLString("body"))
 	layout = HTML5(
-		HEAD(
-			TITLE(header),
-		),
-		BODY(
-			NAV(
-				A(Attr("href", "/"), "navigate to /"), BR(),
-				A(Attr("href", "/app"), "navigate to /app"), BR(),
-				A(Attr("href", "/other"), "navigate to /other"), BR(),
+		HTML(
+			HEAD(
+				TITLE(header),
 			),
-			H1(header),
-			PRE(body),
+			BODY(
+				NAV(
+					A(Attrs_("href", "/"), "navigate to /"), BR(),
+					A(Attrs_("href", "/app"), "navigate to /app"), BR(),
+					A(Attrs_("href", "/other"), "navigate to /other"), BR(),
+				),
+				H1(header),
+				PRE(body),
+			),
 		),
-	).Compile("layout")
+	).Template()
 )
 
 type App struct {
 	URL     string
-	Setters []template.Setter
+	Setters []placeholder.Setter
 }
 
 func (m *App) setURL(req *http.Request) {

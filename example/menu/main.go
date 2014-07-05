@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-on/lib/html"
+	// "github.com/go-on/lib/html"
 	"github.com/go-on/lib/internal/menu"
 	"github.com/go-on/lib/internal/menu/menuhtml"
+	"github.com/go-on/lib/internal/shared"
 	"github.com/go-on/router/example/static/site"
 	"os"
 
@@ -72,8 +73,8 @@ func main() {
 	site.Router.Menu(solver, solver)
 
 	menuhtml.NewUL(
-		html.Class("menu-open"),
-		html.Class("menu-active"),
-		html.Class("menu-sub"),
+		shared.Class("menu-open"),
+		shared.Class("menu-active"),
+		shared.Class("menu-sub"),
 	).WriterTo(root, 4, "/d/a0/x/b0/d0.html").WriteTo(os.Stdout)
 }
