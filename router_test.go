@@ -15,7 +15,7 @@ type routerSuite struct{}
 var _ = Suite(&routerSuite{})
 
 func mkEtaggedRouter() *Router {
-	router := NewETagged()
+	router := ETagged()
 	router.MustHandle("/a", method.GET, webwrite("A"))
 	router.MustHandle("/a", method.PATCH, webwrite("OK"))
 	mount(router, "/")
@@ -209,12 +209,13 @@ func (s *routerSuite) TestRouterIfMatchDoesNotMatch(c *C) {
 
 func (s *routerSuite) TestRouterEtaggedWithCustomWrappers(c *C) {
 
-	router := NewETagged()
+	router := ETagged()
 	router.AddWrappers(wraps.Before(webwrite("a")), wraps.Before(webwrite("b")))
 	router.AddWrappers(wraps.Before(webwrite("c")), wraps.Before(webwrite("d")))
 
 	router.MustHandle("/a", method.GET, webwrite("A"))
-	mount(router, "/")
+	//mount(router, "/")
+	router.MustMount("/", nil)
 
 	rec, req := newTestRequest("GET", "/a")
 	router.ServeHTTP(rec, req)
@@ -223,7 +224,7 @@ func (s *routerSuite) TestRouterEtaggedWithCustomWrappers(c *C) {
 	c.Assert(rec.Body.String(), Equals, "abcdA")
 	c.Assert(rec.Header().Get("Etag"), Equals, "90c5f685703be163a3894ba83b6b57a2")
 
-	router2 := NewETagged()
+	router2 := ETagged()
 	router2.MustHandle("/a", method.GET, webwrite("abcdA"))
 	mount(router2, "/")
 

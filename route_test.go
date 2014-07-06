@@ -480,6 +480,7 @@ func (vv *v) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	vv.y = GetRouteParam(req, "y")
 }
 
+/*
 func (s *routeSuite) TestSecureParams(c *C) {
 	vv := &v{}
 	routerWithout := New()
@@ -499,6 +500,7 @@ func (s *routeSuite) TestSecureParams(c *C) {
 	routerWith.ServeHTTP(rw, req)
 	c.Assert(vv.x, Equals, "")
 }
+*/
 
 func (s *routeSuite) TestVars(c *C) {
 	vv := &v{}

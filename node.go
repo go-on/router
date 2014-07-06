@@ -10,6 +10,8 @@ import (
 	"github.com/go-on/router/route"
 )
 
+// todo: base the node mangling on https://github.com/julienschmidt/httprouter
+
 type pathNode struct {
 	// Given the next segment s, if edges[s] exists, then we'll look there first.
 	edges map[string]*pathNode
@@ -85,21 +87,41 @@ func (pn *pathNode) addInternal(originalPath string, segments []string, v method
 
 }
 
-func (pn *pathNode) Match(path string) (leaf *pathLeaf, wildcards map[string]string) {
+func (pn *pathNode) Match(path string) (leaf *pathLeaf, wildcards []string) {
 	// Bail on invalid paths.
 	if len(path) == 0 || path[0] != '/' {
 		return nil, nil
 	}
 
 	return pn.match(splitPath(path), nil)
+	/*
+		if len(wc) > 0 {
+			wildcards := make(map[string]string, len(wc))
+			for i, val := range wc {
+				wildcards[l.wildcards[i]] = val
+			}
+		}
+		leaf = l
+	*/
+	// return
 }
 
 // Segments is like ["admin", "users"] representing "/admin/users"
 // wildcardValues are the actual values accumulated when we match on a wildcard.
-func (pn *pathNode) match(segments []string, wildcardValues []string) (leaf *pathLeaf, wildcardMap map[string]string) {
+func (pn *pathNode) match(segments []string, wildcardValues []string) (leaf *pathLeaf, wildcardMap []string) {
 	// Handle leaf nodes:
 	if len(segments) == 0 {
-		return pn.leaf, makeWildcardMap(pn.leaf, wildcardValues)
+		leaf = pn.leaf
+		if leaf == nil {
+			return
+		}
+
+		if len(wildcardValues) != 0 && (len(pn.leaf.wildcards) == len(wildcardValues)) {
+			wildcardMap = wildcardValues
+		}
+
+		return
+		//return pn.leaf, makeWildcardMap(pn.leaf, wildcardValues)
 	}
 
 	var seg string

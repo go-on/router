@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-on/lib/internal/menu"
 	"net/http"
+	"net/url"
 	"path"
 	"path/filepath"
 	"strings"
@@ -11,19 +12,22 @@ import (
 	"github.com/go-on/method"
 	"github.com/go-on/router/route"
 	"github.com/go-on/wrap"
-	// "github.com/go-on/wrap-contrib-testing/wrapstesting"
 	"github.com/go-on/wrap-contrib/wraps"
 )
 
+// concurrently adding and serving routes is not supported.
+// routes must be defined none concurrently and before serving
 type Router struct {
 	pathNode   *pathNode
 	wrapper    []wrap.Wrapper
 	routes     map[string]*route.Route
 	parent     *Router
 	mountPoint string
+	path       string
+	muxed      bool
 }
 
-//func New(wrapper ...wrap.Wrapper) (ø *Router) {
+// New creates a bare router, without method override middleware
 func New() (ø *Router) {
 	ø = &Router{
 		wrapper:  []wrap.Wrapper{},
@@ -33,22 +37,17 @@ func New() (ø *Router) {
 	return
 }
 
-// NewMain creates a new main wrapper that removes the "X-Route-Param-" and the "X-Route-Definition"
-// request header to close a possible security holes
-// also uses methodoverride middleware
-func NewMain() (ø *Router) {
+// Default creates a new main wrapper that uses methodoverride middleware
+func Default() (ø *Router) {
 	ø = New()
-	ø.AddWrappers(
-		wraps.RemoveRequestHeader("X-Route-Definition"),
-		wraps.RemoveRequestHeader("X-Route-Param-"),
-		wraps.MethodOverride(),
-	)
+	ø.AddWrappers(wraps.MethodOverride())
 	return
 }
 
-func NewETagged() (ø *Router) {
+func ETagged() (ø *Router) {
 	ø = New()
 	ø.AddWrappers(
+		wraps.MethodOverride(),
 		wraps.IfNoneMatch,
 		wraps.IfMatch(ø),
 		wraps.ETag,
@@ -76,11 +75,14 @@ func (r *Router) MountPoint() string {
 	return r.mountPoint
 }
 
-func (ø *Router) getFinalHandler(path, method string) (h http.Handler, route *route.Route, wc map[string]string) {
-	var leaf *pathLeaf
-	leaf, wc = ø.findLeaf(path)
+func (ø *Router) getFinalHandler(path, method string) (h http.Handler, route *route.Route, wcString string) {
+	//var leaf *pathLeaf
+	leaf, wc := ø.findLeaf(path)
 	if leaf == nil {
 		return
+	}
+	if len(wc) > 0 {
+		wcString = serialize(leaf, wc)
 	}
 
 	h = getHandler(leaf.Route, method)
@@ -117,20 +119,43 @@ func (ø *Router) MountPath() string {
 	return ø.Path()
 }
 
+/*
 func SetRouteParam(req *http.Request, key, value string) {
 	req.Header.Set(fmt.Sprintf("X-Route-Param-%s", key), value)
 }
+*/
 
+// since req.URL.Path has / unescaped so that originally escaped / are
+// indistinguishable from escaped ones, we are save here, i.e. / is
+// already handled as path splitted and no key or value has / in it
+// also it is save to use req.URL.Fragment since that will never be transmitted
+// by the request
 func GetRouteParam(req *http.Request, key string) string {
-	return req.Header.Get(fmt.Sprintf("X-Route-Param-%s", key))
+	i := strings.Index(req.URL.Fragment, "//"+key+"/")
+	if i == -1 {
+		return ""
+	}
+	startId := i + 3 + len(key)
+	end := strings.Index(req.URL.Fragment[startId:], "//")
+	return req.URL.Fragment[startId : startId+end]
 }
 
-func SetRouteDefinition(req *http.Request, value string) {
-	req.Header.Set("X-Route-Definition", value)
+func serialize(pn *pathLeaf, wildcards []string) (res string) {
+	res += "//"
+	for i, val := range wildcards {
+		res += pn.wildcards[i] + "/" + val + "//"
+	}
+	return
 }
 
+// also it is save to use req.URL.Fragment since that will never be transmitted
+// by the request
 func GetRouteDefinition(req *http.Request) string {
-	return req.Header.Get("X-Route-Definition")
+	i := strings.Index(req.URL.Fragment, "//")
+	if i == -1 {
+		return ""
+	}
+	return req.URL.Fragment[:i]
 }
 
 func (ø *Router) RequestRoute(rq *http.Request) *route.Route {
@@ -148,7 +173,7 @@ func (ø *Router) RequestRoute(rq *http.Request) *route.Route {
 func (ø *Router) Dispatch(rq *http.Request) http.Handler {
 	method := rq.Method
 	h, route, wc := ø.getFinalHandler(rq.URL.Path, method)
-
+	_ = wc
 	if h == nil && method == "HEAD" {
 		method = "GET"
 		h, route, wc = ø.getFinalHandler(rq.URL.Path, method)
@@ -168,14 +193,15 @@ func (ø *Router) Dispatch(rq *http.Request) http.Handler {
 	// rq.Header.Set("X-Route-Param-", value)
 
 	// q := rq.URL.Query()
-	for k, v := range wc {
-		SetRouteParam(rq, k, v)
-		// q.Set(":"+k, v)
-	}
-	//rq.URL.RawQuery = q.Encode()
-	// rq.URL.Fragment = route.OriginalPath
-	SetRouteDefinition(rq, route.OriginalPath)
-
+	/*
+		for k, v := range wc {
+			SetRouteParam(rq, k, v)
+			// q.Set(":"+k, v)
+		}
+		//rq.URL.RawQuery = q.Encode()
+		// rq.URL.Fragment = route.OriginalPath
+		SetRouteDefinition(rq, route.OriginalPath)
+	*/
 	//h.ServeHTTP(&Vars{w, wc}, rq)
 	//h.ServeHTTP(w, rq)
 	return h
@@ -204,13 +230,27 @@ func (ø *Router) serveHTTP(w http.ResponseWriter, rq *http.Request) {
 	// rq.Header.Set("X-Route-Param-", value)
 
 	// q := rq.URL.Query()
-	for k, v := range wc {
-		SetRouteParam(rq, k, v)
-		// q.Set(":"+k, v)
-	}
+	// head := rq.Header
+	_ = url.Parse
+	/*
+		var headers  string
+
+		for k, v := range wc {
+			// req.Header.Set(fmt.Sprintf("X-Route-Param-%s", key), value)
+			//head.Set("X-Route-Param-"+k, v)
+			// _ = k
+			headers += "&" + k + "=" + v
+
+			//SetRouteParam(rq, k, v)
+			// q.Set(":"+k, v)
+		}
+	*/
+	//
+	// _ = wc
 	//rq.URL.RawQuery = q.Encode()
 	// rq.URL.Fragment = route.OriginalPath
-	SetRouteDefinition(rq, route.OriginalPath)
+	// SetRouteDefinition(rq, route.OriginalPath)
+	rq.URL.Fragment = route.OriginalPath + wc
 
 	//h.ServeHTTP(&Vars{w, wc}, rq)
 	h.ServeHTTP(w, rq)
@@ -222,11 +262,33 @@ func (ø *Router) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 	if ø.mountPoint == "" {
 		panic("router not mounted")
 	}
+
+	// do this things only on the top level and if not mounted to a ServeMux
+	if ø.parent == nil && !ø.muxed {
+		if rq.RequestURI == "*" {
+			if rq.ProtoAtLeast(1, 1) {
+				w.Header().Set("Connection", "close")
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		// taken from net/http ServeMux and modified
+		if rq.Method != "CONNECT" {
+			if p := cleanPath(rq.URL.Path); p != rq.URL.Path {
+				url := *rq.URL
+				url.Path = p
+				http.RedirectHandler(url.String(), http.StatusMovedPermanently).ServeHTTP(w, rq)
+				return
+			}
+		}
+	}
+
 	//	wraps.MethodOverride().ServeHandle(http.HandlerFunc(ø.serveHTTP), w, rq)
 	ø.serveHTTP(w, rq)
 }
 
-func (ø *Router) findLeaf(url string) (leaf *pathLeaf, wc map[string]string) {
+func (ø *Router) findLeaf(url string) (leaf *pathLeaf, wc []string) {
 	if url == "" || !filepath.HasPrefix(url, ø.Path()) {
 		return
 	}
@@ -253,16 +315,20 @@ func (ø *Router) findLeaf(url string) (leaf *pathLeaf, wc map[string]string) {
 // on the other hand, there is no need to track 404 response, simply return the answer to the client
 // in the appropriate format
 func (r *Router) serveNotFound(w http.ResponseWriter, rq *http.Request) {
-	w.Header().Set("Allow", "")
+	// w.Header().Set("Allow", "")
 	w.WriteHeader(405)
 	// w.WriteHeader(405)
 }
 
 func (r *Router) Path() string {
+	return r.path
+}
+
+func (r *Router) setPath() {
 	if r.parent == nil {
-		return path.Join("/", r.mountPoint)
+		r.path = path.Join("/", r.mountPoint)
 	} else {
-		return path.Join(r.parent.Path(), r.mountPoint)
+		r.path = path.Join(r.parent.Path(), r.mountPoint)
 	}
 }
 
@@ -275,6 +341,17 @@ func (r *Router) trimmedUrl(url string) (trimmed string) {
 	return filepath.Clean("/" + tr)
 }
 
+func (r *Router) setPaths() {
+	r.setPath()
+	for _, rt := range r.routes {
+		for _, h := range rt.Handlers {
+			if rtr, ok := h.(*Router); ok {
+				rtr.setPaths()
+			}
+		}
+	}
+}
+
 func (ø *Router) Mount(path string, m *http.ServeMux) error {
 	if strings.Index(path, ":") > -1 {
 		return fmt.Errorf("mount on path with vars not allowed")
@@ -284,19 +361,23 @@ func (ø *Router) Mount(path string, m *http.ServeMux) error {
 	}
 
 	ø.mountPoint = path
+	ø.setPaths()
 	err := ø.registerRoutes()
 
 	if err != nil {
 		return err
 	}
 
-	if path == "/" {
-		m.Handle("/", ø)
-		return nil
-	}
-
 	// fmt.Printf("mount %s\n", ø.Path()+"/")
-	m.Handle(ø.Path()+"/", ø)
+	if m != nil {
+		ø.muxed = true
+		if path == "/" {
+			m.Handle("/", ø)
+			return nil
+		}
+
+		m.Handle(ø.Path()+"/", ø)
+	}
 	return nil
 }
 
@@ -316,6 +397,7 @@ func (r *Router) registerRoutes() error {
 			}
 		}
 	}
+	// fmt.Println("path: ", r.path)
 	return nil
 }
 
