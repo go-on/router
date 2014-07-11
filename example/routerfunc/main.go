@@ -75,12 +75,12 @@ var (
 	personRouterFunc = router.RouterFunc(func() http.Handler { return &Person{} })
 	CommentsRoute    = personRouter.GET("/:person_id/article/:article_id/comment", personRouterFunc)
 	ArticleRoute     = personRouter.GET("/:person_id/article/:article_id", personRouterFunc)
-	ArticlesRoute    = personRouter.MustHandle("/:person_id/article", method.GET|method.POST, personRouterFunc)
+	ArticlesRoute    = personRouter.MustHandleMethod("/:person_id/article", method.GET|method.POST, personRouterFunc)
 	mainRouter       = router.New()
 )
 
 func main() {
-	mainRouter.Handle("/person", method.ALL, personRouter)
+	mainRouter.HandleMethod("/person", method.ALL, personRouter)
 	router.MustMount("/", mainRouter)
 	err := http.ListenAndServe(":8085", nil)
 	if err != nil {

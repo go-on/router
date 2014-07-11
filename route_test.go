@@ -38,7 +38,7 @@ func makeRouter(mw ...wrap.Wrapper) *Router {
 	router.AddWrappers(mw...)
 	for _, r := range corpus {
 		if r.code == 200 {
-			router.MustHandle(r.path, method.GET, webwrite(r.body))
+			router.MustHandleMethod(r.path, method.GET, webwrite(r.body))
 		}
 	}
 	return router
@@ -66,25 +66,25 @@ func (s *routeSuite) TestRouting(c *C) {
 
 func (s *routeSuite) TestRouter(c *C) {
 	r := New()
-	rt := r.MustHandle("/hu", method.GET, webwrite("hu"))
+	rt := r.MustHandleMethod("/hu", method.GET, webwrite("hu"))
 	c.Assert(rt.Router, Equals, r)
 }
 
 func (s *routeSuite) TestDoubleRoute(c *C) {
 	r := New()
-	r.MustHandle("/hu", method.GET, webwrite("hu"))
+	r.MustHandleMethod("/hu", method.GET, webwrite("hu"))
 
 	defer func() {
 		e := recover()
 		c.Assert(e, Not(Equals), nil)
 	}()
 
-	r.MustHandle("/hu", method.GET, webwrite("ho"))
+	r.MustHandleMethod("/hu", method.GET, webwrite("ho"))
 }
 
 func (s *routeSuite) TestURLWrongParams(c *C) {
 	r := New()
-	rt := r.MustHandle("/", method.GET, webwrite("hu"))
+	rt := r.MustHandleMethod("/", method.GET, webwrite("hu"))
 	defer func() {
 		e := recover()
 		c.Assert(e, Not(Equals), nil)
@@ -94,7 +94,7 @@ func (s *routeSuite) TestURLWrongParams(c *C) {
 
 func (s *routeSuite) TestURLWrongParams2(c *C) {
 	r := New()
-	rt := r.MustHandle("/:hi", method.GET, webwrite("hu"))
+	rt := r.MustHandleMethod("/:hi", method.GET, webwrite("hu"))
 	defer func() {
 		e := recover()
 		c.Assert(e, Not(Equals), nil)
@@ -104,7 +104,7 @@ func (s *routeSuite) TestURLWrongParams2(c *C) {
 
 func (s *routeSuite) TestURLMapWrongParams(c *C) {
 	r := New()
-	rt := r.MustHandle("/:hi", method.GET, webwrite("hu"))
+	rt := r.MustHandleMethod("/:hi", method.GET, webwrite("hu"))
 	defer func() {
 		e := recover()
 		c.Assert(e, Not(Equals), nil)
@@ -114,14 +114,14 @@ func (s *routeSuite) TestURLMapWrongParams(c *C) {
 
 func (s *routeSuite) TestURLStructWrongParams(c *C) {
 	r := New()
-	rt := r.MustHandle("/", method.GET, webwrite("hu"))
+	rt := r.MustHandleMethod("/", method.GET, webwrite("hu"))
 	_, err := URLStruct(rt, "hu", "ho")
 	c.Assert(err, Not(Equals), nil)
 }
 
 func (s *routeSuite) TestMustURLStructWrongParams(c *C) {
 	r := New()
-	rt := r.MustHandle("/", method.GET, webwrite("hu"))
+	rt := r.MustHandleMethod("/", method.GET, webwrite("hu"))
 	defer func() {
 		e := recover()
 		c.Assert(e, Not(Equals), nil)
@@ -131,7 +131,7 @@ func (s *routeSuite) TestMustURLStructWrongParams(c *C) {
 
 func (s *routeSuite) TestNotExistingMethod(c *C) {
 	r := New()
-	r.MustHandle("/", method.POST, webwrite("hu"))
+	r.MustHandleMethod("/", method.POST, webwrite("hu"))
 	router := mount(r, "/")
 
 	rw, req := newTestRequest("GETTO", "/")
@@ -226,7 +226,7 @@ func (s *routeSuite) TestRoutingSubroutes(c *C) {
 	}
 	inner := makeRouter()
 	outer := makeRouter()
-	outer.MustHandle("/inner", method.GET, inner)
+	outer.MustHandleMethod("/inner", method.GET, inner)
 
 	router := mount(outer, "/outer")
 	_ = router
@@ -262,7 +262,7 @@ func (s *routeSuite) TestRoutingMiddlewareSubroutes(c *C) {
 
 	inner := makeRouter(wrr.Around(webwrite("~"), webwrite("~")))
 	outer := makeRouter(wrr.Around(webwrite("#"), webwrite("#")))
-	outer.MustHandle("/inner", method.GET, inner)
+	outer.MustHandleMethod("/inner", method.GET, inner)
 
 	router := mount(outer, "/outer")
 	//fmt.Println(router.Inspect(0))
@@ -276,7 +276,7 @@ func (s *routeSuite) TestRoutingMiddlewareSubroutes(c *C) {
 
 func (s *routeSuite) TestRoutingVerbs(c *C) {
 	r := makeRouter()
-	r.MustHandle("/a.html", method.POST, webwrite("A-POST"))
+	r.MustHandleMethod("/a.html", method.POST, webwrite("A-POST"))
 	router := mount(r, "/")
 
 	rw, req := newTestRequest("GET", "/a.html")
@@ -299,15 +299,15 @@ func (s *routeSuite) TestRoutingVerbs(c *C) {
 func (s *routeSuite) TestRoutingHandlerAndSubroutes(c *C) {
 	inner := New()
 	inner.AddWrappers(wrr.Around(webwrite("~"), webwrite("~")))
-	inner.MustHandle("/b.html", method.POST, webwrite("B-POST"))
+	inner.MustHandleMethod("/b.html", method.POST, webwrite("B-POST"))
 	inner2 := New()
 	inner2.AddWrappers(wrr.Around(webwrite("~"), webwrite("~")))
-	inner2.MustHandle("/b.html", method.POST, webwrite("B-POST"))
+	inner2.MustHandleMethod("/b.html", method.POST, webwrite("B-POST"))
 
 	outer := New()
 	outer.AddWrappers(wrr.Around(webwrite("#"), webwrite("#")))
-	outer.MustHandle("/a", method.POST, inner)
-	outer.MustHandle("/other", method.POST, inner2)
+	outer.MustHandleMethod("/a", method.POST, inner)
+	outer.MustHandleMethod("/other", method.POST, inner2)
 
 	//	fmt.Println(outer.Inspect(0))
 	router := mount(outer, "/mount")
@@ -334,14 +334,14 @@ func (s *routeSuite) TestRoutingHandlerAndSubroutes(c *C) {
 func (s *routeSuite) TestRoutingHandlerCombined(c *C) {
 	inner := New()
 	inner.AddWrappers(wrr.Around(webwrite("~"), webwrite("~")))
-	inner.MustHandle("/", method.GET, webwrite("INNER-ROOT"))
-	inner.MustHandle("/a.html", method.GET|method.POST, webwrite("A-INNER-GET-POST"))
+	inner.MustHandleMethod("/", method.GET, webwrite("INNER-ROOT"))
+	inner.MustHandleMethod("/a.html", method.GET|method.POST, webwrite("A-INNER-GET-POST"))
 
 	outer := New()
 	outer.AddWrappers(wrr.FilterBody(method.PATCH), wrr.Around(webwrite("#"), webwrite("#")))
-	outer.MustHandle("/a.html", method.GET|method.POST, webwrite("A-OUTER-GET-POST"))
+	outer.MustHandleMethod("/a.html", method.GET|method.POST, webwrite("A-OUTER-GET-POST"))
 
-	outer.MustHandle("/inner", method.GET|method.POST, inner)
+	outer.MustHandleMethod("/inner", method.GET|method.POST, inner)
 
 	_ = fmt.Println
 	//	fmt.Println(outer.Inspect(0))
@@ -385,9 +385,9 @@ func (s *routeSuite) TestRoutingHandlerCombined(c *C) {
 
 func (s *routeSuite) TestRoutingSubRouteRoot(c *C) {
 	admin := New()
-	admin.MustHandle("/", method.GET, webwrite("ADMIN"))
+	admin.MustHandleMethod("/", method.GET, webwrite("ADMIN"))
 	index := New()
-	index.MustHandle("/admin", method.GET, admin)
+	index.MustHandleMethod("/admin", method.GET, admin)
 
 	router := mount(index, "/index")
 
@@ -405,11 +405,11 @@ func (s *routeSuite) TestMassiveRoutes(c *C) {
 	var rt *route.Route
 
 	for i := 0; i < 10000; i++ {
-		rt = inner.MustHandle(fmt.Sprintf("/r%d", i), method.GET, webwrite(fmt.Sprintf("r%d", i)))
+		rt = inner.MustHandleMethod(fmt.Sprintf("/r%d", i), method.GET, webwrite(fmt.Sprintf("r%d", i)))
 	}
 
 	index := New()
-	index.MustHandle("/admin", method.GET, inner)
+	index.MustHandleMethod("/admin", method.GET, inner)
 
 	// fmt.Println("mounting flat")
 	router := mount(index, "/index")
@@ -430,7 +430,7 @@ func (s *routeSuite) TestMassiveRoutes(c *C) {
 func (s *routeSuite) TestMassiveRoutingNested(c *C) {
 	var inner = New()
 	var r *Router
-	inner.MustHandle("/admin", method.GET, webwrite("ADMIN"))
+	inner.MustHandleMethod("/admin", method.GET, webwrite("ADMIN"))
 	var route *route.Route
 	// var r2 *Route
 
@@ -438,18 +438,18 @@ func (s *routeSuite) TestMassiveRoutingNested(c *C) {
 		//for i := 0; i < 100; i++ {
 		//for i := 0; i < 500; i++ {
 		r = New()
-		r.MustHandle(fmt.Sprintf("/i%d", i), method.GET, inner)
-		route = r.MustHandle(fmt.Sprintf("/r%d", i), method.GET, webwrite(fmt.Sprintf("r%d", i)))
+		r.MustHandleMethod(fmt.Sprintf("/i%d", i), method.GET, inner)
+		route = r.MustHandleMethod(fmt.Sprintf("/r%d", i), method.GET, webwrite(fmt.Sprintf("r%d", i)))
 		inner = r
 
-		// route = r.MustHandle(fmt.Sprintf("/a%d", i), method.GET, webwrite(fmt.Sprintf("a%d", i)))
+		// route = r.MustHandleMethod(fmt.Sprintf("/a%d", i), method.GET, webwrite(fmt.Sprintf("a%d", i)))
 
 		//	fmt.Print(".")
 		// fmt.Printf("/r%d\n", i)
 	}
 
 	index := New()
-	index.MustHandle("/admin", method.GET, inner)
+	index.MustHandleMethod("/admin", method.GET, inner)
 
 	// fmt.Println("mounting nested")
 	router := mount(index, "/index")
@@ -505,7 +505,7 @@ func (s *routeSuite) TestSecureParams(c *C) {
 func (s *routeSuite) TestVars(c *C) {
 	vv := &v{}
 	r := New()
-	r.MustHandle("/a/:x/c/:y", method.GET, vv)
+	r.MustHandleMethod("/a/:x/c/:y", method.GET, vv)
 	router := mount(r, "/r")
 	rw, req := newTestRequest("GET", "/r/a/b/c/d")
 	router.ServeHTTP(rw, req)
@@ -519,13 +519,13 @@ func (s *routeSuite) TestVarsSubrouterPanic(c *C) {
 	vv := &v{}
 	r := New()
 	sub := New()
-	sub.MustHandle("/:y", method.GET, vv)
+	sub.MustHandleMethod("/:y", method.GET, vv)
 	defer func() {
 		e := recover()
 		c.Assert(e, Not(Equals), nil)
 	}()
 
-	r.MustHandle("/a/:x/sub", method.GET, sub)
+	r.MustHandleMethod("/a/:x/sub", method.GET, sub)
 }
 
 type ctx struct {
@@ -560,7 +560,7 @@ func (s *routeSuite) TestVarsSetStruct(c *C) {
 		//	wrr.Before(wr.HandlerMethod((*ctx).SetVars)),
 		wrr.Before(wr.HandlerMethod((*ctx).SetPath)),
 	)
-	r.MustHandle("/app/:app/hiho.html", method.GET, wr.HandlerMethod((*ctx).ServeHTTP))
+	r.MustHandleMethod("/app/:app/hiho.html", method.GET, wr.HandlerMethod((*ctx).ServeHTTP))
 
 	router := mount(r, "/r")
 	rw, req := newTestRequest("GET", "/r/app/X/hiho.html")
@@ -581,9 +581,9 @@ func (s *routeSuite) TestURL(c *C) {
 	route3 := admin2.PUT("/x", webwrite("ADMIN-X"))
 	route4 := admin2.PATCH("/:y/z", webwrite("ADMIN-Z"))
 	index1 := New()
-	index1.MustHandle("/admin1", method.GET, admin1)
+	index1.MustHandleMethod("/admin1", method.GET, admin1)
 	index2 := New()
-	index2.MustHandle("/admin2", method.GET, admin2)
+	index2.MustHandleMethod("/admin2", method.GET, admin2)
 
 	mount(index1, "/index1")
 	mount(index2, "/index2")

@@ -37,17 +37,9 @@ func New() (ø *Router) {
 	return
 }
 
-// Default creates a new main wrapper that uses methodoverride middleware
-func Default() (ø *Router) {
-	ø = New()
-	ø.AddWrappers(wraps.MethodOverride())
-	return
-}
-
 func ETagged() (ø *Router) {
 	ø = New()
 	ø.AddWrappers(
-		wraps.MethodOverride(),
 		wraps.IfNoneMatch,
 		wraps.IfMatch(ø),
 		wraps.ETag,
@@ -208,6 +200,7 @@ func (ø *Router) Dispatch(rq *http.Request) http.Handler {
 }
 
 func (ø *Router) serveHTTP(w http.ResponseWriter, rq *http.Request) {
+	// fmt.Printf("serveHTTP, method %#v\n", rq.Method)
 	method := rq.Method
 	h, route, wc := ø.getFinalHandler(rq.URL.Path, method)
 
@@ -217,11 +210,13 @@ func (ø *Router) serveHTTP(w http.ResponseWriter, rq *http.Request) {
 	}
 
 	if h == nil {
+		// fmt.Printf("not found\n")
 		ø.serveNotFound(w, rq)
 		return
 	}
 
 	if method != "OPTIONS" {
+		// fmt.Printf("wrapped\n")
 		h = route.Router.(*Router).wrapit(h)
 	}
 
@@ -257,14 +252,10 @@ func (ø *Router) serveHTTP(w http.ResponseWriter, rq *http.Request) {
 	return
 }
 
-func (ø *Router) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
-	// fmt.Printf("method %#v\n", rq.Method)
-	if ø.mountPoint == "" {
-		panic("router not mounted")
-	}
-
-	// do this things only on the top level and if not mounted to a ServeMux
-	if ø.parent == nil && !ø.muxed {
+// this handler should be used for the top level router
+// it handles method override and cleanpath
+func (ø *Router) Serve(w http.ResponseWriter, rq *http.Request) {
+	if !ø.muxed {
 		if rq.RequestURI == "*" {
 			if rq.ProtoAtLeast(1, 1) {
 				w.Header().Set("Connection", "close")
@@ -283,7 +274,40 @@ func (ø *Router) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 			}
 		}
 	}
+	// we can't handle the method override as part of the wraps, because it has to
+	// be run before we look for the method (or we would have to run all wrappers before)
+	// maybe we should not handle this case since it can be handled be the outside
+	wraps.MethodOverride().ServeHTTP(w, rq)
+	ø.ServeHTTP(w, rq)
+}
 
+// if server is nil, the default server is used
+func (ø *Router) ListenAndServe(addr string, server *http.Server) error {
+	if server == nil {
+		return http.ListenAndServe(addr, http.HandlerFunc(ø.Serve))
+	}
+	server.Addr = addr
+	server.Handler = http.HandlerFunc(ø.Serve)
+	return server.ListenAndServe()
+	// http.ListenAndServeTLS(addr, certFile, keyFile, handler)
+	// server.ListenAndServeTLS(certFile, keyFile)
+}
+
+func (ø *Router) ListenAndServeTLS(addr string, certFile string, keyFile string, server *http.Server) error {
+	if server == nil {
+		return http.ListenAndServeTLS(addr, certFile, keyFile, http.HandlerFunc(ø.Serve))
+	}
+	server.Addr = addr
+	server.Handler = http.HandlerFunc(ø.Serve)
+	return server.ListenAndServeTLS(certFile, keyFile)
+}
+
+// if you want to use the top level router, use Serve. that does some
+// stuff that only should be done once per request
+func (ø *Router) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
+	if ø.mountPoint == "" {
+		panic("router not mounted")
+	}
 	//	wraps.MethodOverride().ServeHandle(http.HandlerFunc(ø.serveHTTP), w, rq)
 	ø.serveHTTP(w, rq)
 }
@@ -452,7 +476,13 @@ func (ø *Router) assocHandler(rt *route.Route, v method.Method, handler http.Ha
 	return err
 }
 
-func (ø *Router) Handle(path string, v method.Method, handler http.Handler) (*route.Route, error) {
+func (ø *Router) Handle(path string, handler http.Handler) {
+	ø.GET(path, handler)
+}
+
+// Handle(mountpoint string, h http.Handler)
+
+func (ø *Router) HandleMethod(path string, v method.Method, handler http.Handler) (*route.Route, error) {
 	if ø.mountPoint != "" {
 		return nil, fmt.Errorf("can't register handlers: already mounted on %s", ø.Path())
 	}
@@ -473,8 +503,8 @@ func (ø *Router) Handle(path string, v method.Method, handler http.Handler) (*r
 	return rt, err
 }
 
-func (r *Router) MustHandle(path string, v method.Method, handler http.Handler) *route.Route {
-	rt, err := r.Handle(path, v, handler)
+func (r *Router) MustHandleMethod(path string, v method.Method, handler http.Handler) *route.Route {
+	rt, err := r.HandleMethod(path, v, handler)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -482,7 +512,7 @@ func (r *Router) MustHandle(path string, v method.Method, handler http.Handler) 
 }
 
 func (r *Router) GET(path string, handler http.Handler) *route.Route {
-	return r.MustHandle(path, method.GET, handler)
+	return r.MustHandleMethod(path, method.GET, handler)
 }
 
 func (r *Router) GETFunc(path string, handler http.HandlerFunc) *route.Route {
@@ -490,7 +520,7 @@ func (r *Router) GETFunc(path string, handler http.HandlerFunc) *route.Route {
 }
 
 func (r *Router) POST(path string, handler http.Handler) *route.Route {
-	return r.MustHandle(path, method.POST, handler)
+	return r.MustHandleMethod(path, method.POST, handler)
 }
 
 func (r *Router) POSTFunc(path string, handler http.HandlerFunc) *route.Route {
@@ -498,7 +528,7 @@ func (r *Router) POSTFunc(path string, handler http.HandlerFunc) *route.Route {
 }
 
 func (r *Router) PUT(path string, handler http.Handler) *route.Route {
-	return r.MustHandle(path, method.PUT, handler)
+	return r.MustHandleMethod(path, method.PUT, handler)
 }
 
 func (r *Router) PUTFunc(path string, handler http.HandlerFunc) *route.Route {
@@ -506,7 +536,7 @@ func (r *Router) PUTFunc(path string, handler http.HandlerFunc) *route.Route {
 }
 
 func (r *Router) DELETE(path string, handler http.Handler) *route.Route {
-	return r.MustHandle(path, method.DELETE, handler)
+	return r.MustHandleMethod(path, method.DELETE, handler)
 }
 
 func (r *Router) DELETEFunc(path string, handler http.HandlerFunc) *route.Route {
@@ -514,7 +544,7 @@ func (r *Router) DELETEFunc(path string, handler http.HandlerFunc) *route.Route 
 }
 
 func (r *Router) PATCH(path string, handler http.Handler) *route.Route {
-	return r.MustHandle(path, method.PATCH, handler)
+	return r.MustHandleMethod(path, method.PATCH, handler)
 }
 
 func (r *Router) PATCHFunc(path string, handler http.HandlerFunc) *route.Route {
@@ -522,7 +552,7 @@ func (r *Router) PATCHFunc(path string, handler http.HandlerFunc) *route.Route {
 }
 
 func (r *Router) OPTIONS(path string, handler http.Handler) *route.Route {
-	return r.MustHandle(path, method.OPTIONS, handler)
+	return r.MustHandleMethod(path, method.OPTIONS, handler)
 }
 
 func (r *Router) OPTIONSFunc(path string, handler http.HandlerFunc) *route.Route {
@@ -530,7 +560,7 @@ func (r *Router) OPTIONSFunc(path string, handler http.HandlerFunc) *route.Route
 }
 
 func (r *Router) HEAD(path string, handler http.Handler) *route.Route {
-	return r.MustHandle(path, method.HEAD, handler)
+	return r.MustHandleMethod(path, method.HEAD, handler)
 }
 
 func (r *Router) HEADFunc(path string, handler http.HandlerFunc) *route.Route {
@@ -538,7 +568,7 @@ func (r *Router) HEADFunc(path string, handler http.HandlerFunc) *route.Route {
 }
 
 func (r *Router) TRACE(path string, handler http.Handler) *route.Route {
-	return r.MustHandle(path, method.TRACE, handler)
+	return r.MustHandleMethod(path, method.TRACE, handler)
 }
 
 func (r *Router) TRACEFunc(path string, handler http.HandlerFunc) *route.Route {
