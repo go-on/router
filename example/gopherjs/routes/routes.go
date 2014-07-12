@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"github.com/go-on/method"
 	"github.com/go-on/router/route"
 )
 
@@ -12,7 +13,7 @@ func (mp Mountpath) MountPath() string {
 
 var AdminMountPoint = "/admin"
 
-var GetArticle = route.Get("/articles/:id", nil)
+var GetArticle = route.NewRoute("/articles/:id").AddMethod(method.GET)
 
 func init() {
 	GetArticle.Router = Mountpath(AdminMountPoint)

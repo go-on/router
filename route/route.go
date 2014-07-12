@@ -39,6 +39,14 @@ func (r *Route) SetHandler(m method.Method, h http.Handler) {
 	r.Handlers[m] = h
 }
 
+// just a stupid helper to make shared routes look nicer
+func (r *Route) AddMethod(v method.Method) *Route {
+	r.AddHandler(nil, v)
+	return r
+}
+
+/*
+
 func Get(path string, h http.Handler) *Route {
 	rt := NewRoute(path)
 	rt.AddHandler(h, method.GET)
@@ -50,6 +58,25 @@ func Post(path string, h http.Handler) *Route {
 	rt.AddHandler(h, method.POST)
 	return rt
 }
+
+func Patch(path string, h http.Handler) *Route {
+	rt := NewRoute(path)
+	rt.AddHandler(h, method.PATCH)
+	return rt
+}
+
+func Delete(path string, h http.Handler) *Route {
+	rt := NewRoute(path)
+	rt.AddHandler(h, method.DELETE)
+	return rt
+}
+
+func Put(path string, h http.Handler) *Route {
+	rt := NewRoute(path)
+	rt.AddHandler(h, method.PUT)
+	return rt
+}
+*/
 
 func (rt *Route) HasMethod(m method.Method) bool {
 	_, has := rt.Handlers[m]

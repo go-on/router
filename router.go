@@ -2,12 +2,13 @@ package router
 
 import (
 	"fmt"
-	"github.com/go-on/lib/internal/menu"
 	"net/http"
 	"net/url"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/go-on/lib/internal/menu"
 
 	"github.com/go-on/method"
 	"github.com/go-on/router/route"
@@ -453,7 +454,14 @@ func (ø *Router) MustRegisterRoute(rt *route.Route, v method.Method, handler ht
 
 func (ø *Router) RegisterRoute(rt *route.Route, v method.Method, handler http.Handler) error {
 	rt.Router = ø
-	ø.routes[rt.OriginalPath] = rt
+	rt2, has := ø.routes[rt.OriginalPath]
+	if has && rt != rt2 {
+		return fmt.Errorf("path %#v already has another route", rt.OriginalPath)
+	}
+	if !has {
+		ø.routes[rt.OriginalPath] = rt
+	}
+	//= rt
 	return ø.assocHandler(rt, v, handler)
 }
 
