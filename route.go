@@ -11,93 +11,13 @@ import (
 	"github.com/go-on/router/route"
 )
 
-/*
-type MountPather interface {
-	MountPath() string
-}
-*/
-
-/*
-a Router should only know its subroutes and have a pointer to its parent router
-*/
-
-// TODO: have an inner Route that is decoupled from handler and router,
-// that has only a mounter/pather that resolvs to a mount path and
-// method.Methods (method package should get rid of net/http dependency)
-// this inner Route should be used to define real routes at the first place.
-// the mounter/pather should be used by the Router
-/*
-type Route struct {
-	Handlers         map[method.Method]http.Handler
-	RessourceOptions string
-	MountedPath      string
-	OriginalPath     string
-	//router           *Router
-	Router MountPather
-}
-
-func NewRoute(path string) *Route {
-	// fmt.Println("creating route for path", path, "router", router.Path())
-	r := &Route{}
-	// r.Router = router
-	r.MountedPath = path
-	r.OriginalPath = path
-	r.Handlers = map[method.Method]http.Handler{}
-	return r
-}
-
-func (r *Route) SetHandler(m method.Method, h http.Handler) {
-	r.Handlers[m] = h
-}
-*/
-
-/*
-func (r *Route) Router() *Router {
-	return r.router
-}
-*/
-
-/*
-func Route(r *Route) string {
-	return r.OriginalPath
-}
-*/
-
 func HasParams(r *route.Route) bool {
 	return strings.ContainsRune(r.OriginalPath, ':')
 }
 
-/*
-func (r *Route) AddHandler(handler http.Handler, v method.Method) error {
-	_, has := r.Handlers[v]
-	if has {
-		return fmt.Errorf("handler for method %s already defined", v)
-	}
-	r.Handlers[v] = handler
-	return nil
-}
-*/
-
-/*
-func (r *Route) inspect(indent int) string {
-	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "%s", strings.Repeat("\t", indent))
-	for v, _ := range r.handler {
-		fmt.Fprintf(&buf, "%s ", v)
-	}
-	return buf.String()
-}
-*/
-
-/*
-type OptionsServer struct {
-	*route.Route
-}
-*/
-
 func setOptionsHandler(r *route.Route) {
 	// opts := map[method.Method]bool{method.OPTIONS: true}
-	allow := []string{}
+	allow := []string{method.OPTIONS.String()}
 
 	if r.GETHandler != nil {
 		allow = append(allow, method.GET.String())
@@ -128,31 +48,6 @@ func setOptionsHandler(r *route.Route) {
 
 }
 
-/*
-func getHandler(r *route.Route, v string) http.Handler {
-	v = strings.TrimSpace(strings.ToUpper(v))
-	ver, ok := method.StringToMethod[v]
-	if !ok {
-		return nil
-	}
-
-	h, exists := r.Handlers[ver]
-	if !exists {
-		if ver == method.OPTIONS {
-			return &OptionsServer{r}
-		}
-
-		for vb, h := range r.Handlers {
-			if vb&ver != 0 {
-				return h
-			}
-		}
-		return nil
-	}
-	return h
-}
-*/
-
 // params are key/value pairs
 func URL(ø *route.Route, params ...string) (string, error) {
 	// fmt.Printf("params: %#v\n", params)
@@ -171,6 +66,7 @@ func URL(ø *route.Route, params ...string) (string, error) {
 
 // params are key/values
 func URLMap(ø *route.Route, params map[string]string) (string, error) {
+	// println("MountedPath: ", ø.MountedPath)
 	segments := splitPath(ø.MountedPath)
 
 	for i := range segments {

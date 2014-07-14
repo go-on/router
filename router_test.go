@@ -58,6 +58,7 @@ func (s *routerSuite) TestSubmountAlreadyMounted(c *C) {
 	p.GET("/ch", ch)
 }
 
+/*
 func (s *routerSuite) TestTrace(c *C) {
 	r := New()
 	r.TRACE("/ho", http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
@@ -70,6 +71,7 @@ func (s *routerSuite) TestTrace(c *C) {
 	r.ServeHTTP(rw, req)
 	c.Assert(rw.Header().Get("hu"), Equals, "ho")
 }
+*/
 
 func (s *routerSuite) TestEachRoute(c *C) {
 	r := New()
@@ -105,7 +107,7 @@ func (s *routerSuite) TestOptions(c *C) {
 
 func (s *routerSuite) TestHead(c *C) {
 	r := New()
-	r.HEAD("/hu", http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	r.GET("/hu", http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		rw.Header().Set("hu", "ho")
 	}))
 

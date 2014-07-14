@@ -31,7 +31,6 @@ type AjaxHandler interface {
 
 type Route struct {
 	// Handlers         map[method.Method]http.Handler
-	HEADHandler    http.Handler
 	GETHandler     http.Handler
 	POSTHandler    http.Handler
 	PUTHandler     http.Handler
@@ -49,6 +48,20 @@ func NewRoute(path string) *Route {
 	rt := &Route{OriginalPath: path, MountedPath: path}
 	// rt.Handlers = map[method.Method]http.Handler{}
 	return rt
+}
+
+func (r *Route) Clone() *Route {
+	return &Route{
+		GETHandler:     r.GETHandler,
+		POSTHandler:    r.POSTHandler,
+		PUTHandler:     r.PUTHandler,
+		PATCHHandler:   r.PATCHHandler,
+		DELETEHandler:  r.DELETEHandler,
+		OPTIONSHandler: r.OPTIONSHandler,
+		MountedPath:    r.MountedPath,
+		OriginalPath:   r.OriginalPath,
+		Router:         r.Router,
+	}
 }
 
 func (r *Route) Get(callback func(js.Object), params ...string) {
@@ -144,6 +157,7 @@ func URL(r *Route, params ...string) (string, error) {
 		vars[params[i]] = params[i+1]
 	}
 
+	// panic(fmt.Sprintf("mounted path: %#v\n", r.MountedPath))
 	parts := strings.Split(r.MountedPath, "/")
 
 	for i, part := range parts {

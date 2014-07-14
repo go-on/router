@@ -3,10 +3,8 @@ package router
 // stolen from  https://raw.github.com/gocraft/web/master/tree.go and modified
 
 import (
-	"net/http"
 	"strings"
 
-	"github.com/go-on/method"
 	"github.com/go-on/router/route"
 )
 
@@ -37,54 +35,16 @@ func newPathNode() *pathNode {
 	return &pathNode{edges: make(map[string]*pathNode)}
 }
 
-/*
-func (pn *pathNode) inspect(indent int) string {
-	var buf bytes.Buffer
-	for p, edg := range pn.edges {
-		fmt.Fprintf(&buf, "%s/%s\n%s\n", strings.Repeat("\t", indent), p, edg.inspect(indent+1))
-	}
-	if pn.wildcard != nil {
-		fmt.Fprintf(&buf, "%s*\n%s", strings.Repeat("\t", indent), pn.wildcard.inspect(indent+1))
-	}
-	if pn.leaf != nil && pn.leaf.Route != nil {
-		fmt.Fprintf(&buf, "%s\n%s", strings.Repeat("\t", indent), pn.leaf.Route.inspect(indent))
-	}
-
-	return buf.String()
-}
-*/
-
-func (pn *pathNode) add(path string, v method.Method, handler http.Handler, router *Router) error {
-	return pn.addInternal(path, splitPath(path), v, handler, nil, router)
+func (pn *pathNode) add(path string, rt *route.Route) {
+	pn._add(splitPath(path), nil, rt)
 }
 
-func (pn *pathNode) addInternal(originalPath string, segments []string, v method.Method, handler http.Handler, wildcards []string, router *Router) error {
+func (pn *pathNode) _add(segments []string, wildcards []string, rt *route.Route) {
 	if len(segments) == 0 {
 		if pn.leaf == nil {
-			path := "/" + strings.Join(segments, "/")
-			rrt := route.NewRoute(path)
-			rrt.Router = router
-			rrt.OriginalPath = originalPath
-			pn.leaf = &pathLeaf{Route: rrt, wildcards: wildcards}
+			pn.leaf = &pathLeaf{Route: rt, wildcards: wildcards}
 		}
-
-		switch v {
-		case method.GET:
-			pn.leaf.Route.GETHandler = handler
-		case method.POST:
-			pn.leaf.Route.POSTHandler = handler
-		case method.PUT:
-			pn.leaf.Route.PUTHandler = handler
-		case method.DELETE:
-			pn.leaf.Route.DELETEHandler = handler
-		case method.PATCH:
-			pn.leaf.Route.PATCHHandler = handler
-		case method.HEAD:
-			pn.leaf.Route.HEADHandler = handler
-		}
-		return nil
-		//return pn.leaf.Route.AddHandler(handler, v)
-
+		return
 	}
 	seg := segments[0]
 	wc, wcName := isWildcard(seg)
@@ -92,15 +52,15 @@ func (pn *pathNode) addInternal(originalPath string, segments []string, v method
 		if pn.wildcard == nil {
 			pn.wildcard = newPathNode()
 		}
-		return pn.wildcard.addInternal(originalPath, segments[1:], v, handler, append(wildcards, wcName), router)
+		pn.wildcard._add(segments[1:], append(wildcards, wcName), rt)
+		return
 	}
 	subPn, ok := pn.edges[seg]
 	if !ok {
 		subPn = newPathNode()
 		pn.edges[seg] = subPn
 	}
-	return subPn.addInternal(originalPath, segments[1:], v, handler, wildcards, router)
-
+	subPn._add(segments[1:], wildcards, rt)
 }
 
 func (pn *pathNode) Match(path string) (leaf *pathLeaf, wildcards []string) {
@@ -110,16 +70,6 @@ func (pn *pathNode) Match(path string) (leaf *pathLeaf, wildcards []string) {
 	}
 
 	return pn.match(splitPath(path), nil)
-	/*
-		if len(wc) > 0 {
-			wildcards := make(map[string]string, len(wc))
-			for i, val := range wc {
-				wildcards[l.wildcards[i]] = val
-			}
-		}
-		leaf = l
-	*/
-	// return
 }
 
 // Segments is like ["admin", "users"] representing "/admin/users"
@@ -137,7 +87,6 @@ func (pn *pathNode) match(segments []string, wildcardValues []string) (leaf *pat
 		}
 
 		return
-		//return pn.leaf, makeWildcardMap(pn.leaf, wildcardValues)
 	}
 
 	var seg string
@@ -158,13 +107,12 @@ func (pn *pathNode) match(segments []string, wildcardValues []string) (leaf *pat
 // key is a non-empty path segment like "admin" or ":category_id" or ":category_id:\d+"
 // Returns true if it's a wildcard, and if it is, also returns it's name / regexp.
 // Eg, (true, "category_id", "\d+")
-func isWildcard(key string) (bool, string) {
+func isWildcard(key string) (is bool, wc string) {
 	if key[0] == ':' {
 		substrs := strings.SplitN(key[1:], ":", 2)
-		return true, substrs[0]
-	} else {
-		return false, ""
+		is, wc = true, substrs[0]
 	}
+	return
 }
 
 // "/" -> []
@@ -180,24 +128,4 @@ func splitPath(key string) []string {
 		elements = elements[:len(elements)-1]
 	}
 	return elements
-}
-
-func makeWildcardMap(leaf *pathLeaf, wildcards []string) map[string]string {
-	if leaf == nil {
-		return nil
-	}
-
-	leafWildcards := leaf.wildcards
-
-	if len(wildcards) == 0 || (len(leafWildcards) != len(wildcards)) {
-		return nil
-	}
-
-	// At this point, we know that wildcards and leaf.wildcards match in length.
-	assoc := make(map[string]string)
-	for i, w := range wildcards {
-		assoc[leafWildcards[i]] = w
-	}
-
-	return assoc
 }

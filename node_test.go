@@ -1,10 +1,11 @@
 package router
 
+/*
 import (
 	"net/http"
 	"testing"
 
-	"github.com/go-on/method"
+	"github.com/go-on/router/route"
 )
 
 type routeTest struct {
@@ -22,14 +23,11 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func TestRouteFailed(t *testing.T) {
-	router := New()
 	n := newPathNode()
+	rt := route.NewRoute("/")
+	rt.GETHandler = &handler{"/"}
 
-	err := n.add("/", method.GET, &handler{"/"}, router)
-
-	if err != nil {
-		t.Error(err.Error())
-	}
+	n.add("/", rt)
 
 	leaf, wc := n.Match("")
 
@@ -104,23 +102,14 @@ func TestRoutes(t *testing.T) {
 			get:   "/site2/123",
 			vars:  map[string]string{"id": "123"},
 		},
-		/*
-			{
-				route: "/withwildcard/*",
-				get:   "/withwildcard/huho",
-				vars:  map[string]string{"hiho": "123"},
-			},
-		*/
 	}
 
 	n := newPathNode()
-	router := New()
-	// Create routes
+
 	for _, rt := range table {
-		err := n.add(rt.route, method.GET, &handler{rt.route}, router)
-		if err != nil {
-			panic(err.Error())
-		}
+		rtt := route.NewRoute(rt.route)
+		rtt.GETHandler = &handler{rt.route}
+		n.add(rt.route, rtt)
 	}
 	for _, rt := range table {
 		leaf, wc := n.Match(rt.get)
@@ -128,16 +117,6 @@ func TestRoutes(t *testing.T) {
 			t.Errorf("got no leaf for %#v", rt.route)
 		}
 		_ = wc
-		/*
-			for k, v := range wc {
-				exp, has := rt.vars[k]
-				if !has {
-					t.Errorf("missing key in vars: %s", k)
-				}
-				if v != exp {
-					t.Errorf("incorrect vars value for key %s: %#v, expected: %#v", k, v, exp)
-				}
-			}
-		*/
 	}
 }
+*/
