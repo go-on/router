@@ -67,7 +67,23 @@ func (pn *pathNode) addInternal(originalPath string, segments []string, v method
 			rrt.OriginalPath = originalPath
 			pn.leaf = &pathLeaf{Route: rrt, wildcards: wildcards}
 		}
-		return pn.leaf.Route.AddHandler(handler, v)
+
+		switch v {
+		case method.GET:
+			pn.leaf.Route.GETHandler = handler
+		case method.POST:
+			pn.leaf.Route.POSTHandler = handler
+		case method.PUT:
+			pn.leaf.Route.PUTHandler = handler
+		case method.DELETE:
+			pn.leaf.Route.DELETEHandler = handler
+		case method.PATCH:
+			pn.leaf.Route.PATCHHandler = handler
+		case method.HEAD:
+			pn.leaf.Route.HEADHandler = handler
+		}
+		return nil
+		//return pn.leaf.Route.AddHandler(handler, v)
 
 	}
 	seg := segments[0]

@@ -68,7 +68,7 @@ func (r *Router) MountPoint() string {
 	return r.mountPoint
 }
 
-func (ø *Router) getFinalHandler(path, method string) (h http.Handler, route *route.Route, wcString string) {
+func (ø *Router) getFinalHandler(path string, meth method.Method) (h http.Handler, route *route.Route, wcString string) {
 	//var leaf *pathLeaf
 	leaf, wc := ø.findLeaf(path)
 	if leaf == nil {
@@ -78,8 +78,30 @@ func (ø *Router) getFinalHandler(path, method string) (h http.Handler, route *r
 		wcString = serialize(leaf, wc)
 	}
 
-	h = getHandler(leaf.Route, method)
+	/*
+		h = getHandler(leaf.Route, meth)
 
+		if h == nil {
+			return
+		}
+	*/
+
+	switch meth {
+	case method.GET:
+		h = leaf.Route.GETHandler
+	case method.POST:
+		h = leaf.Route.POSTHandler
+	case method.PUT:
+		h = leaf.Route.PUTHandler
+	case method.PATCH:
+		h = leaf.Route.PATCHHandler
+	case method.DELETE:
+		h = leaf.Route.DELETEHandler
+	case method.OPTIONS:
+		h = leaf.Route.OPTIONSHandler
+	case method.HEAD:
+		h = leaf.Route.HEADHandler
+	}
 	if h == nil {
 		return
 	}
@@ -88,13 +110,16 @@ func (ø *Router) getFinalHandler(path, method string) (h http.Handler, route *r
 
 	rt, isRouter := h.(*Router)
 	if isRouter {
-		return rt.getFinalHandler(path, method)
+		return rt.getFinalHandler(path, meth)
 	}
 
-	// fmt.Println("method", method, "h", h)
-	if h == nil && method == "OPTIONS" {
-		h = &OptionsServer{route}
-	}
+	// fmt.Println("meth", meth, "h", h)
+	/*
+		if h == nil && meth == method.OPTIONS {
+			//h = &OptionsServer{route}
+			h = route.OPTIONSHandler
+		}
+	*/
 	return
 }
 
@@ -152,24 +177,27 @@ func GetRouteDefinition(req *http.Request) string {
 }
 
 func (ø *Router) RequestRoute(rq *http.Request) *route.Route {
-	method := rq.Method
-	h, route, _ := ø.getFinalHandler(rq.URL.Path, method)
+	// meth := rq.Method
+	meth := method.StringToMethod[rq.Method]
 
-	if h == nil && method == "HEAD" {
-		method = "GET"
-		_, route, _ = ø.getFinalHandler(rq.URL.Path, method)
+	h, route, _ := ø.getFinalHandler(rq.URL.Path, meth)
+
+	if h == nil && meth == method.HEAD {
+		// meth = "GET"
+		_, route, _ = ø.getFinalHandler(rq.URL.Path, method.GET)
 	}
 
 	return route
 }
 
 func (ø *Router) Dispatch(rq *http.Request) http.Handler {
-	method := rq.Method
-	h, route, wc := ø.getFinalHandler(rq.URL.Path, method)
+	// method := rq.Method
+	meth := method.StringToMethod[rq.Method]
+	h, route, wc := ø.getFinalHandler(rq.URL.Path, meth)
 	_ = wc
-	if h == nil && method == "HEAD" {
-		method = "GET"
-		h, route, wc = ø.getFinalHandler(rq.URL.Path, method)
+	if h == nil && meth == method.HEAD {
+		meth = method.GET
+		h, route, wc = ø.getFinalHandler(rq.URL.Path, meth)
 	}
 
 	if h == nil {
@@ -177,7 +205,7 @@ func (ø *Router) Dispatch(rq *http.Request) http.Handler {
 		return nil
 	}
 
-	if method != "OPTIONS" {
+	if meth != method.OPTIONS {
 		h = route.Router.(*Router).wrapit(h)
 	}
 
@@ -202,21 +230,22 @@ func (ø *Router) Dispatch(rq *http.Request) http.Handler {
 
 func (ø *Router) serveHTTP(w http.ResponseWriter, rq *http.Request) {
 	// fmt.Printf("serveHTTP, method %#v\n", rq.Method)
-	method := rq.Method
-	h, route, wc := ø.getFinalHandler(rq.URL.Path, method)
+	meth := method.StringToMethod[rq.Method]
+	// method := rq.Method
+	h, route, wc := ø.getFinalHandler(rq.URL.Path, meth)
 
-	if h == nil && method == "HEAD" {
-		method = "GET"
-		h, route, wc = ø.getFinalHandler(rq.URL.Path, method)
+	if h == nil && meth == method.HEAD {
+		meth = method.GET
+		h, route, wc = ø.getFinalHandler(rq.URL.Path, meth)
 	}
 
 	if h == nil {
-		// fmt.Printf("not found\n")
+		fmt.Printf("not found\n")
 		ø.serveNotFound(w, rq)
 		return
 	}
 
-	if method != "OPTIONS" {
+	if meth != method.OPTIONS {
 		// fmt.Printf("wrapped\n")
 		h = route.Router.(*Router).wrapit(h)
 	}
@@ -369,11 +398,26 @@ func (r *Router) trimmedUrl(url string) (trimmed string) {
 func (r *Router) setPaths() {
 	r.setPath()
 	for _, rt := range r.routes {
-		for _, h := range rt.Handlers {
-			if rtr, ok := h.(*Router); ok {
-				rtr.setPaths()
-			}
+		//		for _, h := range rt.Handlers {
+		if rtr, ok := rt.GETHandler.(*Router); ok {
+			rtr.setPaths()
 		}
+		if rtr, ok := rt.HEADHandler.(*Router); ok {
+			rtr.setPaths()
+		}
+		if rtr, ok := rt.DELETEHandler.(*Router); ok {
+			rtr.setPaths()
+		}
+		if rtr, ok := rt.POSTHandler.(*Router); ok {
+			rtr.setPaths()
+		}
+		if rtr, ok := rt.PATCHHandler.(*Router); ok {
+			rtr.setPaths()
+		}
+		if rtr, ok := rt.PUTHandler.(*Router); ok {
+			rtr.setPaths()
+		}
+		//		}
 	}
 }
 
@@ -415,12 +459,47 @@ func (r *Router) MustMount(path string, m *http.ServeMux) {
 
 func (r *Router) registerRoutes() error {
 	for p, rt := range r.routes {
-		for v, h := range rt.Handlers {
-			err := r.pathNode.add(p, v, h, r)
+		if rt.GETHandler != nil {
+			err := r.pathNode.add(p, method.GET, rt.GETHandler, r)
 			if err != nil {
-				return fmt.Errorf("can't register %s %s", v.String(), p)
+				return fmt.Errorf("can't register %s %s", method.GET, p)
 			}
 		}
+		if rt.POSTHandler != nil {
+			err := r.pathNode.add(p, method.POST, rt.GETHandler, r)
+			if err != nil {
+				return fmt.Errorf("can't register %s %s", method.POST, p)
+			}
+		}
+		if rt.PUTHandler != nil {
+			err := r.pathNode.add(p, method.PUT, rt.PUTHandler, r)
+			if err != nil {
+				return fmt.Errorf("can't register %s %s", method.PUT, p)
+			}
+		}
+		if rt.DELETEHandler != nil {
+			err := r.pathNode.add(p, method.DELETE, rt.DELETEHandler, r)
+			if err != nil {
+				return fmt.Errorf("can't register %s %s", method.DELETE, p)
+			}
+		}
+		if rt.PATCHHandler != nil {
+			err := r.pathNode.add(p, method.PATCH, rt.PATCHHandler, r)
+			if err != nil {
+				return fmt.Errorf("can't register %s %s", method.PATCH, p)
+			}
+		}
+
+		setOptionsHandler(rt)
+
+		/*
+			for v, h := range rt.Handlers {
+				err := r.pathNode.add(p, v, h, r)
+				if err != nil {
+					return fmt.Errorf("can't register %s %s", v.String(), p)
+				}
+			}
+		*/
 	}
 	// fmt.Println("path: ", r.path)
 	return nil
@@ -475,13 +554,29 @@ func (ø *Router) assocHandler(rt *route.Route, v method.Method, handler http.Ha
 		}
 	}
 
-	err := rt.AddHandler(handler, v)
-	if err != nil {
-		return err
+	switch v {
+	case method.GET:
+		rt.GETHandler = handler
+	case method.HEAD:
+		rt.HEADHandler = handler
+	case method.PUT:
+		rt.PUTHandler = handler
+	case method.POST:
+		rt.POSTHandler = handler
+	case method.DELETE:
+		rt.DELETEHandler = handler
+	case method.PATCH:
+		rt.PATCHHandler = handler
 	}
 
+	/*
+		err := rt.AddHandler(handler, v)
+		if err != nil {
+			return err
+		}
+	*/
 	// ø.routes[rt.OriginalPath] = rt
-	return err
+	return nil
 }
 
 func (ø *Router) Handle(path string, handler http.Handler) {
@@ -591,9 +686,14 @@ func (r *Router) EachRoute(fn func(mountPoint string, route *route.Route)) {
 
 func (r *Router) EachGETRoute(fn func(mountPoint string, route *route.Route)) {
 	for mP, rt := range r.routes {
-		if getHandler(rt, "GET") != nil {
+		if rt.GETHandler != nil {
 			fn(mP, rt)
 		}
+		/*
+			if getHandler(rt, "GET") != nil {
+				fn(mP, rt)
+			}
+		*/
 	}
 }
 

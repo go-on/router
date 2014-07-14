@@ -89,47 +89,46 @@ func (r *Route) inspect(indent int) string {
 }
 */
 
+/*
 type OptionsServer struct {
 	*route.Route
 }
+*/
 
-// serves the OPTIONS
-func (r *OptionsServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	if r.RessourceOptions == "" {
-		opts := map[method.Method]bool{method.OPTIONS: true}
-		allow := []string{}
-		all := []method.Method{
-			method.GET,
-			method.POST,
-			method.DELETE,
-			// method.HEAD,
-			method.PATCH,
-			method.PUT,
-		}
+func setOptionsHandler(r *route.Route) {
+	// opts := map[method.Method]bool{method.OPTIONS: true}
+	allow := []string{}
 
-		for _, m := range all {
-			for vb, _ := range r.Handlers {
-				if vb&m != 0 {
-					opts[m] = true
-				}
-			}
-		}
-
-		if opts[method.GET] {
-			opts[method.HEAD] = true
-		}
-
-		for m, ok := range opts {
-			if ok {
-				allow = append(allow, m.String())
-			}
-		}
-
-		r.RessourceOptions = strings.Join(allow, ",")
+	if r.GETHandler != nil {
+		allow = append(allow, method.GET.String())
+		allow = append(allow, method.HEAD.String())
 	}
-	rw.Header().Set("Allow", r.RessourceOptions)
+
+	if r.POSTHandler != nil {
+		allow = append(allow, method.POST.String())
+	}
+
+	if r.DELETEHandler != nil {
+		allow = append(allow, method.DELETE.String())
+	}
+
+	if r.PATCHHandler != nil {
+		allow = append(allow, method.PATCH.String())
+	}
+
+	if r.PUTHandler != nil {
+		allow = append(allow, method.PUT.String())
+	}
+
+	options := strings.Join(allow, ",")
+
+	r.OPTIONSHandler = http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.Header().Set("Allow", options)
+	})
+
 }
 
+/*
 func getHandler(r *route.Route, v string) http.Handler {
 	v = strings.TrimSpace(strings.ToUpper(v))
 	ver, ok := method.StringToMethod[v]
@@ -152,6 +151,7 @@ func getHandler(r *route.Route, v string) http.Handler {
 	}
 	return h
 }
+*/
 
 // params are key/value pairs
 func URL(ø *route.Route, params ...string) (string, error) {
