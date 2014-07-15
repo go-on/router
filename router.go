@@ -68,18 +68,18 @@ func (r *Router) MountPoint() string {
 }
 
 func (ø *Router) getFinalHandler(path string, meth method.Method, rq *http.Request) (h http.Handler, route *route.Route) {
-	// fmt.Printf("searching for %#v\n", path)
-	if path == "" || !filepath.HasPrefix(path, ø.Path()) {
+	if len(path) == 0 || !filepath.HasPrefix(path, ø.Path()) {
 		return
 	}
 
-	// FindPlaceholders
-	//path = string([]byte(ø.trimmedUrl(path)))
-	wc := &wildcards{path: ø.trimmedUrl(path)}
+	start, end := ø.trimmedUrl(path)
+	wc := &wildcards{path: path[start:end]}
+	// return
 	ø.pathNode.FindPlaceholders(wc)
+	// _ = wc
+	// return nil, wc.route
 
 	if wc.route == nil {
-		// fmt.Printf("no route: %#v\n", path)
 		return
 	}
 
@@ -99,63 +99,20 @@ func (ø *Router) getFinalHandler(path string, meth method.Method, rq *http.Requ
 	}
 
 	if h == nil {
-		// fmt.Printf("no handler: %#v\n", path)
 		return
 	}
 
-	//route = leaf.Route
 	route = wc.route
 
 	rt, isRouter := h.(*Router)
 	if isRouter {
-		// fmt.Println("is router")
 		return rt.getFinalHandler(path, meth, rq)
 	}
-	_ = wc
 
-	debugf("found: %d\n", len(wc.found))
 	if len(wc.found) > 0 {
-		mp := wc.ToMap()
-
-		debugf("mp: %#v\n", mp)
-		// wcnames := leaf.wildcards
-		//var bf bytes.Buffer
-		//bf.WriteString(route.OriginalPath + "//")
-		// rq.URL.Fragment += route.OriginalPath + "//"
-		res := route.OriginalPath + "//"
-		for _k, _v := range mp {
-			// _ = i
-			// _ = val
-			res += _k + "/" + _v + "//"
-			// rq.URL.Fragment += leaf.wildcards[i] + "/" + val + "//"
-			//fmt.Fprintf(&bf, format, ...)
-			//bf.WriteString(wcnames[i] + "/" + val + "//")
-		}
-		rq.URL.Fragment = res
-
-		debug(rq.URL.Fragment)
-		//rq.URL.Fragment = bf.String()
+		rq.URL.Fragment = wc.route.OriginalPath + "//" + wc.ParamStr()
 	}
 
-	/*
-		if len(wc) > 0 {
-			wcnames := leaf.wildcards
-			//var bf bytes.Buffer
-			//bf.WriteString(route.OriginalPath + "//")
-			// rq.URL.Fragment += route.OriginalPath + "//"
-			res := route.OriginalPath + "//"
-			for i, val := range wc {
-				// _ = i
-				// _ = val
-				res += wcnames[i] + "/" + val + "//"
-				// rq.URL.Fragment += leaf.wildcards[i] + "/" + val + "//"
-				//fmt.Fprintf(&bf, format, ...)
-				//bf.WriteString(wcnames[i] + "/" + val + "//")
-			}
-			rq.URL.Fragment = res
-			//rq.URL.Fragment = bf.String()
-		}
-	*/
 	return
 }
 
@@ -194,16 +151,6 @@ func GetRouteParam(req *http.Request, key string) string {
 	return req.URL.Fragment[startId : startId+end]
 }
 
-/*
-func serialize2(pn *pathLeaf, wildcards []string) (res string) {
-	res += "//"
-	for i, val := range wildcards {
-		res += pn.wildcards[i] + "/" + val + "//"
-	}
-	return
-}
-*/
-
 // also it is save to use req.URL.Fragment since that will never be transmitted
 // by the request
 func GetRouteRelPath(req *http.Request) string {
@@ -223,15 +170,9 @@ func (ø *Router) getHandler(rq *http.Request) (h http.Handler, rt *route.Route,
 	meth = method.StringToMethod[rq.Method]
 	if meth == method.HEAD {
 		meth = method.GET
-		// h, rt, wc = ø.getFinalHandler(rq.URL.Path, meth)
 	}
+
 	h, rt = ø.getFinalHandler(rq.URL.Path, meth, rq)
-	/*
-		if h == nil && meth == method.HEAD {
-			meth = method.GET
-			h, rt, wc = ø.getFinalHandler(rq.URL.Path, meth)
-		}
-	*/
 	return
 }
 
@@ -245,8 +186,6 @@ func (ø *Router) Dispatch(rq *http.Request) http.Handler {
 	if meth != method.OPTIONS {
 		h = route.Router.(*Router).wrapit(h)
 	}
-
-	//rq.URL.Fragment = route.OriginalPath + wc
 
 	return h
 }
@@ -345,14 +284,17 @@ func (r *Router) setPath() {
 	// fmt.Printf("setting path of %p to %#v\n", r, r.path)
 }
 
-func (r *Router) trimmedUrl(url string) (trimmed string) {
-	// fmt.Printf("trimming %#v relative to %#v\n", url, r.Path())
-	tr, err := filepath.Rel(r.Path(), url)
-	if err != nil {
-		panic(err.Error())
+func (r *Router) trimmedUrl(url string) (startPos, endPos int) {
+	if len(r.Path()) == 1 {
+		return 0, len(url)
 	}
-
-	return filepath.Clean("/" + tr)
+	if !strings.HasPrefix(url, r.Path()) {
+		panic(fmt.Sprintf("url %#v not relative to %#v", url, r.Path()))
+	}
+	if len(url) == len(r.Path()) {
+		return 0, 1
+	}
+	return len(r.Path()), len(url)
 }
 
 func (r *Router) setPaths() {

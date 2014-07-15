@@ -61,6 +61,17 @@ func (wc *wildcards) ToMap() (params map[string]string) {
 	return
 }
 
+func (wc *wildcards) ParamStr() (params string) {
+	// res += _k + "/" + _v + "//"
+	for _, f := range wc.found {
+		if f[0] != -1 {
+			params += wc.wildcards[f[0]] + "/" + wc.path[f[1]:f[2]] + "//"
+			// params[wc.wildcards[f[0]]] = wc.path[f[1]:f[2]]
+		}
+	}
+	return
+}
+
 func (pn *pathNode) add(path string, rt *route.Route) {
 	//pathArr := splitPath(path)
 
@@ -68,7 +79,7 @@ func (pn *pathNode) add(path string, rt *route.Route) {
 	var start int = 1
 	var end int
 	var fin bool
-	debug("register " + path)
+	// debug("register " + path)
 	// var pa string = path
 	for {
 		if start >= len(path) {
@@ -76,7 +87,7 @@ func (pn *pathNode) add(path string, rt *route.Route) {
 			panic("unaccessible")
 		}
 		end = strings.Index(path[start:], "/")
-		debugf("start: %d end: %d\n", start, end)
+		// debugf("start: %d end: %d\n", start, end)
 
 		if end == 0 {
 			start++
@@ -91,10 +102,10 @@ func (pn *pathNode) add(path string, rt *route.Route) {
 		} else {
 			end += start
 		}
-		debugf("revised start: %d end: %d\n", start, end)
+		// debugf("revised start: %d end: %d\n", start, end)
 		p := path[start:end]
 		if ok, wc := isWildcard(p); ok {
-			debugf("wildcard: %#v (%#v)\n", wc, p)
+			// debugf("wildcard: %#v (%#v)\n", wc, p)
 			node.wildcard = wc //append(node.wildcard, wc)
 
 			subnode, exist := node.edges[""]
@@ -104,7 +115,7 @@ func (pn *pathNode) add(path string, rt *route.Route) {
 			}
 			node = subnode
 		} else {
-			debugf("subnode: %#v\n", p)
+			// debugf("subnode: %#v\n", p)
 			subnode, exist := node.edges[p]
 			if !exist {
 				subnode = newPathNode()
@@ -129,7 +140,8 @@ func (pn *pathNode) add(path string, rt *route.Route) {
 
 func (n *pathNode) FindPlaceholders(wc *wildcards) {
 	// wc.path = wc.path[1:]
-	debugf("searching for: %#v\n", wc.path)
+	// debugf("searching for: %#v\n", wc.path)
+	// return
 	n._FindPositions(1, wc)
 }
 
@@ -146,7 +158,7 @@ func (n *pathNode) findSlash(wc *wildcards, start int) (pos int) {
 func (n *pathNode) _FindEdge(start int, wc *wildcards) (found bool) {
 	if len(wc.path)-start < 1 {
 		wc.route = n.route
-		debugf("foundroute: %#v\n", n.route)
+		// debugf("foundroute: %#v\n", n.route)
 		return true
 	}
 
@@ -191,37 +203,23 @@ func (n *pathNode) _FindWildcards(wcCounter int, start int, wc *wildcards) (end 
 */
 
 func (n *pathNode) _FindPositions(start int, wc *wildcards) {
-	/*
-		if start == len(wc.path)-1 {
-			wc.route = n.route
-			return
-		}
-	*/
-
 	if len(wc.path)-start < 1 {
-		debugf("foundroute: %#v\n", n.route)
 		wc.route = n.route
 		return
 	}
 
-	/*
-		if start == 0 {
-			start = n.findSlash(wc, start)
-		}
-	*/
 	pos := n.findSlash(wc, start)
 	end := start + pos
 
 	if pos == -1 {
 		end = len(wc.path)
 	}
-
 	if n._FindEdge(start, wc) {
 		return
 	}
 
-	if n.wildcard != "" {
-		debugf("findwildcard [%d]: %#v => %#v\n", len(wc.wildcards), n.wildcard, wc.path[start:end])
+	// return
+	if len(n.wildcard) > 0 {
 		wc.found = append(wc.found, [3]int{len(wc.wildcards), start, end})
 		wc.wildcards = append(wc.wildcards, n.wildcard)
 		next, has := n.edges[""]
@@ -230,31 +228,6 @@ func (n *pathNode) _FindPositions(start int, wc *wildcards) {
 		}
 	}
 
-	debugf("continue with %#v\n", wc.path[start:end])
-
-	/*
-		for _, wc_ := range n.wildcard {
-			if n.wildcard != "" {
-				fmt.Printf("findwildcard: %#v => %#v\n", n.wildcard, wc.path[start:end])
-				wc.found = append(wc.found, [3]int{len(wc.wildcards), start, end})
-				wc.wildcards = append(wc.wildcards, n.wildcard)
-			}
-		}
-	*/
-	/*
-		if pos == -1 {
-			wc.route = n.route
-			return
-		}
-	*/
-	/*
-		if s, has := n.edges[""]; has && start == 1 {
-			s._FindPositions(start, 0, wc)
-			return
-		}
-
-	*/
-	// wc.route = n.route
 	return
 }
 
