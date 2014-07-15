@@ -100,7 +100,7 @@ func (pn *pathNode) add(path string, rt *route.Route) {
 }
 
 func (n *pathNode) FindPlaceholders(wc *paramQuery) {
-	n._FindPositions(wc.startPath+1, wc)
+	n.findPositions(wc.startPath+1, wc)
 }
 
 func (n *pathNode) findSlash(wc *paramQuery, start int) (pos int) {
@@ -112,7 +112,7 @@ func (n *pathNode) findSlash(wc *paramQuery, start int) (pos int) {
 	return -1
 }
 
-func (n *pathNode) _FindEdge(start int, wc *paramQuery) (found bool) {
+func (n *pathNode) findEdge(start int, wc *paramQuery) (found bool) {
 	pos := n.findSlash(wc, start)
 	end := start + pos
 
@@ -126,14 +126,14 @@ func (n *pathNode) _FindEdge(start int, wc *paramQuery) (found bool) {
 				wc.route = val.route
 				return true
 			}
-			val._FindPositions(end+1, wc)
+			val.findPositions(end+1, wc)
 			return true
 		}
 	}
 	return false
 }
 
-func (n *pathNode) _FindPositions(start int, wc *paramQuery) {
+func (n *pathNode) findPositions(start int, wc *paramQuery) {
 	if wc.endPath-start < 1 {
 		wc.route = n.route
 		return
@@ -146,7 +146,7 @@ func (n *pathNode) _FindPositions(start int, wc *paramQuery) {
 		end = wc.endPath
 	}
 
-	if n._FindEdge(start, wc) {
+	if n.findEdge(start, wc) {
 		return
 	}
 
@@ -155,7 +155,7 @@ func (n *pathNode) _FindPositions(start int, wc *paramQuery) {
 		wc.params = append(wc.params, n.wildcard...)
 		wc.params = append(wc.params, ("/" + wc.request.URL.Path[start:end] + "/")...)
 		if n.sub != nil {
-			n.sub._FindPositions(end+1, wc)
+			n.sub.findPositions(end+1, wc)
 		}
 	}
 }
