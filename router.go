@@ -275,12 +275,13 @@ func (r *Router) setPaths() {
 			}
 			return nil
 		})
+		// rt.EachHandler(r.setupHandlers(rt))
 	}
 }
 
 func (r *Router) prepareRoutes() {
 	for p, rt := range r.routes {
-		rt.EachHandler(r.setupHandlers(rt))
+		//rt.EachHandler(r.setupHandlers(rt))
 		r.node.add(p, rt)
 	}
 }
@@ -324,7 +325,14 @@ func (r *Router) newRoute(path string) *route.Route {
 	if rt == nil {
 		rt = route.NewRoute(path)
 		r.MustAdd(rt)
+		// rt.EachHandler(r.setupHandlers(rt))
 	}
+	return rt
+}
+
+func (r *Router) MustHandle(path string, m method.Method, handler http.Handler) *route.Route {
+	rt := r.newRoute(path)
+	rt.SetHandler(m, handler)
 	return rt
 }
 

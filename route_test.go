@@ -325,13 +325,13 @@ func (s *routeSuite) TestRoutingHandlerCombined(c *C) {
 	inner := New()
 	inner.AddWrappers(wrr.Around(webwrite("~"), webwrite("~")))
 	inner.GET("/", webwrite("INNER-ROOT"))
-	inner.GET("/a.html", method.GET|method.POST, webwrite("A-INNER-GET-POST"))
+	inner.MustHandle("/a.html", method.GET|method.POST, webwrite("A-INNER-GET-POST"))
 
 	outer := New()
 	outer.AddWrappers(wrr.FilterBody(method.PATCH), wrr.Around(webwrite("#"), webwrite("#")))
-	outer.GET("/a.html", method.GET|method.POST, webwrite("A-OUTER-GET-POST"))
+	outer.MustHandle("/a.html", method.GET|method.POST, webwrite("A-OUTER-GET-POST"))
 
-	outer.GET("/inner", method.GET|method.POST, inner)
+	outer.MustHandle("/inner", method.GET|method.POST, inner)
 
 	_ = fmt.Println
 	//	fmt.Println(outer.Inspect(0))
@@ -523,7 +523,7 @@ func (s *routeSuite) TestVarsSetStruct(c *C) {
 		//	wrr.Before(wr.HandlerMethod((*ctx).SetVars)),
 		wrr.Before(wr.HandlerMethod((*ctx).SetPath)),
 	)
-	r.GET("/app/:app/hiho.html", method.GET, wr.HandlerMethod((*ctx).ServeHTTP))
+	r.GET("/app/:app/hiho.html", wr.HandlerMethod((*ctx).ServeHTTP))
 
 	router := mount(r, "/r")
 	rw, req := newTestRequest("GET", "/r/app/X/hiho.html")
@@ -544,9 +544,9 @@ func (s *routeSuite) TestURL(c *C) {
 	route3 := admin2.PUT("/x", webwrite("ADMIN-X"))
 	route4 := admin2.PATCH("/:y/z", webwrite("ADMIN-Z"))
 	index1 := New()
-	index1.GET("/admin1", method.GET, admin1)
+	index1.GET("/admin1", admin1)
 	index2 := New()
-	index2.GET("/admin2", method.GET, admin2)
+	index2.GET("/admin2", admin2)
 
 	mount(index1, "/index1")
 	mount(index2, "/index2")

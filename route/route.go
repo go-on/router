@@ -110,6 +110,43 @@ func (r *Route) Handler(meth method.Method) http.Handler {
 	return nil
 }
 
+func (rt *Route) SetHandler(m method.Method, handler http.Handler) {
+	switch m {
+	case method.GET:
+		rt.GETHandler = handler
+	case method.PUT:
+		rt.PUTHandler = handler
+	case method.POST:
+		rt.POSTHandler = handler
+	case method.DELETE:
+		rt.DELETEHandler = handler
+	case method.PATCH:
+		rt.PATCHHandler = handler
+	case method.OPTIONS:
+		rt.OPTIONSHandler = handler
+	default:
+		if m&method.GET != 0 {
+			rt.GETHandler = handler
+		}
+		if m&method.PUT != 0 {
+			rt.PUTHandler = handler
+		}
+		if m&method.POST != 0 {
+			rt.POSTHandler = handler
+		}
+		if m&method.DELETE != 0 {
+			rt.DELETEHandler = handler
+		}
+		if m&method.PATCH != 0 {
+			rt.PATCHHandler = handler
+		}
+		if m&method.OPTIONS != 0 {
+			rt.OPTIONSHandler = handler
+		}
+	}
+
+}
+
 func (r *Route) EachHandler(fn func(http.Handler) error) error {
 	if r.GETHandler != nil {
 		err := fn(r.GETHandler)
