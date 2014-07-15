@@ -66,7 +66,8 @@ func (r *Router) MountPoint() string {
 	return r.mountPoint
 }
 
-func (ø *Router) getFinalHandler(startPath, endPath int, req *http.Request, params *[]byte, meth method.Method) (parms *[]byte, h http.Handler, rt *route.Route) {
+//func (ø *Router) getFinalHandler(startPath, endPath int, req *http.Request, params *[]byte, meth method.Method) (parms *[]byte, h http.Handler, rt *route.Route) {
+func (ø *Router) getFinalHandler(startPath, endPath int, req *http.Request, meth method.Method) (h http.Handler, rt *route.Route) {
 	if startPath == endPath {
 		return
 	}
@@ -87,11 +88,10 @@ func (ø *Router) getFinalHandler(startPath, endPath int, req *http.Request, par
 		}
 	}
 
-	// startPath int, endPath int, req *http.Request, params *[]byte
-	parms, rt = ø.pathNode.FindPlaceholders(startPath, endPath, req, params)
+	var parms *[]byte
+	parms, rt = ø.pathNode.FindPlaceholders(startPath, endPath, req)
 
 	if rt == nil {
-		parms = params
 		return
 	}
 
@@ -102,12 +102,8 @@ func (ø *Router) getFinalHandler(startPath, endPath int, req *http.Request, par
 	}
 
 	if rtr, isRouter := h.(*Router); isRouter {
-		// wc.handler, wc.route = nil, nil
-		// wc.startPath, wc.endPath = oldStart, oldEnd
-		return rtr.getFinalHandler(oldStart, oldEnd, req, params, meth)
+		return rtr.getFinalHandler(oldStart, oldEnd, req, meth)
 	}
-
-	// wc.SetFragment()
 
 	if parms == nil {
 		req.URL.Fragment = rt.Id //+ "//"
@@ -276,8 +272,9 @@ func (ø *Router) getHandler(rq *http.Request) (h http.Handler, rt *route.Route,
 		meth = method.GET
 	}
 
-	var params *[]byte
-	_, h, rt = ø.getFinalHandler(0, len(rq.URL.Path), rq, params, meth)
+	// var params *[]byte
+	// _, h, rt = ø.getFinalHandler(0, len(rq.URL.Path), rq, params, meth)
+	h, rt = ø.getFinalHandler(0, len(rq.URL.Path), rq, meth)
 	// ø.getFinalHandler(pq)
 	return
 }

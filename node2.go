@@ -99,8 +99,9 @@ func (pn *pathNode) add(path string, rt *route.Route) {
 	node.route = rt
 }
 
-func (n *pathNode) FindPlaceholders(startPath int, endPath int, req *http.Request, params *[]byte) (parms *[]byte, rt *route.Route) {
-	return n.findPositions(startPath+1, endPath, req, params)
+//func (n *pathNode) FindPlaceholders(startPath int, endPath int, req *http.Request, params *[]byte) (parms *[]byte, rt *route.Route) {
+func (n *pathNode) FindPlaceholders(startPath int, endPath int, req *http.Request) (parms *[]byte, rt *route.Route) {
+	return n.findPositions(startPath+1, endPath, req, nil)
 }
 
 func (n *pathNode) findSlash(req *http.Request, start int, endPath int) (pos int) {
@@ -152,7 +153,7 @@ func (n *pathNode) findPositions(start int, endPath int, req *http.Request, para
 	if n.wildcard != nil {
 		// wc.params = append(wc.params, "//"...)
 		if params == nil {
-			pArr := []byte{}
+			pArr := make([]byte, 0, len(n.wildcard)+len(req.URL.Path[start:end])+2)
 			params = &pArr
 		}
 		*params = append(*params, n.wildcard...)
