@@ -21,8 +21,9 @@ func newPathNode() *pathNode {
 
 type pathNode struct {
 	edges    map[string]*pathNode // the empty key is for the next wildcard node (the node after my wildcard)
-	wildcard string
+	wildcard []byte               //string
 	route    *route.Route
+	sub      *pathNode
 }
 
 type paramQuery struct {
@@ -36,13 +37,12 @@ type paramQuery struct {
 }
 
 func (wc *paramQuery) SetFragment() {
-	if len(wc.params) == 0 {
-		//wc.request.URL.Fragment = wc.route.OriginalPath + "//"
-		wc.request.URL.Fragment = wc.route.Id + "//"
+	if wc.params == nil {
+		wc.request.URL.Fragment = wc.route.Id //+ "//"
 		return
 	}
-	//wc.request.URL.Fragment = wc.route.OriginalPath + "//" + string(wc.params)
-	wc.request.URL.Fragment = wc.route.Id + "//" + string(wc.params)
+	//wc.request.URL.Fragment = wc.route.Id + "//" + string(wc.params)
+	wc.request.URL.Fragment = string(wc.params) + wc.route.Id
 }
 
 func (pn *pathNode) add(path string, rt *route.Route) {
@@ -73,14 +73,13 @@ func (pn *pathNode) add(path string, rt *route.Route) {
 
 		p := path[start:end]
 		if ok, wc := isWildcard(p); ok {
-			node.wildcard = wc //append(node.wildcard, wc)
+			node.wildcard = []byte(wc)
 
-			subnode, exist := node.edges[""]
-			if !exist {
-				subnode = newPathNode()
-				node.edges[""] = subnode
+			if node.sub == nil {
+				node.sub = newPathNode()
 			}
-			node = subnode
+
+			node = node.sub
 		} else {
 			subnode, exist := node.edges[p]
 			if !exist {
@@ -114,14 +113,6 @@ func (n *pathNode) findSlash(wc *paramQuery, start int) (pos int) {
 }
 
 func (n *pathNode) _FindEdge(start int, wc *paramQuery) (found bool) {
-	/*
-		if wc.endPath-start < 1 {
-			panic("does it happen?")
-			wc.route = n.route
-			return true
-		}
-	*/
-
 	pos := n.findSlash(wc, start)
 	end := start + pos
 
@@ -131,7 +122,7 @@ func (n *pathNode) _FindEdge(start int, wc *paramQuery) (found bool) {
 
 	for k, val := range n.edges {
 		if k == wc.request.URL.Path[start:end] {
-			if len(val.edges) == 0 && val.wildcard == "" {
+			if len(val.edges) == 0 && val.wildcard == nil {
 				wc.route = val.route
 				return true
 			}
@@ -159,11 +150,12 @@ func (n *pathNode) _FindPositions(start int, wc *paramQuery) {
 		return
 	}
 
-	//	if len(n.wildcard) > 0 {
-	if n.wildcard != "" {
-		wc.params = append(wc.params, (n.wildcard + "/" + wc.request.URL.Path[start:end] + "//")...)
-		if next, has := n.edges[""]; has {
-			next._FindPositions(end+1, wc)
+	if n.wildcard != nil {
+		// wc.params = append(wc.params, "//"...)
+		wc.params = append(wc.params, n.wildcard...)
+		wc.params = append(wc.params, ("/" + wc.request.URL.Path[start:end] + "/")...)
+		if n.sub != nil {
+			n.sub._FindPositions(end+1, wc)
 		}
 	}
 }

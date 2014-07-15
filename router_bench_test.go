@@ -137,3 +137,28 @@ func BenchmarkGet1Param(b *testing.B) {
 		r.ServeHTTP(rec, req)
 	}
 }
+
+type fetchX struct{}
+
+func (f fetchX) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte(GetRouteParam(r, "x")))
+}
+
+func BenchmarkFetchParam(b *testing.B) {
+	_ = fmt.Print
+	r := New()
+	r.GET("/ho/:x", fetchX{})
+	mount(r, "/")
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/ho/hi", nil)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	// b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		r.ServeHTTP(rec, req)
+	}
+}

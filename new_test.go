@@ -160,3 +160,23 @@ func TestNewSub(t *testing.T) {
 	}
 
 }
+
+func TestFindParams(t *testing.T) {
+	corpus := map[string]string{
+		"abc/def/key/val1/mno/pqr//0xfun":  "val1",
+		"key/val2/mno/pqr//0xfun":          "val2",
+		"abc/def/xyz/val1/key/val3//0xfun": "val3",
+	}
+
+	for k, v := range corpus {
+		start, end := findParam(k, "key")
+		got := ""
+		if start > -1 && end > -1 {
+			got = k[start:end]
+		}
+		if got != v {
+			t.Errorf("expected: %#v, got: %#v", v, got)
+		}
+	}
+
+}

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go-on/method"
 	"github.com/gopherjs/gopherjs/js"
 )
 
@@ -47,13 +48,13 @@ type Route struct {
 func NewRoute(path string) *Route {
 	// method.
 	rt := &Route{OriginalPath: path, MountedPath: path}
-	rt.Id = fmt.Sprintf("%p", rt)
+	rt.Id = fmt.Sprintf("//%p", rt)
 	// rt.Handlers = map[method.Method]http.Handler{}
 	return rt
 }
 
 func (r *Route) Clone() *Route {
-	return &Route{
+	rt := &Route{
 		GETHandler:     r.GETHandler,
 		POSTHandler:    r.POSTHandler,
 		PUTHandler:     r.PUTHandler,
@@ -64,6 +65,8 @@ func (r *Route) Clone() *Route {
 		OriginalPath:   r.OriginalPath,
 		Router:         r.Router,
 	}
+	rt.Id = fmt.Sprintf("//%p", rt)
+	return rt
 }
 
 func (r *Route) Get(callback func(js.Object), params ...string) {
@@ -84,6 +87,24 @@ func (r *Route) Patch(data interface{}, callback func(js.Object), params ...stri
 
 func (r *Route) Put(data interface{}, callback func(js.Object), params ...string) {
 	ajax.Put(MustURL(r, params...), data, callback)
+}
+
+func (r *Route) Handler(meth method.Method) http.Handler {
+	switch meth {
+	case method.GET:
+		return r.GETHandler
+	case method.POST:
+		return r.POSTHandler
+	case method.PUT:
+		return r.PUTHandler
+	case method.PATCH:
+		return r.PATCHHandler
+	case method.DELETE:
+		return r.DELETEHandler
+	case method.OPTIONS:
+		return r.OPTIONSHandler
+	}
+	return nil
 }
 
 /*

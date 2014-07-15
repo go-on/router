@@ -82,20 +82,7 @@ func (ø *Router) getFinalHandler(wc *paramQuery) {
 		return
 	}
 
-	switch wc.meth {
-	case method.GET:
-		wc.handler = wc.route.GETHandler
-	case method.POST:
-		wc.handler = wc.route.POSTHandler
-	case method.PUT:
-		wc.handler = wc.route.PUTHandler
-	case method.PATCH:
-		wc.handler = wc.route.PATCHHandler
-	case method.DELETE:
-		wc.handler = wc.route.DELETEHandler
-	case method.OPTIONS:
-		wc.handler = wc.route.OPTIONSHandler
-	}
+	wc.handler = wc.route.Handler(wc.meth)
 
 	if wc.handler == nil {
 		return
@@ -125,18 +112,77 @@ func (ø *Router) MountPath() string {
 	return ø.Path()
 }
 
-/*
-func SetRouteParam(req *http.Request, key, value string) {
-	req.Header.Set(fmt.Sprintf("X-Route-Param-%s", key), value)
+var slashB = []byte("/")[0]
+
+func findParam(fragment, key string) (start, end int) {
+	var keyStart = 0
+	var valStart = -1
+	var inSlash bool
+	for i := 0; i < len(fragment); i++ {
+		// fmt.Printf("%s [%d] => [%d] (%v)\n", fragment[i:i+1], keyStart, valStart, inSlash)
+		if fragment[i] == slashB {
+			if inSlash {
+				break
+			}
+			inSlash = true
+			if keyStart > -1 {
+				if fragment[keyStart:i] == key {
+					valStart = i + 1
+				}
+				keyStart = -1
+				continue
+			}
+
+			keyStart = i + 1
+
+			if valStart > -1 {
+				return valStart, i
+			}
+			continue
+		}
+		inSlash = false
+	}
+	return -1, -1
 }
-*/
+
+func findParamBak(fragment, key string) (start, end int) {
+	var keyStart = -1
+	var valStart = -1
+	var inSlash bool
+	for i := 0; i < len(fragment); i++ {
+		// fmt.Printf("%s [%d] => [%d] (%v)\n", fragment[i:i+1], keyStart, valStart, inSlash)
+		if fragment[i] == slashB {
+			if inSlash {
+				// i++
+				keyStart = i + 1
+				inSlash = false
+				continue
+			} else {
+				inSlash = true
+			}
+		}
+		if keyStart > -1 && inSlash {
+			if fragment[keyStart:i] == key {
+				valStart = i + 1
+			}
+			keyStart = -1
+			inSlash = false
+			continue
+		}
+
+		if valStart > -1 && fragment[i] == slashB {
+			return valStart, i
+		}
+	}
+	return -1, -1
+}
 
 // since req.URL.Path has / unescaped so that originally escaped / are
 // indistinguishable from escaped ones, we are save here, i.e. / is
 // already handled as path splitted and no key or value has / in it
 // also it is save to use req.URL.Fragment since that will never be transmitted
 // by the request
-func GetRouteParam(req *http.Request, key string) (res string) {
+func GetRouteParam2(req *http.Request, key string) (res string) {
 	i := strings.Index(req.URL.Fragment, "//"+key+"/")
 	if i == -1 {
 		return
@@ -146,25 +192,57 @@ func GetRouteParam(req *http.Request, key string) (res string) {
 	return req.URL.Fragment[startId : startId+end]
 }
 
-func GetRouteId(req *http.Request) string {
-	i := strings.Index(req.URL.Fragment, "//")
-	if i == -1 {
-		return ""
+func GetRouteParam(req *http.Request, key string) (res string) {
+	start, end := func() (start, end int) {
+		var keyStart = 0
+		var valStart = -1
+		var inSlash bool
+		for i := 0; i < len(req.URL.Fragment); i++ {
+			// fmt.Printf("%s [%d] => [%d] (%v)\n", req.URL.Fragment[i:i+1], keyStart, valStart, inSlash)
+			if req.URL.Fragment[i] == slashB {
+				if inSlash {
+					break
+				}
+				inSlash = true
+				if keyStart > -1 {
+					if req.URL.Fragment[keyStart:i] == key {
+						valStart = i + 1
+					}
+					keyStart = -1
+					continue
+				}
+
+				keyStart = i + 1
+
+				if valStart > -1 {
+					return valStart, i
+				}
+				continue
+			}
+			inSlash = false
+		}
+		return -1, -1
+	}()
+
+	// start, end := find()
+	if start == -1 {
+		return
 	}
-	return req.URL.Fragment[:i]
+	return req.URL.Fragment[start:end]
 }
 
-// also it is save to use req.URL.Fragment since that will never be transmitted
-// by the request
-/*
-func GetRouteRelPath(req *http.Request) string {
-	i := strings.Index(req.URL.Fragment, "//")
+func IsCurrentRoute(req *http.Request, rt *route.Route) bool {
+	return GetRouteId(req) == rt.Id
+}
+
+func GetRouteId(req *http.Request) string {
+	// println(req.URL.Fragment)
+	i := strings.Index(req.URL.Fragment, "//0x")
 	if i == -1 {
 		return ""
 	}
-	return req.URL.Fragment[:i]
+	return req.URL.Fragment[i:]
 }
-*/
 
 func (ø *Router) RequestRoute(rq *http.Request) (rt *route.Route) {
 	pq := ø.getHandler(rq)
@@ -409,29 +487,8 @@ func (r *Router) MustMount(path string, m *http.ServeMux) {
 	}
 }
 
-/*
-func (r *Router) subMountRoute(p string, rt *route.Route) error {
-	fmt.Println("subMountRoute")
-	fmt.Printf("get handler: %T\n", rt.GETHandler)
-	if rtr, is := rt.GETHandler.(*Router); is {
-		err := rtr.submount(p, r)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-*/
-
 func (r *Router) registerRoutes() error {
-	// fmt.Println("registerRoutes")
 	for p, rt := range r.routes {
-		/*
-			err := r.subMountRoute(p, rt)
-			if err != nil {
-				return err
-			}
-		*/
 		if rt.OPTIONSHandler == nil {
 			setOptionsHandler(rt)
 		}
@@ -441,7 +498,6 @@ func (r *Router) registerRoutes() error {
 }
 
 func (r *Router) submount(path string, parent *Router) error {
-	// fmt.Printf("submounting %p on path: %#v\n", r, path)
 	if strings.Index(path, ":") > -1 {
 		return fmt.Errorf("submount on path with vars not allowed")
 	}
@@ -476,14 +532,8 @@ func (ø *Router) RegisterRoute(rt *route.Route, v method.Method, handler http.H
 	if !has {
 		ø.routes[rt.OriginalPath] = rt
 	}
-	//= rt
 	return ø.assocHandler(rt, v, handler)
 }
-
-/*
-func (ø *Router) submountMe(rt *route.Route) {
-	}
-*/
 
 func (ø *Router) MustRegisterRoute2(rt *route.Route) {
 	_, has := ø.routes[rt.OriginalPath]
@@ -527,8 +577,6 @@ func (ø *Router) MustRegisterRoute2(rt *route.Route) {
 			panic(err.Error())
 		}
 	}
-
-	//return ø.assocHandler(rt, v, handler)
 }
 
 func (ø *Router) assocHandler(rt *route.Route, m method.Method, handler http.Handler) error {
@@ -576,21 +624,12 @@ func (ø *Router) assocHandler(rt *route.Route, m method.Method, handler http.Ha
 		}
 	}
 
-	/*
-		err := rt.AddHandler(handler, v)
-		if err != nil {
-			return err
-		}
-	*/
-	// ø.routes[rt.OriginalPath] = rt
 	return nil
 }
 
 func (ø *Router) Handle(path string, handler http.Handler) {
 	ø.GET(path, handler)
 }
-
-// Handle(mountpoint string, h http.Handler)
 
 func (ø *Router) HandleMethod(path string, v method.Method, handler http.Handler) (*route.Route, error) {
 	if ø.mountPoint != "" {
@@ -696,11 +735,6 @@ func (r *Router) EachGETRoute(fn func(mountPoint string, route *route.Route)) {
 		if rt.GETHandler != nil {
 			fn(mP, rt)
 		}
-		/*
-			if getHandler(rt, "GET") != nil {
-				fn(mP, rt)
-			}
-		*/
 	}
 }
 
