@@ -99,12 +99,12 @@ func (pn *pathNode) add(path string, rt *route.Route) {
 	node.route = rt
 }
 
-func (n *pathNode) FindPlaceholders(wc *paramQuery) {
-	n.findPositions(wc.startPath+1, wc)
+func (n *pathNode) FindPlaceholders(startPath int, endPath int, req *http.Request, params *[]byte) (parms *[]byte, rt *route.Route) {
+	return n.findPositions(startPath+1, endPath, req, params)
 }
 
-func (n *pathNode) findSlash(wc *paramQuery, start int) (pos int) {
-	for i, r := range wc.request.URL.Path[start:wc.endPath] {
+func (n *pathNode) findSlash(req *http.Request, start int, endPath int) (pos int) {
+	for i, r := range req.URL.Path[start:endPath] {
 		if r == sep {
 			return i
 		}
@@ -112,52 +112,57 @@ func (n *pathNode) findSlash(wc *paramQuery, start int) (pos int) {
 	return -1
 }
 
-func (n *pathNode) findEdge(start int, wc *paramQuery) (found bool) {
-	pos := n.findSlash(wc, start)
+func (n *pathNode) findEdge(start int, endPath int, req *http.Request, params *[]byte) (*[]byte, *route.Route) {
+	pos := n.findSlash(req, start, endPath)
 	end := start + pos
 
 	if pos == -1 {
-		end = wc.endPath
+		end = endPath
 	}
 
 	for k, val := range n.edges {
-		if k == wc.request.URL.Path[start:end] {
+		if k == req.URL.Path[start:end] {
 			if len(val.edges) == 0 && val.wildcard == nil {
-				wc.route = val.route
-				return true
+				return params, val.route
 			}
-			val.findPositions(end+1, wc)
-			return true
+			return val.findPositions(end+1, endPath, req, params)
 		}
 	}
-	return false
+	return params, nil
 }
 
-func (n *pathNode) findPositions(start int, wc *paramQuery) {
-	if wc.endPath-start < 1 {
-		wc.route = n.route
-		return
+func (n *pathNode) findPositions(start int, endPath int, req *http.Request, params *[]byte) (*[]byte, *route.Route) {
+	if endPath-start < 1 {
+		return params, n.route
 	}
 
-	pos := n.findSlash(wc, start)
+	pos := n.findSlash(req, start, endPath)
 	end := start + pos
 
 	if pos == -1 {
-		end = wc.endPath
+		end = endPath
 	}
 
-	if n.findEdge(start, wc) {
-		return
+	var edgeRoute *route.Route
+	params, edgeRoute = n.findEdge(start, endPath, req, params)
+	if edgeRoute != nil {
+		return params, edgeRoute
 	}
 
 	if n.wildcard != nil {
 		// wc.params = append(wc.params, "//"...)
-		wc.params = append(wc.params, n.wildcard...)
-		wc.params = append(wc.params, ("/" + wc.request.URL.Path[start:end] + "/")...)
+		if params == nil {
+			pArr := []byte{}
+			params = &pArr
+		}
+		*params = append(*params, n.wildcard...)
+		*params = append(*params, ("/" + req.URL.Path[start:end] + "/")...)
 		if n.sub != nil {
-			n.sub.findPositions(end+1, wc)
+			return n.sub.findPositions(end+1, endPath, req, params)
 		}
 	}
+
+	return params, nil
 }
 
 // key is a non-empty path segment like "admin" or ":category_id" or ":category_id:\d+"

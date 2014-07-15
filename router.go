@@ -66,36 +66,56 @@ func (r *Router) MountPoint() string {
 	return r.mountPoint
 }
 
-func (ø *Router) getFinalHandler(wc *paramQuery) {
-	if wc.startPath == wc.endPath {
+func (ø *Router) getFinalHandler(startPath, endPath int, req *http.Request, params *[]byte, meth method.Method) (parms *[]byte, h http.Handler, rt *route.Route) {
+	if startPath == endPath {
 		return
 	}
 
-	oldStart, oldEnd := wc.startPath, wc.endPath
-	if err := ø.trimmedUrl(wc); err != nil {
+	oldStart, oldEnd := startPath, endPath
+	ln := len(ø.path)
+
+	// trimming down the path
+	if ln != 1 {
+		if !strings.HasPrefix(req.URL.Path[startPath:endPath], ø.path) {
+			return
+		}
+
+		if endPath-startPath == ln {
+			endPath = startPath + 1
+		} else {
+			startPath += ln
+		}
+	}
+
+	// startPath int, endPath int, req *http.Request, params *[]byte
+	parms, rt = ø.pathNode.FindPlaceholders(startPath, endPath, req, params)
+
+	if rt == nil {
+		parms = params
 		return
 	}
 
-	ø.pathNode.FindPlaceholders(wc)
+	h = rt.Handler(meth)
 
-	if wc.route == nil {
+	if h == nil {
 		return
 	}
 
-	wc.handler = wc.route.Handler(wc.meth)
-
-	if wc.handler == nil {
-		return
+	if rtr, isRouter := h.(*Router); isRouter {
+		// wc.handler, wc.route = nil, nil
+		// wc.startPath, wc.endPath = oldStart, oldEnd
+		return rtr.getFinalHandler(oldStart, oldEnd, req, params, meth)
 	}
 
-	if rt, isRouter := wc.handler.(*Router); isRouter {
-		wc.handler, wc.route = nil, nil
-		wc.startPath, wc.endPath = oldStart, oldEnd
-		rt.getFinalHandler(wc)
+	// wc.SetFragment()
+
+	if parms == nil {
+		req.URL.Fragment = rt.Id //+ "//"
 		return
 	}
-
-	wc.SetFragment()
+	//wc.request.URL.Fragment = wc.route.Id + "//" + string(wc.params)
+	req.URL.Fragment = string(*parms) + rt.Id
+	return
 }
 
 func (ø *Router) wrapit(h http.Handler) http.Handler {
@@ -245,38 +265,35 @@ func GetRouteId(req *http.Request) string {
 }
 
 func (ø *Router) RequestRoute(rq *http.Request) (rt *route.Route) {
-	pq := ø.getHandler(rq)
-	return pq.route
+	_, rt, _ = ø.getHandler(rq)
+	// return pq.route
+	return
 }
 
-func (ø *Router) getHandler(rq *http.Request) (pq *paramQuery) {
-	meth := method.StringToMethod[rq.Method]
+func (ø *Router) getHandler(rq *http.Request) (h http.Handler, rt *route.Route, meth method.Method) {
+	meth = method.StringToMethod[rq.Method]
 	if meth == method.HEAD {
 		meth = method.GET
 	}
 
-	pq = &paramQuery{
-		request:   rq,
-		startPath: 0,
-		endPath:   len(rq.URL.Path),
-		meth:      meth,
-	}
-	ø.getFinalHandler(pq)
+	var params *[]byte
+	_, h, rt = ø.getFinalHandler(0, len(rq.URL.Path), rq, params, meth)
+	// ø.getFinalHandler(pq)
 	return
 }
 
 func (ø *Router) Dispatch(rq *http.Request) http.Handler {
-	pq := ø.getHandler(rq)
+	h, rt, meth := ø.getHandler(rq)
 
-	if pq.handler == nil {
+	if h == nil {
 		return nil
 	}
 
-	if pq.meth != method.OPTIONS {
-		return pq.route.Router.(*Router).wrapit(pq.handler)
+	if meth != method.OPTIONS {
+		return rt.Router.(*Router).wrapit(h)
 	}
 
-	return pq.handler
+	return h
 }
 
 // this handler should be used for the top level router
@@ -373,6 +390,7 @@ func (r *Router) setPath() {
 	// fmt.Printf("setting path of %p to %#v\n", r, r.path)
 }
 
+/*
 func (r *Router) trimmedUrl(pq *paramQuery) (err error) {
 	if len(r.Path()) == 1 {
 		return
@@ -388,6 +406,7 @@ func (r *Router) trimmedUrl(pq *paramQuery) (err error) {
 	pq.startPath = pq.startPath + len(r.Path())
 	return
 }
+*/
 
 func (r *Router) setPaths() {
 	r.setPath()
