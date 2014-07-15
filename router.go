@@ -73,7 +73,7 @@ func (ø *Router) getFinalHandler(path string, meth method.Method, rq *http.Requ
 	}
 
 	start, end := ø.trimmedUrl(path)
-	wc := &wildcards{path: path[start:end]}
+	wc := &paramQuery{path: path[start:end]}
 	// return
 	ø.pathNode.FindPlaceholders(wc)
 	// _ = wc

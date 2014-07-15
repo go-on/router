@@ -44,14 +44,14 @@ type pathNode struct {
 	// route    http.Handler
 }
 
-type wildcards struct {
+type paramQuery struct {
 	wildcards []string //[]byte
 	found     [][3]int
 	route     *route.Route
 	path      string
 }
 
-func (wc *wildcards) ToMap() (params map[string]string) {
+func (wc *paramQuery) ToMap() (params map[string]string) {
 	params = map[string]string{}
 	for _, f := range wc.found {
 		if f[0] != -1 {
@@ -61,7 +61,7 @@ func (wc *wildcards) ToMap() (params map[string]string) {
 	return
 }
 
-func (wc *wildcards) ParamStr() (params string) {
+func (wc *paramQuery) ParamStr() (params string) {
 	// res += _k + "/" + _v + "//"
 	for _, f := range wc.found {
 		if f[0] != -1 {
@@ -138,14 +138,14 @@ func (pn *pathNode) add(path string, rt *route.Route) {
 	//	pn._add(splitPath(path), nil, rt)
 }
 
-func (n *pathNode) FindPlaceholders(wc *wildcards) {
+func (n *pathNode) FindPlaceholders(wc *paramQuery) {
 	// wc.path = wc.path[1:]
 	// debugf("searching for: %#v\n", wc.path)
 	// return
 	n._FindPositions(1, wc)
 }
 
-func (n *pathNode) findSlash(wc *wildcards, start int) (pos int) {
+func (n *pathNode) findSlash(wc *paramQuery, start int) (pos int) {
 	// fmt.Printf("searching from pos: %d of %d\n", start, len(wc.path)-1)
 	for i, r := range wc.path[start:] {
 		if r == sep {
@@ -155,7 +155,7 @@ func (n *pathNode) findSlash(wc *wildcards, start int) (pos int) {
 	return -1
 }
 
-func (n *pathNode) _FindEdge(start int, wc *wildcards) (found bool) {
+func (n *pathNode) _FindEdge(start int, wc *paramQuery) (found bool) {
 	if len(wc.path)-start < 1 {
 		wc.route = n.route
 		// debugf("foundroute: %#v\n", n.route)
@@ -202,7 +202,7 @@ func (n *pathNode) _FindWildcards(wcCounter int, start int, wc *wildcards) (end 
 }
 */
 
-func (n *pathNode) _FindPositions(start int, wc *wildcards) {
+func (n *pathNode) _FindPositions(start int, wc *paramQuery) {
 	if len(wc.path)-start < 1 {
 		wc.route = n.route
 		return
