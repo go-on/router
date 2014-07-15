@@ -28,26 +28,25 @@ type AjaxHandler interface {
 	Put(url string, data interface{}, callback func(js.Object))
 	Patch(url string, data interface{}, callback func(js.Object))
 	Delete(url string, callback func(js.Object))
+	Options(url string, callback func(js.Object))
 }
 
 type Route struct {
-	// Handlers         map[method.Method]http.Handler
 	GETHandler     http.Handler
 	POSTHandler    http.Handler
 	PUTHandler     http.Handler
 	PATCHHandler   http.Handler
 	DELETEHandler  http.Handler
 	OPTIONSHandler http.Handler
-	// RessourceOptions string
-	MountedPath  string
-	OriginalPath string
-	Router       MountPather
-	Id           string
+	MountedPath    string
+	DefinitionPath string
+	Router         MountPather
+	Id             string
 }
 
 func NewRoute(path string) *Route {
 	// method.
-	rt := &Route{OriginalPath: path, MountedPath: path}
+	rt := &Route{DefinitionPath: path, MountedPath: path}
 	rt.Id = fmt.Sprintf("//%p", rt)
 	// rt.Handlers = map[method.Method]http.Handler{}
 	return rt
@@ -62,7 +61,7 @@ func (r *Route) Clone() *Route {
 		DELETEHandler:  r.DELETEHandler,
 		OPTIONSHandler: r.OPTIONSHandler,
 		MountedPath:    r.MountedPath,
-		OriginalPath:   r.OriginalPath,
+		DefinitionPath: r.DefinitionPath,
 		Router:         r.Router,
 	}
 	rt.Id = fmt.Sprintf("//%p", rt)
@@ -89,6 +88,10 @@ func (r *Route) Put(data interface{}, callback func(js.Object), params ...string
 	ajax.Put(MustURL(r, params...), data, callback)
 }
 
+func (r *Route) Options(data interface{}, callback func(js.Object), params ...string) {
+	ajax.Put(MustURL(r, params...), data, callback)
+}
+
 func (r *Route) Handler(meth method.Method) http.Handler {
 	switch meth {
 	case method.GET:
@@ -107,66 +110,50 @@ func (r *Route) Handler(meth method.Method) http.Handler {
 	return nil
 }
 
-/*
-func (r *Route) AddHandler(handler http.Handler, v method.Method) error {
-	h := r.Handlers[v]
-	if h != nil {
-		return fmt.Errorf("handler for method %s already defined", v)
+func (r *Route) EachHandler(fn func(http.Handler) error) error {
+	if r.GETHandler != nil {
+		err := fn(r.GETHandler)
+		if err != nil {
+			return err
+		}
 	}
-	r.Handlers[v] = handler
+
+	if r.POSTHandler != nil {
+		err := fn(r.POSTHandler)
+		if err != nil {
+			return err
+		}
+	}
+
+	if r.PUTHandler != nil {
+		err := fn(r.PUTHandler)
+		if err != nil {
+			return err
+		}
+	}
+
+	if r.PATCHHandler != nil {
+		err := fn(r.PATCHHandler)
+		if err != nil {
+			return err
+		}
+	}
+
+	if r.DELETEHandler != nil {
+		err := fn(r.DELETEHandler)
+		if err != nil {
+			return err
+		}
+	}
+
+	if r.OPTIONSHandler != nil {
+		err := fn(r.OPTIONSHandler)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
-
-func (r *Route) SetHandler(m method.Method, h http.Handler) {
-	r.Handlers[m] = h
-}
-
-// just a stupid helper to make shared routes look nicer
-func (r *Route) AddMethod(v method.Method) *Route {
-	r.AddHandler(nil, v)
-	return r
-}
-*/
-
-/*
-
-func Get(path string, h http.Handler) *Route {
-	rt := NewRoute(path)
-	rt.AddHandler(h, method.GET)
-	return rt
-}
-
-func Post(path string, h http.Handler) *Route {
-	rt := NewRoute(path)
-	rt.AddHandler(h, method.POST)
-	return rt
-}
-
-func Patch(path string, h http.Handler) *Route {
-	rt := NewRoute(path)
-	rt.AddHandler(h, method.PATCH)
-	return rt
-}
-
-func Delete(path string, h http.Handler) *Route {
-	rt := NewRoute(path)
-	rt.AddHandler(h, method.DELETE)
-	return rt
-}
-
-func Put(path string, h http.Handler) *Route {
-	rt := NewRoute(path)
-	rt.AddHandler(h, method.PUT)
-	return rt
-}
-*/
-
-/*
-func (rt *Route) HasMethod(m method.Method) bool {
-	_, has := rt.Handlers[m]
-	return has
-}
-*/
 
 var colon string = ":"
 

@@ -12,11 +12,10 @@ import (
 )
 
 func HasParams(r *route.Route) bool {
-	return strings.ContainsRune(r.OriginalPath, ':')
+	return strings.ContainsRune(r.DefinitionPath, ':')
 }
 
-func setOptionsHandler(r *route.Route) {
-	// opts := map[method.Method]bool{method.OPTIONS: true}
+func optionsString(r *route.Route) string {
 	allow := []string{method.OPTIONS.String()}
 
 	if r.GETHandler != nil {
@@ -40,8 +39,11 @@ func setOptionsHandler(r *route.Route) {
 		allow = append(allow, method.PUT.String())
 	}
 
-	options := strings.Join(allow, ",")
+	return strings.Join(allow, ",")
+}
 
+func SetOPTIONSHandler(r *route.Route) {
+	options := optionsString(r)
 	r.OPTIONSHandler = http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		rw.Header().Set("Allow", options)
 	})

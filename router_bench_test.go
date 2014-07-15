@@ -1,5 +1,6 @@
 package router
 
+/*
 import (
 	"fmt"
 	"net/http"
@@ -35,11 +36,6 @@ func BenchmarkGet2Params(b *testing.B) {
 	r := New()
 	r.GET("/ho/:hi/hu/:he", noop{})
 	// r.GET("/ho/:hi", noop{})
-	/*
-		r.GETFunc("/ho/:hi", func(rw http.ResponseWriter, req *http.Request) {
-			fmt.Println(GetRouteParam(req, "hi"))
-		})
-	*/
 
 	mount(r, "/")
 
@@ -62,11 +58,6 @@ func BenchmarkGet4Params(b *testing.B) {
 	r := New()
 	r.GET("/ho/:hi/hu/:he/:a/:b", noop{})
 	// r.GET("/ho/:hi", noop{})
-	/*
-		r.GETFunc("/ho/:hi", func(rw http.ResponseWriter, req *http.Request) {
-			fmt.Println(GetRouteParam(req, "hi"))
-		})
-	*/
 
 	mount(r, "/")
 
@@ -89,11 +80,6 @@ func BenchmarkGet6Params(b *testing.B) {
 	r := New()
 	r.GET("/ho/:hi/hu/:he/:a/:b/:x/:y", noop{})
 	// r.GET("/ho/:hi", noop{})
-	/*
-		r.GETFunc("/ho/:hi", func(rw http.ResponseWriter, req *http.Request) {
-			fmt.Println(GetRouteParam(req, "hi"))
-		})
-	*/
 
 	mount(r, "/")
 
@@ -116,11 +102,6 @@ func BenchmarkGet1Param(b *testing.B) {
 	r := New()
 	//r.GET("/ho/:hi/hu/:he", noop{})
 	r.GET("/ho/:hi", noop{})
-	/*
-		r.GETFunc("/ho/:hi", func(rw http.ResponseWriter, req *http.Request) {
-			fmt.Println(GetRouteParam(req, "hi"))
-		})
-	*/
 
 	mount(r, "/")
 
@@ -162,3 +143,4 @@ func BenchmarkFetchParam(b *testing.B) {
 		r.ServeHTTP(rec, req)
 	}
 }
+*/

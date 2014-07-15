@@ -1,13 +1,15 @@
 package router
 
 import (
-	"code.google.com/p/go-html-transform/html/transform"
 	"fmt"
-	"github.com/go-on/wrap-contrib/helper"
 	"html"
 	"io/ioutil"
 	"net/http"
 	"regexp"
+
+	"code.google.com/p/go-html-transform/html/transform"
+	"github.com/go-on/router/route"
+	"github.com/go-on/wrap-contrib/helper"
 	// "net/http/httptest"
 	"os"
 	"path/filepath"
@@ -163,4 +165,94 @@ func DumpPaths(server http.Handler, paths []string, targetDir string) (errors ma
 		}
 	}
 	return
+}
+
+func (r *Router) EachRoute(fn func(mountPoint string, route *route.Route)) {
+	for mP, rt := range r.routes {
+		fn(mP, rt)
+	}
+}
+
+func (r *Router) EachGETRoute(fn func(mountPoint string, route *route.Route)) {
+	for mP, rt := range r.routes {
+		if rt.GETHandler != nil {
+			fn(mP, rt)
+		}
+	}
+}
+
+// the paths of all get routes
+func (r *Router) AllGETPaths(paramSolver RouteParameter) (paths []string) {
+	paths = []string{}
+	fn := func(mountPoint string, rt *route.Route) {
+
+		if HasParams(rt) {
+			paramsArr := paramSolver.Params(rt)
+
+			for _, params := range paramsArr {
+				paths = append(paths, MustURLMap(rt, params))
+			}
+
+		} else {
+			paths = append(paths, MustURL(rt))
+		}
+	}
+
+	r.EachGETRoute(fn)
+	return paths
+}
+
+// saves the results of all get routes
+func (r *Router) SavePages(paramSolver RouteParameter, mainHandler http.Handler, targetDir string) map[string]error {
+	return DumpPaths(mainHandler, r.AllGETPaths(paramSolver), targetDir)
+}
+
+func (r *Router) MustSavePages(paramSolver RouteParameter, mainHandler http.Handler, targetDir string) {
+	errs := r.SavePages(paramSolver, mainHandler, targetDir)
+	for _, err := range errs {
+		panic(err.Error())
+	}
+}
+
+// map[string][]interface{} is tag => []struct
+func (r *Router) GETPathsByStruct(parameters map[*route.Route]map[string][]interface{}) (paths []string) {
+	paths = []string{}
+
+	fn := func(mountPoint string, route *route.Route) {
+		paramPairs := parameters[route]
+
+		// if route has : it has parameters
+		if HasParams(route) {
+			for tag, structs := range paramPairs {
+				for _, stru := range structs {
+					paths = append(paths, MustURLStruct(route, stru, tag))
+				}
+			}
+		} else {
+			paths = append(paths, MustURL(route))
+		}
+	}
+
+	r.EachGETRoute(fn)
+	return
+}
+
+func (r *Router) DynamicRoutes() (routes []*route.Route) {
+	routes = []*route.Route{}
+	for _, rt := range r.routes {
+		if HasParams(rt) {
+			routes = append(routes, rt)
+		}
+	}
+	return routes
+}
+
+func (r *Router) StaticRoutePaths() (paths []string) {
+	paths = []string{}
+	for _, rt := range r.routes {
+		if !HasParams(rt) {
+			paths = append(paths, MustURL(rt))
+		}
+	}
+	return paths
 }

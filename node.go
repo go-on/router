@@ -1,108 +1,151 @@
 package router
 
-// stolen from  https://raw.github.com/gocraft/web/master/tree.go and modified
-/*
 import (
+	"net/http"
 	"strings"
 
 	"github.com/go-on/router/route"
 )
 
-// todo: base the node mangling on https://github.com/julienschmidt/httprouter
+const (
+	dblslash = "//"
+	slash    = "/"
+)
 
-type pathNode struct {
-	// Given the next segment s, if edges[s] exists, then we'll look there first.
-	edges map[string]*pathNode
+var sep = '/'
 
-	// If set, failure to match on edges will match on wildcard
-	wildcard *pathNode
-
-	// If set, and we have nothing left to match, then we match on this node
-	leaf *pathLeaf
+func newNode() *node {
+	return &node{edges: make(map[string]*node)}
 }
 
-// For the route /admin/forums/:forum_id/suggestions/:suggestion_id
-// We'd have wildcards = ["forum_id", "suggestion_id"]
-type pathLeaf struct {
-	// names of wildcards that lead to this leaf. eg, ["category_id"] for the wildcard ":category_id"
-	wildcards []string
-
-	// Pointer back to the route
-	*route.Route
+type node struct {
+	edges    map[string]*node // the empty key is for the next wildcard node (the node after my wildcard)
+	wildcard []byte           //string
+	route    *route.Route
+	sub      *node
 }
 
-func newPathNode() *pathNode {
-	return &pathNode{edges: make(map[string]*pathNode)}
-}
+func (pn *node) add(path string, rt *route.Route) {
 
-func (pn *pathNode) add(path string, rt *route.Route) {
-	pn._add(splitPath(path), nil, rt)
-}
-
-func (pn *pathNode) _add(segments []string, wildcards []string, rt *route.Route) {
-	if len(segments) == 0 {
-		if pn.leaf == nil {
-			pn.leaf = &pathLeaf{Route: rt, wildcards: wildcards}
+	node := pn
+	var start int = 1
+	var end int
+	var fin bool
+	for {
+		if start >= len(path) {
+			break
+			panic("unaccessible")
 		}
-		return
-	}
-	seg := segments[0]
-	wc, wcName := isWildcard(seg)
-	if wc {
-		if pn.wildcard == nil {
-			pn.wildcard = newPathNode()
-		}
-		pn.wildcard._add(segments[1:], append(wildcards, wcName), rt)
-		return
-	}
-	subPn, ok := pn.edges[seg]
-	if !ok {
-		subPn = newPathNode()
-		pn.edges[seg] = subPn
-	}
-	subPn._add(segments[1:], wildcards, rt)
-}
+		end = strings.Index(path[start:], "/")
 
-func (pn *pathNode) Match(path string) (leaf *pathLeaf, wildcards []string) {
-	// Bail on invalid paths.
-	if len(path) == 0 || path[0] != '/' {
-		return nil, nil
-	}
-
-	return pn.match(splitPath(path), nil)
-}
-
-// Segments is like ["admin", "users"] representing "/admin/users"
-// wildcardValues are the actual values accumulated when we match on a wildcard.
-func (pn *pathNode) match(segments []string, wildcardValues []string) (leaf *pathLeaf, wildcardMap []string) {
-	// Handle leaf nodes:
-	if len(segments) == 0 {
-		leaf = pn.leaf
-		if leaf == nil {
-			return
+		if end == 0 {
+			start++
+			continue
+			panic("unaccessible")
 		}
 
-		if len(wildcardValues) != 0 && (len(pn.leaf.wildcards) == len(wildcardValues)) {
-			wildcardMap = wildcardValues
+		if end == -1 {
+			end = len(path)
+			fin = true
+		} else {
+			end += start
 		}
 
-		return
+		p := path[start:end]
+		if ok, wc := isWildcard(p); ok {
+			node.wildcard = []byte(wc)
+
+			if node.sub == nil {
+				node.sub = newNode()
+			}
+
+			node = node.sub
+		} else {
+			subnode, exist := node.edges[p]
+			if !exist {
+				subnode = newNode()
+				node.edges[p] = subnode
+			}
+			node = subnode
+		}
+
+		if fin {
+			break
+			panic("unaccessible")
+		}
+
+		start = end + 1
 	}
-
-	var seg string
-	seg, segments = segments[0], segments[1:]
-
-	subPn, ok := pn.edges[seg]
-	if ok {
-		leaf, wildcardMap = subPn.match(segments, wildcardValues)
-	}
-
-	if leaf == nil && pn.wildcard != nil {
-		leaf, wildcardMap = pn.wildcard.match(segments, append(wildcardValues, seg))
-	}
-
-	return leaf, wildcardMap
+	node.route = rt
 }
+
+//func (n *node) FindPlaceholders(startPath int, endPath int, req *http.Request, params *[]byte) (parms *[]byte, rt *route.Route) {
+func (n *node) FindPlaceholders(startPath int, endPath int, req *http.Request) (parms *[]byte, rt *route.Route) {
+	return n.findPositions(startPath+1, endPath, req, nil)
+}
+
+func (n *node) findSlash(req *http.Request, start int, endPath int) (pos int) {
+	for i, r := range req.URL.Path[start:endPath] {
+		if r == sep {
+			return i
+		}
+	}
+	return -1
+}
+
+func (n *node) findEdge(start int, endPath int, req *http.Request, params *[]byte) (*[]byte, *route.Route) {
+	pos := n.findSlash(req, start, endPath)
+	end := start + pos
+
+	if pos == -1 {
+		end = endPath
+	}
+
+	for k, val := range n.edges {
+		if k == req.URL.Path[start:end] {
+			if len(val.edges) == 0 && val.wildcard == nil {
+				return params, val.route
+			}
+			return val.findPositions(end+1, endPath, req, params)
+		}
+	}
+	return params, nil
+}
+
+func (n *node) findPositions(start int, endPath int, req *http.Request, params *[]byte) (*[]byte, *route.Route) {
+	if endPath-start < 1 {
+		return params, n.route
+	}
+
+	pos := n.findSlash(req, start, endPath)
+	end := start + pos
+
+	if pos == -1 {
+		end = endPath
+	}
+
+	var edgeRoute *route.Route
+	params, edgeRoute = n.findEdge(start, endPath, req, params)
+	if edgeRoute != nil {
+		return params, edgeRoute
+	}
+
+	if n.wildcard != nil {
+		if params == nil {
+			pArr := make([]byte, 0, len(n.wildcard)+len(req.URL.Path[start:end])+2)
+			params = &pArr
+		}
+		*params = append(*params, n.wildcard...)
+		*params = append(*params, ("/" + req.URL.Path[start:end] + "/")...)
+		if n.sub != nil {
+			return n.sub.findPositions(end+1, endPath, req, params)
+		}
+	}
+
+	return params, nil
+}
+
+// stolen from  https://raw.github.com/gocraft/web/master/tree.go and modified
 
 // key is a non-empty path segment like "admin" or ":category_id" or ":category_id:\d+"
 // Returns true if it's a wildcard, and if it is, also returns it's name / regexp.
@@ -129,4 +172,3 @@ func splitPath(key string) []string {
 	}
 	return elements
 }
-*/

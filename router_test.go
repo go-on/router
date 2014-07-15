@@ -1,5 +1,6 @@
 package router
 
+/*
 import (
 	"fmt"
 	"net/http"
@@ -57,21 +58,6 @@ func (s *routerSuite) TestSubmountAlreadyMounted(c *C) {
 	}()
 	p.GET("/ch", ch)
 }
-
-/*
-func (s *routerSuite) TestTrace(c *C) {
-	r := New()
-	r.TRACE("/ho", http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.Header().Set("hu", "ho")
-	}))
-	mount(r, "/")
-
-	rw, req := newTestRequest("TRACE", "/ho")
-
-	r.ServeHTTP(rw, req)
-	c.Assert(rw.Header().Get("hu"), Equals, "ho")
-}
-*/
 
 func (s *routerSuite) TestEachRoute(c *C) {
 	r := New()
@@ -288,3 +274,4 @@ func (s *routeSuite) TestAllGETPaths(c *C) {
 	// fmt.Printf("paths: %v", paths)
 
 }
+*/
