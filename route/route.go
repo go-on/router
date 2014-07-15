@@ -41,11 +41,13 @@ type Route struct {
 	MountedPath  string
 	OriginalPath string
 	Router       MountPather
+	Id           string
 }
 
 func NewRoute(path string) *Route {
 	// method.
 	rt := &Route{OriginalPath: path, MountedPath: path}
+	rt.Id = fmt.Sprintf("%p", rt)
 	// rt.Handlers = map[method.Method]http.Handler{}
 	return rt
 }

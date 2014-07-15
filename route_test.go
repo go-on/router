@@ -508,14 +508,15 @@ func (s *routeSuite) TestSecureParams(c *C) {
 func (s *routeSuite) TestVars(c *C) {
 	vv := &v{}
 	r := New()
-	r.MustHandleMethod("/a/:x/c/:y", method.GET, vv)
+	rt := r.MustHandleMethod("/a/:x/c/:y", method.GET, vv)
 	router := mount(r, "/r")
 	rw, req := newTestRequest("GET", "/r/a/b/c/d")
 	router.ServeHTTP(rw, req)
 	//assertResponse(c, rw, "ADMIN", 200)
 	c.Assert(vv.x, Equals, "b")
 	c.Assert(vv.y, Equals, "d")
-	c.Assert(GetRouteRelPath(req), Equals, "/a/:x/c/:y")
+	// println(rt.Id)
+	c.Assert(GetRouteId(req), Equals, rt.Id)
 }
 
 func (s *routeSuite) TestVarsSubrouterPanic(c *C) {

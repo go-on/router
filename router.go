@@ -72,8 +72,7 @@ func (ø *Router) getFinalHandler(wc *paramQuery) {
 	}
 
 	oldStart, oldEnd := wc.startPath, wc.endPath
-	ø.trimmedUrl(wc)
-	if wc.startPath == -1 {
+	if err := ø.trimmedUrl(wc); err != nil {
 		return
 	}
 
@@ -109,13 +108,7 @@ func (ø *Router) getFinalHandler(wc *paramQuery) {
 		return
 	}
 
-	// if len(wc.params) > 0 {
-	// if wc.params != "" {
 	wc.SetFragment()
-	// wc.request.URL.Fragment = wc.route.OriginalPath + "//" + wc.ParamStr()
-	// }
-
-	return
 }
 
 func (ø *Router) wrapit(h http.Handler) http.Handler {
@@ -143,18 +136,27 @@ func SetRouteParam(req *http.Request, key, value string) {
 // already handled as path splitted and no key or value has / in it
 // also it is save to use req.URL.Fragment since that will never be transmitted
 // by the request
-func GetRouteParam(req *http.Request, key string) string {
+func GetRouteParam(req *http.Request, key string) (res string) {
 	i := strings.Index(req.URL.Fragment, "//"+key+"/")
 	if i == -1 {
-		return ""
+		return
 	}
 	startId := i + 3 + len(key)
 	end := strings.Index(req.URL.Fragment[startId:], "//")
 	return req.URL.Fragment[startId : startId+end]
 }
 
+func GetRouteId(req *http.Request) string {
+	i := strings.Index(req.URL.Fragment, "//")
+	if i == -1 {
+		return ""
+	}
+	return req.URL.Fragment[:i]
+}
+
 // also it is save to use req.URL.Fragment since that will never be transmitted
 // by the request
+/*
 func GetRouteRelPath(req *http.Request) string {
 	i := strings.Index(req.URL.Fragment, "//")
 	if i == -1 {
@@ -162,6 +164,7 @@ func GetRouteRelPath(req *http.Request) string {
 	}
 	return req.URL.Fragment[:i]
 }
+*/
 
 func (ø *Router) RequestRoute(rq *http.Request) (rt *route.Route) {
 	pq := ø.getHandler(rq)
@@ -292,26 +295,20 @@ func (r *Router) setPath() {
 	// fmt.Printf("setting path of %p to %#v\n", r, r.path)
 }
 
-func (r *Router) trimmedUrl(pq *paramQuery) {
+func (r *Router) trimmedUrl(pq *paramQuery) (err error) {
 	if len(r.Path()) == 1 {
-		// return 0, len(url)
 		return
 	}
 	if !strings.HasPrefix(pq.request.URL.Path[pq.startPath:pq.endPath], r.Path()) {
-		//panic(fmt.Sprintf("url %#v not relative to %#v", url, r.Path()))
-		//return -1, -1
-		pq.startPath = -1
-		pq.endPath = -1
-		return
+		return fmt.Errorf("no subpath of %#v", r.Path())
 	}
-	//if len(url) == len(r.Path()) {
+
 	if (pq.endPath - pq.startPath) == len(r.Path()) {
-		//return 0, 1
 		pq.endPath = pq.startPath + 1
 		return
 	}
 	pq.startPath = pq.startPath + len(r.Path())
-	//return len(r.Path()), len(url)
+	return
 }
 
 func (r *Router) setPaths() {

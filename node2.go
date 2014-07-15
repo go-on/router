@@ -37,10 +37,12 @@ type paramQuery struct {
 
 func (wc *paramQuery) SetFragment() {
 	if len(wc.params) == 0 {
-		wc.request.URL.Fragment = wc.route.OriginalPath + "//"
+		//wc.request.URL.Fragment = wc.route.OriginalPath + "//"
+		wc.request.URL.Fragment = wc.route.Id + "//"
 		return
 	}
-	wc.request.URL.Fragment = wc.route.OriginalPath + "//" + string(wc.params)
+	//wc.request.URL.Fragment = wc.route.OriginalPath + "//" + string(wc.params)
+	wc.request.URL.Fragment = wc.route.Id + "//" + string(wc.params)
 }
 
 func (pn *pathNode) add(path string, rt *route.Route) {
@@ -112,10 +114,13 @@ func (n *pathNode) findSlash(wc *paramQuery, start int) (pos int) {
 }
 
 func (n *pathNode) _FindEdge(start int, wc *paramQuery) (found bool) {
-	if wc.endPath-start < 1 {
-		wc.route = n.route
-		return true
-	}
+	/*
+		if wc.endPath-start < 1 {
+			panic("does it happen?")
+			wc.route = n.route
+			return true
+		}
+	*/
 
 	pos := n.findSlash(wc, start)
 	end := start + pos
