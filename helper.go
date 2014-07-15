@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-on/wrap"
-
 	"github.com/go-on/router/route"
 	"github.com/go-on/wrap-contrib/wraps"
 )
@@ -90,6 +88,7 @@ func GetRouteParam(req *http.Request, key string) (res string) {
 }
 
 // func (r *Router) Route(path string) *route.Route { return r.routes[path] }
+/*
 type Etagged struct{}
 
 func (et *Etagged) Wrap(next http.Handler) http.Handler {
@@ -99,6 +98,17 @@ func (et *Etagged) Wrap(next http.Handler) http.Handler {
 		wraps.ETag,
 		wrap.Handler(next),
 	)
+}
+*/
+
+func ETagged() (ø *Router) {
+	ø = New()
+	ø.AddWrappers(
+		wraps.IfNoneMatch,
+		wraps.IfMatch(ø),
+		wraps.ETag,
+	)
+	return
 }
 
 /*

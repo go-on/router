@@ -45,6 +45,14 @@ func (ø *Router) MustAdd(rt *route.Route) {
 	}
 }
 
+// the given wrappers are near the inner call and called before the
+// etag and IfMatch and IfNoneMatch wrappers. wrappers around them
+// could be easily done by making a go-on/wrap.New() and use the Router
+// as final http.Handler surrounded by other middleware
+func (r *Router) AddWrappers(wrapper ...wrap.Wrapper) {
+	r.wrapper = append(r.wrapper, wrapper...)
+}
+
 func (ø *Router) Add(rt *route.Route) error {
 	if _, has := ø.routes[rt.DefinitionPath]; has {
 		return ErrDoubleRegistration{rt.DefinitionPath}
@@ -58,7 +66,7 @@ func (ø *Router) Add(rt *route.Route) error {
 func (ø *Router) MountPath() string { return ø.path }
 
 func (ø *Router) RequestRoute(rq *http.Request) (rt *route.Route) {
-	_, rt = ø.getHandler(rq)
+	_, rt, _ = ø.getHandler(rq)
 	return
 }
 
@@ -121,9 +129,17 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 }
 
 // Dispatch returns the corresponding http.Handler for the request
-func (ø *Router) Dispatch(rq *http.Request) (h http.Handler) {
-	h, _ = ø.getHandler(rq)
-	return
+func (ø *Router) Dispatch(rq *http.Request) http.Handler {
+	h, rt, meth := ø.getHandler(rq)
+
+	if h == nil {
+		return nil
+	}
+
+	if meth != method.OPTIONS {
+		return rt.Router.(*Router).wrapHandler(h)
+	}
+	return h
 }
 
 // Mount mounts the router under the given path, i.e. all routing paths will be
@@ -220,13 +236,14 @@ func (ø *Router) wrapHandler(h http.Handler) http.Handler {
 	return h
 }
 
-func (ø *Router) getHandler(rq *http.Request) (http.Handler, *route.Route) {
-	meth := method.StringToMethod[rq.Method]
+func (ø *Router) getHandler(rq *http.Request) (h http.Handler, rt *route.Route, meth method.Method) {
+	meth = method.StringToMethod[rq.Method]
 	if meth == method.HEAD {
 		meth = method.GET
 	}
 
-	return ø.findHandler(0, len(rq.URL.Path), rq, meth)
+	h, rt = ø.findHandler(0, len(rq.URL.Path), rq, meth)
+	return
 }
 
 // route not found boils down to method not allowed.
