@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"path"
-	"path/filepath"
 	"strings"
 
 	"github.com/go-on/lib/internal/menu"
@@ -67,51 +66,54 @@ func (r *Router) MountPoint() string {
 	return r.mountPoint
 }
 
-func (ø *Router) getFinalHandler(path string, meth method.Method, rq *http.Request) (h http.Handler, route *route.Route) {
-	if len(path) == 0 || !filepath.HasPrefix(path, ø.Path()) {
+func (ø *Router) getFinalHandler(wc *paramQuery) {
+	if wc.startPath == wc.endPath {
 		return
 	}
 
-	start, end := ø.trimmedUrl(path)
-	wc := &paramQuery{path: path[start:end]}
-	// return
+	oldStart, oldEnd := wc.startPath, wc.endPath
+	ø.trimmedUrl(wc)
+	if wc.startPath == -1 {
+		return
+	}
+
 	ø.pathNode.FindPlaceholders(wc)
-	// _ = wc
-	// return nil, wc.route
 
 	if wc.route == nil {
 		return
 	}
 
-	switch meth {
+	switch wc.meth {
 	case method.GET:
-		h = wc.route.GETHandler
+		wc.handler = wc.route.GETHandler
 	case method.POST:
-		h = wc.route.POSTHandler
+		wc.handler = wc.route.POSTHandler
 	case method.PUT:
-		h = wc.route.PUTHandler
+		wc.handler = wc.route.PUTHandler
 	case method.PATCH:
-		h = wc.route.PATCHHandler
+		wc.handler = wc.route.PATCHHandler
 	case method.DELETE:
-		h = wc.route.DELETEHandler
+		wc.handler = wc.route.DELETEHandler
 	case method.OPTIONS:
-		h = wc.route.OPTIONSHandler
+		wc.handler = wc.route.OPTIONSHandler
 	}
 
-	if h == nil {
+	if wc.handler == nil {
 		return
 	}
 
-	route = wc.route
-
-	rt, isRouter := h.(*Router)
-	if isRouter {
-		return rt.getFinalHandler(path, meth, rq)
+	if rt, isRouter := wc.handler.(*Router); isRouter {
+		wc.handler, wc.route = nil, nil
+		wc.startPath, wc.endPath = oldStart, oldEnd
+		rt.getFinalHandler(wc)
+		return
 	}
 
-	if len(wc.found) > 0 {
-		rq.URL.Fragment = wc.route.OriginalPath + "//" + wc.ParamStr()
-	}
+	// if len(wc.params) > 0 {
+	// if wc.params != "" {
+	wc.SetFragment()
+	// wc.request.URL.Fragment = wc.route.OriginalPath + "//" + wc.ParamStr()
+	// }
 
 	return
 }
@@ -162,32 +164,38 @@ func GetRouteRelPath(req *http.Request) string {
 }
 
 func (ø *Router) RequestRoute(rq *http.Request) (rt *route.Route) {
-	_, rt, _ = ø.getHandler(rq)
-	return
+	pq := ø.getHandler(rq)
+	return pq.route
 }
 
-func (ø *Router) getHandler(rq *http.Request) (h http.Handler, rt *route.Route, meth method.Method) {
-	meth = method.StringToMethod[rq.Method]
+func (ø *Router) getHandler(rq *http.Request) (pq *paramQuery) {
+	meth := method.StringToMethod[rq.Method]
 	if meth == method.HEAD {
 		meth = method.GET
 	}
 
-	h, rt = ø.getFinalHandler(rq.URL.Path, meth, rq)
+	pq = &paramQuery{
+		request:   rq,
+		startPath: 0,
+		endPath:   len(rq.URL.Path),
+		meth:      meth,
+	}
+	ø.getFinalHandler(pq)
 	return
 }
 
 func (ø *Router) Dispatch(rq *http.Request) http.Handler {
-	h, route, meth := ø.getHandler(rq)
+	pq := ø.getHandler(rq)
 
-	if h == nil {
+	if pq.handler == nil {
 		return nil
 	}
 
-	if meth != method.OPTIONS {
-		h = route.Router.(*Router).wrapit(h)
+	if pq.meth != method.OPTIONS {
+		return pq.route.Router.(*Router).wrapit(pq.handler)
 	}
 
-	return h
+	return pq.handler
 }
 
 // this handler should be used for the top level router
@@ -284,17 +292,26 @@ func (r *Router) setPath() {
 	// fmt.Printf("setting path of %p to %#v\n", r, r.path)
 }
 
-func (r *Router) trimmedUrl(url string) (startPos, endPos int) {
+func (r *Router) trimmedUrl(pq *paramQuery) {
 	if len(r.Path()) == 1 {
-		return 0, len(url)
+		// return 0, len(url)
+		return
 	}
-	if !strings.HasPrefix(url, r.Path()) {
-		panic(fmt.Sprintf("url %#v not relative to %#v", url, r.Path()))
+	if !strings.HasPrefix(pq.request.URL.Path[pq.startPath:pq.endPath], r.Path()) {
+		//panic(fmt.Sprintf("url %#v not relative to %#v", url, r.Path()))
+		//return -1, -1
+		pq.startPath = -1
+		pq.endPath = -1
+		return
 	}
-	if len(url) == len(r.Path()) {
-		return 0, 1
+	//if len(url) == len(r.Path()) {
+	if (pq.endPath - pq.startPath) == len(r.Path()) {
+		//return 0, 1
+		pq.endPath = pq.startPath + 1
+		return
 	}
-	return len(r.Path()), len(url)
+	pq.startPath = pq.startPath + len(r.Path())
+	//return len(r.Path()), len(url)
 }
 
 func (r *Router) setPaths() {

@@ -57,6 +57,60 @@ func BenchmarkGet2Params(b *testing.B) {
 	}
 }
 
+func BenchmarkGet4Params(b *testing.B) {
+	_ = fmt.Print
+	r := New()
+	r.GET("/ho/:hi/hu/:he/:a/:b", noop{})
+	// r.GET("/ho/:hi", noop{})
+	/*
+		r.GETFunc("/ho/:hi", func(rw http.ResponseWriter, req *http.Request) {
+			fmt.Println(GetRouteParam(req, "hi"))
+		})
+	*/
+
+	mount(r, "/")
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/ho/hi/hu/he/c/d", nil)
+	// req, err := http.NewRequest("GET", "/ho/hi", nil)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	// b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		r.ServeHTTP(rec, req)
+	}
+}
+
+func BenchmarkGet6Params(b *testing.B) {
+	_ = fmt.Print
+	r := New()
+	r.GET("/ho/:hi/hu/:he/:a/:b/:x/:y", noop{})
+	// r.GET("/ho/:hi", noop{})
+	/*
+		r.GETFunc("/ho/:hi", func(rw http.ResponseWriter, req *http.Request) {
+			fmt.Println(GetRouteParam(req, "hi"))
+		})
+	*/
+
+	mount(r, "/")
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/ho/hi/hu/he/c/d/e/f", nil)
+	// req, err := http.NewRequest("GET", "/ho/hi", nil)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	// b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		r.ServeHTTP(rec, req)
+	}
+}
+
 func BenchmarkGet1Param(b *testing.B) {
 	_ = fmt.Print
 	r := New()
