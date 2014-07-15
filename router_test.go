@@ -1,6 +1,5 @@
 package router
 
-/*
 import (
 	"fmt"
 	"net/http"
@@ -17,8 +16,8 @@ var _ = Suite(&routerSuite{})
 
 func mkEtaggedRouter() *Router {
 	router := ETagged()
-	router.MustHandleMethod("/a", method.GET, webwrite("A"))
-	router.MustHandleMethod("/a", method.PATCH, webwrite("OK"))
+	router.MustHandle("/a", method.GET, webwrite("A"))
+	router.MustHandle("/a", method.PATCH, webwrite("OK"))
 	mount(router, "/")
 	return router
 }
@@ -35,7 +34,7 @@ func (s *routerSuite) TestRoute(c *C) {
 	r := New()
 	rt := r.GET("/hu", webwrite("hu"))
 
-	c.Assert(r.Route("/hu"), Equals, rt)
+	c.Assert(r.routes["/hu"], Equals, rt)
 }
 
 func (s *routerSuite) TestParent(c *C) {
@@ -43,8 +42,9 @@ func (s *routerSuite) TestParent(c *C) {
 
 	ch := New()
 	p.GET("/ch", ch)
+	p.Mount("/", nil)
 
-	c.Assert(ch.Parent(), Equals, p)
+	c.Assert(ch.parent, Equals, p)
 }
 
 func (s *routerSuite) TestSubmountAlreadyMounted(c *C) {
@@ -57,6 +57,7 @@ func (s *routerSuite) TestSubmountAlreadyMounted(c *C) {
 		c.Assert(e, Not(Equals), nil)
 	}()
 	p.GET("/ch", ch)
+	p.Mount("/", nil)
 }
 
 func (s *routerSuite) TestEachRoute(c *C) {
@@ -79,9 +80,11 @@ func (s *routerSuite) TestEachRoute(c *C) {
 
 func (s *routerSuite) TestOptions(c *C) {
 	r := New()
-	r.OPTIONS("/ho", http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	rt := route.NewRoute("/ho")
+	rt.OPTIONSHandler = http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		rw.Header().Set("hu", "ho")
-	}))
+	})
+	r.Add(rt)
 	mount(r, "/")
 
 	rw, req := newTestRequest("OPTIONS", "/ho")
@@ -118,6 +121,7 @@ func (s *routerSuite) TestDelete(c *C) {
 	c.Assert(rw.Body.String(), Equals, "deleted")
 }
 
+/*
 func (s *routerSuite) TestAddHandleAfterMount(c *C) {
 	r := New()
 
@@ -126,13 +130,14 @@ func (s *routerSuite) TestAddHandleAfterMount(c *C) {
 	_, err := r.HandleMethod("/ho", method.GET, webwrite("ho"))
 	c.Assert(err, Not(Equals), nil)
 }
+*/
 
 func (s *routerSuite) TestMountPoint(c *C) {
 	r := New()
 
 	mount(r, "/hu")
 
-	c.Assert(r.MountPoint(), Equals, "/hu")
+	c.Assert(r.mountPoint, Equals, "/hu")
 }
 
 func (s *routerSuite) TestDoubleMount(c *C) {
@@ -201,7 +206,7 @@ func (s *routerSuite) TestRouterEtaggedWithCustomWrappers(c *C) {
 	router.AddWrappers(wraps.Before(webwrite("a")), wraps.Before(webwrite("b")))
 	router.AddWrappers(wraps.Before(webwrite("c")), wraps.Before(webwrite("d")))
 
-	router.MustHandleMethod("/a", method.GET, webwrite("A"))
+	router.MustHandle("/a", method.GET, webwrite("A"))
 	//mount(router, "/")
 	router.MustMount("/", nil)
 
@@ -213,7 +218,7 @@ func (s *routerSuite) TestRouterEtaggedWithCustomWrappers(c *C) {
 	c.Assert(rec.Header().Get("Etag"), Equals, "90c5f685703be163a3894ba83b6b57a2")
 
 	router2 := ETagged()
-	router2.MustHandleMethod("/a", method.GET, webwrite("abcdA"))
+	router2.MustHandle("/a", method.GET, webwrite("abcdA"))
 	mount(router2, "/")
 
 	rec, req = newTestRequest("GET", "/a")
@@ -274,4 +279,3 @@ func (s *routeSuite) TestAllGETPaths(c *C) {
 	// fmt.Printf("paths: %v", paths)
 
 }
-*/

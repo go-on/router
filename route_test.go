@@ -267,6 +267,7 @@ func (s *routeSuite) TestRoutingVerbs(c *C) {
 	r := makeRouter()
 	r.POST("/a.html", webwrite("A-POST"))
 	router := mount(r, "/")
+	router.SetOPTIONSHandlers()
 
 	rw, req := newTestRequest("GET", "/a.html")
 	router.ServeHTTP(rw, req)
@@ -298,6 +299,8 @@ func (s *routeSuite) TestRoutingHandlerAndSubroutes(c *C) {
 	outer.AddWrappers(wrr.Around(webwrite("#"), webwrite("#")))
 	outer.POST("/a", inner)
 	outer.POST("/other", inner2)
+
+	outer.SetAllOPTIONSHandlers()
 
 	//	fmt.Println(outer.Inspect(0))
 	router := mount(outer, "/mount")
@@ -332,6 +335,8 @@ func (s *routeSuite) TestRoutingHandlerCombined(c *C) {
 	outer.MustHandle("/a.html", method.GET|method.POST, webwrite("A-OUTER-GET-POST"))
 
 	outer.MustHandle("/inner", method.GET|method.POST, inner)
+
+	outer.SetAllOPTIONSHandlers()
 
 	_ = fmt.Println
 	//	fmt.Println(outer.Inspect(0))
@@ -484,6 +489,7 @@ func (s *routeSuite) TestVars(c *C) {
 	c.Assert(GetRouteId(req), Equals, rt.Id)
 }
 
+/*
 func (s *routeSuite) TestVarsSubrouterPanic(c *C) {
 	vv := &v{}
 	r := New()
@@ -496,6 +502,7 @@ func (s *routeSuite) TestVarsSubrouterPanic(c *C) {
 
 	r.GET("/a/:x/sub", sub)
 }
+*/
 
 type ctx struct {
 	App  string `var:"app"`

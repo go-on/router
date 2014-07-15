@@ -1,6 +1,5 @@
 package router
 
-/*
 import (
 	"fmt"
 	"net/http"
@@ -143,4 +142,3 @@ func BenchmarkFetchParam(b *testing.B) {
 		r.ServeHTTP(rec, req)
 	}
 }
-*/

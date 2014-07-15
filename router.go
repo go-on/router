@@ -60,7 +60,6 @@ func (ø *Router) Add(rt *route.Route) error {
 	ø.routes[rt.DefinitionPath] = rt
 	rt.Router = ø
 	return nil
-	// return rt.EachHandler(ø.setupHandlers(rt))
 }
 
 func (ø *Router) MountPath() string { return ø.path }
@@ -270,23 +269,32 @@ func (r *Router) setPaths() {
 	r.setPath()
 	for _, rt := range r.routes {
 		rt.EachHandler(func(h http.Handler) error {
-			if rtr, ok := h.(*Router); ok {
+			if rtr, has := h.(*Router); has {
+				if err := rtr.submount(rt.DefinitionPath, r); err != nil {
+					panic(err.Error())
+				}
 				rtr.setPaths()
+			}
+			if fs, has := h.(*FileServer); has {
+				if fs.Handler == nil {
+					fs.SetHandler()
+				}
 			}
 			return nil
 		})
-		// rt.EachHandler(r.setupHandlers(rt))
 	}
 }
 
 func (r *Router) prepareRoutes() {
 	for p, rt := range r.routes {
-		//rt.EachHandler(r.setupHandlers(rt))
 		r.node.add(p, rt)
 	}
 }
 
 func (r *Router) submount(path string, parent *Router) error {
+	if r.parent == parent {
+		return nil
+	}
 	if strings.Index(path, ":") > -1 {
 		return ErrInvalidMountPath{path, "mount path must not contain ':'"}
 	}
@@ -299,7 +307,7 @@ func (r *Router) submount(path string, parent *Router) error {
 	return nil
 }
 
-func (ø *Router) setupHandlers(rt *route.Route) func(h http.Handler) error {
+func (ø *Router) setupHandlersX(rt *route.Route) func(h http.Handler) error {
 	return func(h http.Handler) error {
 		if r, has := h.(*Router); has {
 			if err := r.submount(rt.DefinitionPath, ø); err != nil {
@@ -307,7 +315,9 @@ func (ø *Router) setupHandlers(rt *route.Route) func(h http.Handler) error {
 			}
 		}
 		if fs, has := h.(*FileServer); has {
-			fs.SetHandler()
+			if fs.Handler == nil {
+				fs.SetHandler()
+			}
 		}
 		return nil
 	}
@@ -325,7 +335,6 @@ func (r *Router) newRoute(path string) *route.Route {
 	if rt == nil {
 		rt = route.NewRoute(path)
 		r.MustAdd(rt)
-		// rt.EachHandler(r.setupHandlers(rt))
 	}
 	return rt
 }
