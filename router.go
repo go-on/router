@@ -1,11 +1,8 @@
 package router
 
 import (
-	"fmt"
 	"net/http"
-	"os"
 	"path"
-	"path/filepath"
 	"strings"
 
 	"github.com/go-on/method"
@@ -343,106 +340,4 @@ func (r *Router) MustHandle(path string, m method.Method, handler http.Handler) 
 	rt := r.newRoute(path)
 	rt.SetHandler(m, handler)
 	return rt
-}
-
-func (r *Router) GET(path string, handler http.Handler) *route.Route {
-	rt := r.newRoute(path)
-	rt.GETHandler = handler
-	return rt
-}
-
-func (r *Router) POST(path string, handler http.Handler) *route.Route {
-	rt := r.newRoute(path)
-	rt.POSTHandler = handler
-	return rt
-}
-
-func (r *Router) PUT(path string, handler http.Handler) *route.Route {
-	rt := r.newRoute(path)
-	rt.PUTHandler = handler
-	return rt
-}
-
-func (r *Router) PATCH(path string, handler http.Handler) *route.Route {
-	rt := r.newRoute(path)
-	rt.PATCHHandler = handler
-	return rt
-}
-
-func (r *Router) DELETE(path string, handler http.Handler) *route.Route {
-	rt := r.newRoute(path)
-	rt.DELETEHandler = handler
-	return rt
-}
-
-func (r *Router) GETFunc(path string, handler http.HandlerFunc) *route.Route {
-	rt := r.newRoute(path)
-	rt.GETHandler = handler
-	return rt
-}
-
-func (r *Router) POSTFunc(path string, handler http.HandlerFunc) *route.Route {
-	rt := r.newRoute(path)
-	rt.POSTHandler = handler
-	return rt
-}
-
-func (r *Router) PUTFunc(path string, handler http.HandlerFunc) *route.Route {
-	rt := r.newRoute(path)
-	rt.PUTHandler = handler
-	return rt
-}
-
-func (r *Router) PATCHFunc(path string, handler http.HandlerFunc) *route.Route {
-	rt := r.newRoute(path)
-	rt.PATCHHandler = handler
-	return rt
-}
-
-func (r *Router) DELETEFunc(path string, handler http.HandlerFunc) *route.Route {
-	rt := r.newRoute(path)
-	rt.DELETEHandler = handler
-	return rt
-}
-
-// FileServer serves the files from the given directory under the given path
-func (r *Router) FileServer(path, dir string) *FileServer {
-	rt := r.newRoute(path)
-	fs := &FileServer{
-		fs:    http.FileServer(http.Dir(dir)),
-		Dir:   dir,
-		route: rt,
-	}
-	rt.GETHandler = fs
-	return fs
-}
-
-type FileServer struct {
-	fs    http.Handler
-	Dir   string
-	route *route.Route
-	http.Handler
-}
-
-func (fs *FileServer) SetHandler() {
-	fs.Handler = http.StripPrefix(fs.route.MountedPath, fs.fs)
-}
-
-func (fs *FileServer) URL(relativePath string) (string, error) {
-	f, err := os.Stat(filepath.Join(fs.Dir, relativePath))
-	if err != nil {
-		return "", err
-	}
-	if f.IsDir() {
-		return "", fmt.Errorf("is directory")
-	}
-	return filepath.Join(fs.route.MountedPath, relativePath), nil
-}
-
-func (fs *FileServer) MustURL(relativePath string) string {
-	url, err := fs.URL(relativePath)
-	if err != nil {
-		panic(err)
-	}
-	return url
 }
