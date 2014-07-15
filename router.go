@@ -68,56 +68,94 @@ func (r *Router) MountPoint() string {
 }
 
 func (ø *Router) getFinalHandler(path string, meth method.Method, rq *http.Request) (h http.Handler, route *route.Route) {
-	leaf, wc := ø.findLeaf(path)
-	if leaf == nil {
+	// fmt.Printf("searching for %#v\n", path)
+	if path == "" || !filepath.HasPrefix(path, ø.Path()) {
+		return
+	}
+
+	// FindPlaceholders
+	//path = string([]byte(ø.trimmedUrl(path)))
+	wc := &wildcards{path: ø.trimmedUrl(path)}
+	ø.pathNode.FindPlaceholders(wc)
+
+	if wc.route == nil {
+		// fmt.Printf("no route: %#v\n", path)
 		return
 	}
 
 	switch meth {
 	case method.GET:
-		h = leaf.Route.GETHandler
+		h = wc.route.GETHandler
 	case method.POST:
-		h = leaf.Route.POSTHandler
+		h = wc.route.POSTHandler
 	case method.PUT:
-		h = leaf.Route.PUTHandler
+		h = wc.route.PUTHandler
 	case method.PATCH:
-		h = leaf.Route.PATCHHandler
+		h = wc.route.PATCHHandler
 	case method.DELETE:
-		h = leaf.Route.DELETEHandler
+		h = wc.route.DELETEHandler
 	case method.OPTIONS:
-		h = leaf.Route.OPTIONSHandler
+		h = wc.route.OPTIONSHandler
 	}
 
 	if h == nil {
+		// fmt.Printf("no handler: %#v\n", path)
 		return
 	}
 
-	route = leaf.Route
+	//route = leaf.Route
+	route = wc.route
 
 	rt, isRouter := h.(*Router)
 	if isRouter {
+		// fmt.Println("is router")
 		return rt.getFinalHandler(path, meth, rq)
 	}
 	_ = wc
 
-	if len(wc) > 0 {
-		wcnames := leaf.wildcards
+	debugf("found: %d\n", len(wc.found))
+	if len(wc.found) > 0 {
+		mp := wc.ToMap()
+
+		debugf("mp: %#v\n", mp)
+		// wcnames := leaf.wildcards
 		//var bf bytes.Buffer
 		//bf.WriteString(route.OriginalPath + "//")
 		// rq.URL.Fragment += route.OriginalPath + "//"
 		res := route.OriginalPath + "//"
-		for i, val := range wc {
+		for _k, _v := range mp {
 			// _ = i
 			// _ = val
-			res += wcnames[i] + "/" + val + "//"
+			res += _k + "/" + _v + "//"
 			// rq.URL.Fragment += leaf.wildcards[i] + "/" + val + "//"
 			//fmt.Fprintf(&bf, format, ...)
 			//bf.WriteString(wcnames[i] + "/" + val + "//")
 		}
 		rq.URL.Fragment = res
+
+		debug(rq.URL.Fragment)
 		//rq.URL.Fragment = bf.String()
 	}
 
+	/*
+		if len(wc) > 0 {
+			wcnames := leaf.wildcards
+			//var bf bytes.Buffer
+			//bf.WriteString(route.OriginalPath + "//")
+			// rq.URL.Fragment += route.OriginalPath + "//"
+			res := route.OriginalPath + "//"
+			for i, val := range wc {
+				// _ = i
+				// _ = val
+				res += wcnames[i] + "/" + val + "//"
+				// rq.URL.Fragment += leaf.wildcards[i] + "/" + val + "//"
+				//fmt.Fprintf(&bf, format, ...)
+				//bf.WriteString(wcnames[i] + "/" + val + "//")
+			}
+			rq.URL.Fragment = res
+			//rq.URL.Fragment = bf.String()
+		}
+	*/
 	return
 }
 
@@ -156,22 +194,15 @@ func GetRouteParam(req *http.Request, key string) string {
 	return req.URL.Fragment[startId : startId+end]
 }
 
+/*
 func serialize2(pn *pathLeaf, wildcards []string) (res string) {
-	/*
-		var bf bytes.Buffer
-		fmt.Fprint(&bf, "//")
-		for i, val := range wildcards {
-			//res += pn.wildcards[i] + "/" + val + "//"
-			fmt.Fprintf(&bf, "%s/%s//", pn.wildcards[i], val)
-		}
-	*/
-
 	res += "//"
 	for i, val := range wildcards {
 		res += pn.wildcards[i] + "/" + val + "//"
 	}
 	return
 }
+*/
 
 // also it is save to use req.URL.Fragment since that will never be transmitted
 // by the request
@@ -284,21 +315,6 @@ func (ø *Router) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 	h.ServeHTTP(w, rq)
 }
 
-func (ø *Router) findLeaf(url string) (leaf *pathLeaf, wc []string) {
-	if url == "" || !filepath.HasPrefix(url, ø.Path()) {
-		return
-	}
-
-	leaf, wc = ø.pathNode.Match(ø.trimmedUrl(url))
-	if leaf == nil {
-		i := strings.LastIndex(url, "/")
-		if i >= 0 {
-			return ø.findLeaf(url[:i])
-		}
-	}
-	return
-}
-
 // route not found boils down to method not allowed.
 // I think this allows a better seperation  between a missing route (405, Method not allowed) and
 // a missing entity (such as a missing page served by a cms or a missing entity requested via REST
@@ -326,9 +342,11 @@ func (r *Router) setPath() {
 	} else {
 		r.path = path.Join(r.parent.Path(), r.mountPoint)
 	}
+	// fmt.Printf("setting path of %p to %#v\n", r, r.path)
 }
 
 func (r *Router) trimmedUrl(url string) (trimmed string) {
+	// fmt.Printf("trimming %#v relative to %#v\n", url, r.Path())
 	tr, err := filepath.Rel(r.Path(), url)
 	if err != nil {
 		panic(err.Error())
@@ -339,23 +357,61 @@ func (r *Router) trimmedUrl(url string) (trimmed string) {
 
 func (r *Router) setPaths() {
 	r.setPath()
+	//for p, rt := range r.routes {
 	for _, rt := range r.routes {
 		if rtr, ok := rt.GETHandler.(*Router); ok {
+			/*
+				err := rtr.submount(p, r)
+				if err != nil {
+					panic(err.Error())
+				}
+			*/
 			rtr.setPaths()
 		}
 		if rtr, ok := rt.DELETEHandler.(*Router); ok {
+			/*
+				err := rtr.submount(p, r)
+				if err != nil {
+					panic(err.Error())
+				}
+			*/
 			rtr.setPaths()
 		}
 		if rtr, ok := rt.POSTHandler.(*Router); ok {
+			/*
+				err := rtr.submount(p, r)
+				if err != nil {
+					panic(err.Error())
+				}
+			*/
+			// rtr.submount(p, r)
 			rtr.setPaths()
 		}
 		if rtr, ok := rt.PATCHHandler.(*Router); ok {
+			/*
+				err := rtr.submount(p, r)
+				if err != nil {
+					panic(err.Error())
+				}
+			*/
 			rtr.setPaths()
 		}
 		if rtr, ok := rt.PUTHandler.(*Router); ok {
+			/*
+				err := rtr.submount(p, r)
+				if err != nil {
+					panic(err.Error())
+				}
+			*/
 			rtr.setPaths()
 		}
 		if rtr, ok := rt.OPTIONSHandler.(*Router); ok {
+			/*
+				err := rtr.submount(p, r)
+				if err != nil {
+					panic(err.Error())
+				}
+			*/
 			rtr.setPaths()
 		}
 	}
@@ -369,6 +425,7 @@ func (ø *Router) Mount(path string, m *http.ServeMux) error {
 		return fmt.Errorf("already mounted on %s", ø.Path())
 	}
 
+	// fmt.Printf("setting mountpoint of %p to %#v\n", ø, path)
 	ø.mountPoint = path
 	ø.setPaths()
 	err := ø.registerRoutes()
@@ -396,8 +453,29 @@ func (r *Router) MustMount(path string, m *http.ServeMux) {
 	}
 }
 
+/*
+func (r *Router) subMountRoute(p string, rt *route.Route) error {
+	fmt.Println("subMountRoute")
+	fmt.Printf("get handler: %T\n", rt.GETHandler)
+	if rtr, is := rt.GETHandler.(*Router); is {
+		err := rtr.submount(p, r)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+*/
+
 func (r *Router) registerRoutes() error {
+	// fmt.Println("registerRoutes")
 	for p, rt := range r.routes {
+		/*
+			err := r.subMountRoute(p, rt)
+			if err != nil {
+				return err
+			}
+		*/
 		if rt.OPTIONSHandler == nil {
 			setOptionsHandler(rt)
 		}
@@ -407,6 +485,7 @@ func (r *Router) registerRoutes() error {
 }
 
 func (r *Router) submount(path string, parent *Router) error {
+	// fmt.Printf("submounting %p on path: %#v\n", r, path)
 	if strings.Index(path, ":") > -1 {
 		return fmt.Errorf("submount on path with vars not allowed")
 	}
@@ -445,6 +524,11 @@ func (ø *Router) RegisterRoute(rt *route.Route, v method.Method, handler http.H
 	return ø.assocHandler(rt, v, handler)
 }
 
+/*
+func (ø *Router) submountMe(rt *route.Route) {
+	}
+*/
+
 func (ø *Router) MustRegisterRoute2(rt *route.Route) {
 	_, has := ø.routes[rt.OriginalPath]
 	if has {
@@ -453,21 +537,47 @@ func (ø *Router) MustRegisterRoute2(rt *route.Route) {
 	ø.routes[rt.OriginalPath] = rt
 	rt.Router = ø
 
-	// TODO handle submounts for all handlers
-	/*
-			rtr, is := handler.(*Router)
-		if is {
-			err := rtr.submount(rt.OriginalPath, ø)
-			if err != nil {
-				return err
-			}
+	if r, has := rt.GETHandler.(*Router); has {
+		err := r.submount(rt.OriginalPath, ø)
+		if err != nil {
+			panic(err.Error())
 		}
-	*/
+	}
+
+	if r, has := rt.POSTHandler.(*Router); has {
+		err := r.submount(rt.OriginalPath, ø)
+		if err != nil {
+			panic(err.Error())
+		}
+	}
+
+	if r, has := rt.PUTHandler.(*Router); has {
+		err := r.submount(rt.OriginalPath, ø)
+		if err != nil {
+			panic(err.Error())
+		}
+	}
+
+	if r, has := rt.DELETEHandler.(*Router); has {
+		err := r.submount(rt.OriginalPath, ø)
+		if err != nil {
+			panic(err.Error())
+		}
+	}
+
+	if r, has := rt.PATCHHandler.(*Router); has {
+		err := r.submount(rt.OriginalPath, ø)
+		if err != nil {
+			panic(err.Error())
+		}
+	}
+
 	//return ø.assocHandler(rt, v, handler)
 }
 
 func (ø *Router) assocHandler(rt *route.Route, m method.Method, handler http.Handler) error {
-	// rt.Router = ø
+	rt.Router = ø
+
 	rtr, is := handler.(*Router)
 	if is {
 		err := rtr.submount(rt.OriginalPath, ø)

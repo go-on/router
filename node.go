@@ -1,7 +1,7 @@
 package router
 
 // stolen from  https://raw.github.com/gocraft/web/master/tree.go and modified
-
+/*
 import (
 	"strings"
 
@@ -129,3 +129,4 @@ func splitPath(key string) []string {
 	}
 	return elements
 }
+*/
