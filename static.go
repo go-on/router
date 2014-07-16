@@ -251,7 +251,7 @@ func (r *Router) StaticRoutePaths() (paths []string) {
 	paths = []string{}
 	for _, rt := range r.routes {
 		if !rt.HasParams() {
-			paths = append(paths, MustURL(rt))
+			paths = append(paths, rt.MustURL())
 		}
 	}
 	return paths

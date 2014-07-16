@@ -78,7 +78,7 @@ func (s *routeSuite) TestURLWrongParams(c *C) {
 		e := recover()
 		c.Assert(e, Not(Equals), nil)
 	}()
-	URL(rt, "hu")
+	rt.URL("hu")
 }
 
 func (s *routeSuite) TestURLWrongParams2(c *C) {
@@ -88,7 +88,7 @@ func (s *routeSuite) TestURLWrongParams2(c *C) {
 		e := recover()
 		c.Assert(e, Not(Equals), nil)
 	}()
-	MustURL(rt, "hu", "ho")
+	rt.MustURL("hu", "ho")
 }
 
 func (s *routeSuite) TestURLMapWrongParams(c *C) {
@@ -98,7 +98,7 @@ func (s *routeSuite) TestURLMapWrongParams(c *C) {
 		e := recover()
 		c.Assert(e, Not(Equals), nil)
 	}()
-	MustURLMap(rt, map[string]string{"hu": "ho"})
+	rt.MustURLMap(map[string]string{"hu": "ho"})
 }
 
 func (s *routeSuite) TestURLStructWrongParams(c *C) {
@@ -411,7 +411,7 @@ func (s *routeSuite) TestMassiveRoutes(c *C) {
 
 	// fmt.Println("new request")
 	_ = rt
-	c.Assert(MustURL(rt), Equals, "/index/admin/r9999")
+	c.Assert(rt.MustURL(), Equals, "/index/admin/r9999")
 	// fmt.Println("serving")
 
 	// for i := 0; i < 20000; i++ {
@@ -452,7 +452,7 @@ func (s *routeSuite) TestMassiveRoutingNested(c *C) {
 	//fmt.Println(router.MustURL(r2))
 	// fmt.Println("new request")
 
-	c.Assert(MustURL(route), Equals, "/index/admin/r10000")
+	c.Assert(route.MustURL(), Equals, "/index/admin/r10000")
 	// fmt.Println("serving")
 
 	// for i := 0; i < 20000; i++ {
@@ -558,19 +558,19 @@ func (s *routeSuite) TestURL(c *C) {
 	mount(index1, "/index1")
 	mount(index2, "/index2")
 
-	url1 := MustURL(route1)
+	url1 := route1.MustURL()
 	// return
 	c.Assert(url1, Equals, "/index1/admin1/x")
-	url2 := MustURL(route3)
+	url2 := route3.MustURL()
 	c.Assert(url2, Equals, "/index2/admin2/x")
 
-	url3 := MustURL(route2, "y", "p")
+	url3 := route2.MustURL("y", "p")
 	c.Assert(url3, Equals, "/index1/admin1/p/z")
 
-	url4 := MustURL(route4, "y", "p")
+	url4 := route4.MustURL("y", "p")
 	c.Assert(url4, Equals, "/index2/admin2/p/z")
 
-	_, err := URL(route2)
+	_, err := route2.URL()
 	c.Assert(err, NotNil)
 
 	str1 := uStr1{"q"}
