@@ -9,7 +9,12 @@ import (
 	"github.com/gopherjs/gopherjs/js"
 )
 
-type MountPather interface {
+// MountedRouter is a minimalistic routing interface for a mountable router
+type MountedRouter interface {
+	// Wrap wraps the inner (final) http.Handler
+	Wrap(inner http.Handler) http.Handler
+
+	// MountPath returns the path where the router is mounted
 	MountPath() string
 }
 
@@ -40,15 +45,13 @@ type Route struct {
 	OPTIONSHandler http.Handler
 	MountedPath    string
 	DefinitionPath string
-	Router         MountPather
+	Router         MountedRouter
 	Id             string
 }
 
 func NewRoute(path string) *Route {
-	// method.
 	rt := &Route{DefinitionPath: path, MountedPath: path}
 	rt.Id = fmt.Sprintf("//%p", rt)
-	// rt.Handlers = map[method.Method]http.Handler{}
 	return rt
 }
 
@@ -69,27 +72,27 @@ func (r *Route) Clone() *Route {
 }
 
 func (r *Route) Get(callback func(js.Object), params ...string) {
-	ajax.Get(MustURL(r, params...), callback)
+	ajax.Get(r.MustURL(params...), callback)
 }
 
 func (r *Route) Delete(callback func(js.Object), params ...string) {
-	ajax.Delete(MustURL(r, params...), callback)
+	ajax.Delete(r.MustURL(params...), callback)
 }
 
 func (r *Route) Post(data interface{}, callback func(js.Object), params ...string) {
-	ajax.Post(MustURL(r, params...), data, callback)
+	ajax.Post(r.MustURL(params...), data, callback)
 }
 
 func (r *Route) Patch(data interface{}, callback func(js.Object), params ...string) {
-	ajax.Patch(MustURL(r, params...), data, callback)
+	ajax.Patch(r.MustURL(params...), data, callback)
 }
 
 func (r *Route) Put(data interface{}, callback func(js.Object), params ...string) {
-	ajax.Put(MustURL(r, params...), data, callback)
+	ajax.Put(r.MustURL(params...), data, callback)
 }
 
 func (r *Route) Options(data interface{}, callback func(js.Object), params ...string) {
-	ajax.Put(MustURL(r, params...), data, callback)
+	ajax.Put(r.MustURL(params...), data, callback)
 }
 
 func (r *Route) Handler(meth method.Method) http.Handler {
@@ -110,7 +113,7 @@ func (r *Route) Handler(meth method.Method) http.Handler {
 	return nil
 }
 
-func (rt *Route) SetHandler(m method.Method, handler http.Handler) {
+func (rt *Route) SetHandlerForMethod(handler http.Handler, m method.Method) {
 	switch m {
 	case method.GET:
 		rt.GETHandler = handler
@@ -125,26 +128,14 @@ func (rt *Route) SetHandler(m method.Method, handler http.Handler) {
 	case method.OPTIONS:
 		rt.OPTIONSHandler = handler
 	default:
-		if m&method.GET != 0 {
-			rt.GETHandler = handler
-		}
-		if m&method.PUT != 0 {
-			rt.PUTHandler = handler
-		}
-		if m&method.POST != 0 {
-			rt.POSTHandler = handler
-		}
-		if m&method.DELETE != 0 {
-			rt.DELETEHandler = handler
-		}
-		if m&method.PATCH != 0 {
-			rt.PATCHHandler = handler
-		}
-		if m&method.OPTIONS != 0 {
-			rt.OPTIONSHandler = handler
-		}
+		panic("unsupported method " + m)
 	}
+}
 
+func (rt *Route) SetHandlerForMethods(handler http.Handler, methods ...method.Method) {
+	for _, m := range methods {
+		rt.SetHandlerForMethod(handler, m)
+	}
 }
 
 func (r *Route) EachHandler(fn func(http.Handler) error) error {
@@ -192,39 +183,56 @@ func (r *Route) EachHandler(fn func(http.Handler) error) error {
 	return nil
 }
 
-var colon string = ":"
-
-func URL(r *Route, params ...string) (string, error) {
+// params are key/value pairs
+func (r *Route) URL(params ...string) (string, error) {
 	if len(params)%2 != 0 {
 		panic("number of params must be even (pairs of key, value)")
 	}
-
 	vars := map[string]string{}
 	for i := 0; i < len(params); i += 2 {
 		vars[params[i]] = params[i+1]
 	}
+	return r.URLMap(vars)
+}
 
-	// panic(fmt.Sprintf("mounted path: %#v\n", r.MountedPath))
-	parts := strings.Split(r.MountedPath, "/")
+var WILDCARD_SEPARATOR = []byte(":")[0]
 
+func (r *Route) URLMap(params map[string]string) (string, error) {
+	// mounted path mustalways begin with a /
+	parts := strings.Split(r.MountedPath[1:], "/")
 	for i, part := range parts {
-		if part[:1] == colon {
-			//if parts[0] == ":" {
-			param, has := vars[part[1:]]
+		if part[0] == WILDCARD_SEPARATOR {
+			param, has := params[part[1:]]
 			if !has {
 				return "", fmt.Errorf("missing parameter: %s", part[1:])
 			}
 			parts[i] = param
 		}
 	}
-
-	return r.Router.MountPath() + strings.Join(parts, "/"), nil
+	if r.Router.MountPath() == "/" {
+		return "/" + strings.Join(parts, "/"), nil
+	}
+	return r.Router.MountPath() + "/" + strings.Join(parts, "/"), nil
 }
 
-func MustURL(r *Route, params ...string) string {
-	url, err := URL(r, params...)
+func (r *Route) MustURL(params ...string) string {
+	url, err := r.URL(params...)
 	if err != nil {
 		panic(err.Error())
 	}
 	return url
+}
+
+func (r *Route) MustURLMap(params map[string]string) string {
+	url, err := r.URLMap(params)
+	if err != nil {
+		panic(err.Error())
+	}
+	return url
+}
+
+func (r *Route) HasParams() bool {
+	// return strings.Contains(r.DefinitionPath, _WILDCARD_SEPARATOR)
+	//r.DefinitionPath
+	return strings.ContainsRune(r.DefinitionPath, ':')
 }

@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
 	. "launchpad.net/gocheck"
 )
 
@@ -42,6 +43,6 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 }
 
 func mount(r *Router, mountpoint string) *Router {
-	r.MustMount(mountpoint, http.NewServeMux())
+	r.Mount(mountpoint, http.NewServeMux())
 	return r
 }

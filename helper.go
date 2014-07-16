@@ -8,10 +8,10 @@ import (
 	"github.com/go-on/wrap-contrib/wraps"
 )
 
-func Mount(path string, r *Router) error { return r.Mount(path, http.DefaultServeMux) }
+func MayMount(path string, r *Router) error { return r.MayMount(path, http.DefaultServeMux) }
 
-func MustMount(path string, r *Router) {
-	err := Mount(path, r)
+func Mount(path string, r *Router) {
+	err := MayMount(path, r)
 	if err != nil {
 		panic(err.Error())
 	}

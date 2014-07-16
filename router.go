@@ -1,6 +1,8 @@
 package router
 
 import (
+	"bytes"
+	"fmt"
 	"net/http"
 	"path"
 	"strings"
@@ -9,6 +11,14 @@ import (
 	"github.com/go-on/router/route"
 	"github.com/go-on/wrap"
 )
+
+const (
+// _WILDCARD_SEPARATOR = ":"
+)
+
+var _WILDCARD_SEPARATOR_RUNE = ':'
+
+// var _WILDCARD_SEPARATOR_BYTE = []byte(_WILDCARD_SEPARATOR)[0]
 
 // Router is a mountable router routing paths to routes.
 //
@@ -111,9 +121,6 @@ func (r *Router) ServeOPTIONS(w http.ResponseWriter, rq *http.Request) {
 // done once per request, such as protocol checking and path normalization.
 // These should be done by the toplevel Handler, see the Serve() http.HandlerFunc
 func (r *Router) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
-	if r.mountPoint == "" {
-		panic(ErrNotMounted{})
-	}
 	h := r.Dispatch(rq)
 	if h == nil {
 		if h = r.NotFound; h == nil {
@@ -125,32 +132,52 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 }
 
 // Dispatch returns the corresponding http.Handler for the request
-func (ø *Router) Dispatch(rq *http.Request) http.Handler {
-	h, rt, meth := ø.getHandler(rq)
+// If no handler could be found, nil is returned
+func (r *Router) Dispatch(rq *http.Request) http.Handler {
+	if r.mountPoint == "" {
+		panic(ErrNotMounted{})
+	}
+	h, rt, meth := r.getHandler(rq)
 
 	if h == nil {
 		return nil
 	}
 
 	if meth != method.OPTIONS {
-		return rt.Router.(*Router).wrapHandler(h)
+		return rt.Router.Wrap(h)
+		//return rt.Router.(*Router).wrapHandler(h)
 	}
 	return h
 }
 
-// Mount mounts the router under the given path, i.e. all routing paths will be
+// Wrap wraps the given inner handler with all wrappers
+// of the router and its parents
+// Wrap is part of the route/MountedRouter interface and should
+// only be used internally, even if being exported
+func (ø *Router) Wrap(h http.Handler) http.Handler {
+	for i := len(ø.wrapper) - 1; i >= 0; i-- {
+		h = ø.wrapper[i].Wrap(h)
+	}
+	if ø.parent != nil {
+		return ø.parent.Wrap(h)
+	}
+	return h
+}
+
+// MayMount mounts the router under the given path, i.e. all routing paths will be
 // relative to this path. If a ServeMux is given, its Handle method is used to mount
 // the router. Otherwise the router is self mounted and will be the main handler.
-func (ø *Router) Mount(path string, m *http.ServeMux) error {
-	if strings.Index(path, ":") > -1 {
-		return ErrInvalidMountPath{path, "path with ':' not allowed"}
+func (ø *Router) MayMount(path string, m *http.ServeMux) error {
+	// bytes.IndexByte(s, c)
+	//if strings.Index(path, _WILDCARD_SEPARATOR) > -1 {
+	if bytes.IndexByte([]byte(path), route.WILDCARD_SEPARATOR) > -1 {
+		return ErrInvalidMountPath{path, fmt.Sprintf("path with wildcardseparator not allowed")}
 	}
 
 	if ø.mountPoint != "" {
 		return ErrDoubleMounted{ø.path}
 	}
 
-	// fmt.Printf("setting mountpoint of %p to %#v\n", ø, path)
 	ø.mountPoint = path
 	ø.setPaths()
 	ø.prepareRoutes()
@@ -167,11 +194,34 @@ func (ø *Router) Mount(path string, m *http.ServeMux) error {
 	return nil
 }
 
-func (r *Router) MustMount(path string, m *http.ServeMux) {
-	err := r.Mount(path, m)
+func (r *Router) Mount(path string, m *http.ServeMux) {
+	err := r.MayMount(path, m)
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (r *Router) HandleMethod(path string, handler http.Handler, m method.Method) *route.Route {
+	rt := r.newRoute(path)
+	rt.SetHandlerForMethod(handler, m)
+	return rt
+}
+
+func (r *Router) HandleMethods(path string, handler http.Handler, methods ...method.Method) *route.Route {
+	rt := r.newRoute(path)
+	rt.SetHandlerForMethods(handler, methods...)
+	return rt
+}
+
+// Handle registers a all route
+func (r *Router) Handle(path string, handler http.Handler) {
+	rt := r.newRoute(path)
+	rt.GETHandler = handler
+	rt.POSTHandler = handler
+	rt.PATCHHandler = handler
+	rt.PUTHandler = handler
+	rt.DELETEHandler = handler
+	rt.OPTIONSHandler = handler
 }
 
 // private methods
@@ -222,18 +272,8 @@ func (ø *Router) findHandler(start, end int, req *http.Request, meth method.Met
 	return
 }
 
-func (ø *Router) wrapHandler(h http.Handler) http.Handler {
-	for i := len(ø.wrapper) - 1; i >= 0; i-- {
-		h = ø.wrapper[i].Wrap(h)
-	}
-	if ø.parent != nil {
-		return ø.parent.wrapHandler(h)
-	}
-	return h
-}
-
 func (ø *Router) getHandler(rq *http.Request) (h http.Handler, rt *route.Route, meth method.Method) {
-	meth = method.StringToMethod[rq.Method]
+	meth = method.Method(rq.Method)
 	if meth == method.HEAD {
 		meth = method.GET
 	}
@@ -292,8 +332,9 @@ func (r *Router) submount(path string, parent *Router) error {
 	if r.parent == parent {
 		return nil
 	}
-	if strings.Index(path, ":") > -1 {
-		return ErrInvalidMountPath{path, "mount path must not contain ':'"}
+	// if strings.Index(path, _WILDCARD_SEPARATOR) > -1 {
+	if bytes.IndexByte([]byte(path), route.WILDCARD_SEPARATOR) > -1 {
+		return ErrInvalidMountPath{path, fmt.Sprintf("mount path must not contain wildcardseparator")}
 	}
 	if r.mountPoint != "" {
 		return ErrDoubleMounted{path}
@@ -304,40 +345,11 @@ func (r *Router) submount(path string, parent *Router) error {
 	return nil
 }
 
-func (ø *Router) setupHandlersX(rt *route.Route) func(h http.Handler) error {
-	return func(h http.Handler) error {
-		if r, has := h.(*Router); has {
-			if err := r.submount(rt.DefinitionPath, ø); err != nil {
-				return err
-			}
-		}
-		if fs, has := h.(*FileServer); has {
-			if fs.Handler == nil {
-				fs.SetHandler()
-			}
-		}
-		return nil
-	}
-}
-
-// Handle registers a GET route
-func (r *Router) Handle(path string, handler http.Handler) {
-	rt := route.NewRoute(path)
-	rt.GETHandler = handler
-	r.MustAdd(rt)
-}
-
 func (r *Router) newRoute(path string) *route.Route {
 	rt := r.routes[path]
 	if rt == nil {
 		rt = route.NewRoute(path)
 		r.MustAdd(rt)
 	}
-	return rt
-}
-
-func (r *Router) MustHandle(path string, m method.Method, handler http.Handler) *route.Route {
-	rt := r.newRoute(path)
-	rt.SetHandler(m, handler)
 	return rt
 }

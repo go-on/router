@@ -8,11 +8,13 @@ import (
 )
 
 const (
-	dblslash = "//"
-	slash    = "/"
+// dblslash = "//"
+// slash    = "/"
 )
 
-var sep = '/'
+// var sep = '/'
+
+// var wcSep = ':'
 
 func newNode() *node {
 	return &node{edges: make(map[string]*node)}
@@ -51,9 +53,8 @@ func (pn *node) add(path string, rt *route.Route) {
 			end += start
 		}
 
-		p := path[start:end]
-		if ok, wc := isWildcard(p); ok {
-			node.wildcard = []byte(wc)
+		if path[start] == route.WILDCARD_SEPARATOR {
+			node.wildcard = []byte(path[start+1 : end])
 
 			if node.sub == nil {
 				node.sub = newNode()
@@ -61,8 +62,9 @@ func (pn *node) add(path string, rt *route.Route) {
 
 			node = node.sub
 		} else {
-			subnode, exist := node.edges[p]
-			if !exist {
+			p := path[start:end]
+			subnode := node.edges[p]
+			if subnode == nil {
 				subnode = newNode()
 				node.edges[p] = subnode
 			}
@@ -79,14 +81,13 @@ func (pn *node) add(path string, rt *route.Route) {
 	node.route = rt
 }
 
-//func (n *node) FindPlaceholders(startPath int, endPath int, req *http.Request, params *[]byte) (parms *[]byte, rt *route.Route) {
-func (n *node) FindPlaceholders(startPath int, endPath int, req *http.Request) (parms *[]byte, rt *route.Route) {
-	return n.findPositions(startPath+1, endPath, req, nil)
+func (n *node) FindPlaceholders(start int, end int, req *http.Request) (parms *[]byte, rt *route.Route) {
+	return n.findPositions(start+1, end, req, nil)
 }
 
-func (n *node) findSlash(req *http.Request, start int, endPath int) (pos int) {
-	for i, r := range req.URL.Path[start:endPath] {
-		if r == sep {
+func (n *node) findSlash(req *http.Request, start int, end int) (pos int) {
+	for i, r := range req.URL.Path[start:end] {
+		if r == '/' {
 			return i
 		}
 	}
@@ -96,7 +97,6 @@ func (n *node) findSlash(req *http.Request, start int, endPath int) (pos int) {
 func (n *node) findEdge(start int, endPath int, req *http.Request, params *[]byte) (*[]byte, *route.Route) {
 	pos := n.findSlash(req, start, endPath)
 	end := start + pos
-
 	if pos == -1 {
 		end = endPath
 	}
@@ -132,7 +132,7 @@ func (n *node) findPositions(start int, endPath int, req *http.Request, params *
 
 	if n.wildcard != nil {
 		if params == nil {
-			pArr := make([]byte, 0, len(n.wildcard)+len(req.URL.Path[start:end])+2)
+			pArr := make([]byte, 0, (len(n.wildcard)+len(req.URL.Path[start:end])+2)*2)
 			params = &pArr
 		}
 		*params = append(*params, n.wildcard...)
@@ -147,22 +147,11 @@ func (n *node) findPositions(start int, endPath int, req *http.Request, params *
 
 // stolen from  https://raw.github.com/gocraft/web/master/tree.go and modified
 
-// key is a non-empty path segment like "admin" or ":category_id" or ":category_id:\d+"
-// Returns true if it's a wildcard, and if it is, also returns it's name / regexp.
-// Eg, (true, "category_id", "\d+")
-func isWildcard(key string) (is bool, wc string) {
-	if key[0] == ':' {
-		substrs := strings.SplitN(key[1:], ":", 2)
-		is, wc = true, substrs[0]
-	}
-	return
-}
-
 // "/" -> []
 // "/admin" -> ["admin"]
 // "/admin/" -> ["admin"]
 // "/admin/users" -> ["admin", "users"]
-func splitPath(key string) []string {
+func splitPath2(key string) []string {
 	elements := strings.Split(key, "/")
 	if elements[0] == "" {
 		elements = elements[1:]

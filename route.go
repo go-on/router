@@ -1,7 +1,6 @@
 package router
 
 import (
-	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
@@ -11,9 +10,11 @@ import (
 	"github.com/go-on/router/route"
 )
 
+/*
 func HasParams(r *route.Route) bool {
-	return strings.ContainsRune(r.DefinitionPath, ':')
+	return strings.Contains(r.DefinitionPath, _WILDCARD_SEPARATOR)
 }
+*/
 
 func optionsString(r *route.Route) string {
 	allow := []string{method.OPTIONS.String()}
@@ -50,6 +51,7 @@ func SetOPTIONSHandler(r *route.Route) {
 
 }
 
+/*
 // params are key/value pairs
 func URL(ø *route.Route, params ...string) (string, error) {
 	// fmt.Printf("params: %#v\n", params)
@@ -67,27 +69,10 @@ func URL(ø *route.Route, params ...string) (string, error) {
 }
 
 // params are key/values
-func URLMap(ø *route.Route, params map[string]string) (string, error) {
-	// println("MountedPath: ", ø.MountedPath)
-	segments := splitPath(ø.MountedPath)
-
-	for i := range segments {
-		wc, wcName := isWildcard(segments[i])
-		if wc {
-			repl, ok := params[wcName]
-			if !ok {
-				return "", fmt.Errorf("missing parameter for %s", wcName)
-			}
-			segments[i] = repl
-		}
-	}
-
-	if ø.Router.MountPath() == "/" {
-		return "/" + strings.Join(segments, "/"), nil
-	} else {
-		return ø.Router.MountPath() + "/" + strings.Join(segments, "/"), nil
-	}
+func URLMap(r *route.Route, params map[string]string) (string, error) {
+	return r.URLMap(params)
 }
+*/
 
 var strTy = reflect.TypeOf("")
 
@@ -105,9 +90,10 @@ func URLStruct(ø *route.Route, paramStruct interface{}, tagKey string) (string,
 
 	stru.EachTag(tagKey, fn)
 
-	return URLMap(ø, params)
+	return ø.URLMap(params)
 }
 
+/*
 func MustURLMap(ø *route.Route, params map[string]string) string {
 	u, err := URLMap(ø, params)
 	if err != nil {
@@ -115,6 +101,7 @@ func MustURLMap(ø *route.Route, params map[string]string) string {
 	}
 	return u
 }
+*/
 
 func MustURLStruct(ø *route.Route, paramStruct interface{}, tagKey string) string {
 	u, err := URLStruct(ø, paramStruct, tagKey)
@@ -124,6 +111,7 @@ func MustURLStruct(ø *route.Route, paramStruct interface{}, tagKey string) stri
 	return u
 }
 
+/*
 func MustURL(ø *route.Route, params ...string) string {
 	u, err := URL(ø, params...)
 	if err != nil {
@@ -131,3 +119,4 @@ func MustURL(ø *route.Route, params ...string) string {
 	}
 	return u
 }
+*/

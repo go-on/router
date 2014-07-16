@@ -328,13 +328,13 @@ func (s *routeSuite) TestRoutingHandlerCombined(c *C) {
 	inner := New()
 	inner.AddWrappers(wrr.Around(webwrite("~"), webwrite("~")))
 	inner.GET("/", webwrite("INNER-ROOT"))
-	inner.MustHandle("/a.html", method.GET|method.POST, webwrite("A-INNER-GET-POST"))
+	inner.HandleMethods("/a.html", webwrite("A-INNER-GET-POST"), method.GET, method.POST)
 
 	outer := New()
 	outer.AddWrappers(wrr.FilterBody(method.PATCH), wrr.Around(webwrite("#"), webwrite("#")))
-	outer.MustHandle("/a.html", method.GET|method.POST, webwrite("A-OUTER-GET-POST"))
+	outer.HandleMethods("/a.html", webwrite("A-OUTER-GET-POST"), method.GET, method.POST)
 
-	outer.MustHandle("/inner", method.GET|method.POST, inner)
+	outer.HandleMethods("/inner", inner, method.GET, method.POST)
 
 	outer.SetAllOPTIONSHandlers()
 

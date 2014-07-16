@@ -186,15 +186,15 @@ func (r *Router) AllGETPaths(paramSolver RouteParameter) (paths []string) {
 	paths = []string{}
 	fn := func(mountPoint string, rt *route.Route) {
 
-		if HasParams(rt) {
+		if rt.HasParams() {
 			paramsArr := paramSolver.Params(rt)
 
 			for _, params := range paramsArr {
-				paths = append(paths, MustURLMap(rt, params))
+				paths = append(paths, rt.MustURLMap(params))
 			}
 
 		} else {
-			paths = append(paths, MustURL(rt))
+			paths = append(paths, rt.MustURL())
 		}
 	}
 
@@ -222,14 +222,14 @@ func (r *Router) GETPathsByStruct(parameters map[*route.Route]map[string][]inter
 		paramPairs := parameters[route]
 
 		// if route has : it has parameters
-		if HasParams(route) {
+		if route.HasParams() {
 			for tag, structs := range paramPairs {
 				for _, stru := range structs {
 					paths = append(paths, MustURLStruct(route, stru, tag))
 				}
 			}
 		} else {
-			paths = append(paths, MustURL(route))
+			paths = append(paths, route.MustURL())
 		}
 	}
 
@@ -240,7 +240,7 @@ func (r *Router) GETPathsByStruct(parameters map[*route.Route]map[string][]inter
 func (r *Router) DynamicRoutes() (routes []*route.Route) {
 	routes = []*route.Route{}
 	for _, rt := range r.routes {
-		if HasParams(rt) {
+		if rt.HasParams() {
 			routes = append(routes, rt)
 		}
 	}
@@ -250,7 +250,7 @@ func (r *Router) DynamicRoutes() (routes []*route.Route) {
 func (r *Router) StaticRoutePaths() (paths []string) {
 	paths = []string{}
 	for _, rt := range r.routes {
-		if !HasParams(rt) {
+		if !rt.HasParams() {
 			paths = append(paths, MustURL(rt))
 		}
 	}

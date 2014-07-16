@@ -23,11 +23,11 @@ type MenuAdder interface {
 // and adds it via appender
 func (r *Router) Menu(adder MenuAdder, solver MenuParameter) {
 	fn := func(mountPoint string, rt *route.Route) {
-		if HasParams(rt) {
+		if rt.HasParams() {
 			paramsArr := solver.Params(rt)
 			for _, params := range paramsArr {
 				adder.Add(
-					menu.Item(solver.Text(rt, params), MustURLMap(rt, params)),
+					menu.Item(solver.Text(rt, params), rt.MustURLMap(params)),
 					rt,
 					params,
 				)
@@ -35,7 +35,7 @@ func (r *Router) Menu(adder MenuAdder, solver MenuParameter) {
 
 		} else {
 			adder.Add(
-				menu.Item(solver.Text(rt, nil), MustURL(rt)),
+				menu.Item(solver.Text(rt, nil), rt.MustURL()),
 				rt,
 				nil,
 			)
