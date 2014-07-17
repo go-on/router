@@ -7,15 +7,6 @@ import (
 	"github.com/go-on/router/route"
 )
 
-const (
-// dblslash = "//"
-// slash    = "/"
-)
-
-// var sep = '/'
-
-// var wcSep = ':'
-
 func newNode() *node {
 	return &node{edges: make(map[string]*node)}
 }
@@ -36,14 +27,12 @@ func (pn *node) add(path string, rt *route.Route) {
 	for {
 		if start >= len(path) {
 			break
-			panic("unaccessible")
 		}
 		end = strings.Index(path[start:], "/")
 
 		if end == 0 {
 			start++
 			continue
-			panic("unaccessible")
 		}
 
 		if end == -1 {
@@ -73,7 +62,6 @@ func (pn *node) add(path string, rt *route.Route) {
 
 		if fin {
 			break
-			panic("unaccessible")
 		}
 
 		start = end + 1
@@ -143,21 +131,4 @@ func (n *node) findPositions(start int, endPath int, req *http.Request, params *
 	}
 
 	return params, nil
-}
-
-// stolen from  https://raw.github.com/gocraft/web/master/tree.go and modified
-
-// "/" -> []
-// "/admin" -> ["admin"]
-// "/admin/" -> ["admin"]
-// "/admin/users" -> ["admin", "users"]
-func splitPath2(key string) []string {
-	elements := strings.Split(key, "/")
-	if elements[0] == "" {
-		elements = elements[1:]
-	}
-	if elements[len(elements)-1] == "" {
-		elements = elements[:len(elements)-1]
-	}
-	return elements
 }

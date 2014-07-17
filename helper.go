@@ -4,10 +4,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-on/router/route"
+	"github.com/go-on/wrap"
+
 	"github.com/go-on/wrap-contrib/wraps"
 )
 
+/*
 func MayMount(path string, r *Router) error { return r.MayMount(path, http.DefaultServeMux) }
 
 func Mount(path string, r *Router) {
@@ -16,25 +18,14 @@ func Mount(path string, r *Router) {
 		panic(err.Error())
 	}
 }
+*/
 
+/*
 // wrapper around a http.Handler generator to make it a http.Handler
 type RouterFunc func() http.Handler
 
 func (hc RouterFunc) ServeHTTP(rw http.ResponseWriter, req *http.Request) { hc().ServeHTTP(rw, req) }
-
-type RouteParameterFunc func(*route.Route) []map[string]string
-
-func (rpf RouteParameterFunc) Params(rt *route.Route) []map[string]string {
-	return rpf(rt)
-}
-
-type RouteParameter interface {
-	Params(*route.Route) []map[string]string
-}
-
-func IsCurrentRoute(req *http.Request, rt *route.Route) bool {
-	return GetRouteId(req) == rt.Id
-}
+*/
 
 func GetRouteId(req *http.Request) (id string) {
 	if i := strings.Index(req.URL.Fragment, "//0x"); i != -1 {
@@ -101,13 +92,15 @@ func (et *Etagged) Wrap(next http.Handler) http.Handler {
 }
 */
 
-func ETagged() (ø *Router) {
-	ø = New()
-	ø.AddWrappers(
+func NewETagged(wrappers ...wrap.Wrapper) (ø *Router) {
+	ø = newRouter()
+	wrappers = append(
+		wrappers,
 		wraps.IfNoneMatch,
 		wraps.IfMatch(ø),
 		wraps.ETag,
 	)
+	ø.addWrappers(wrappers...)
 	return
 }
 

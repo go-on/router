@@ -16,6 +16,12 @@ func (e ErrNotMounted) Error() string {
 	return "router is not mounted"
 }
 
+type ErrAddWrappersAfterMount struct{}
+
+func (e ErrAddWrappersAfterMount) Error() string {
+	return "wrappers may not be added after mounting"
+}
+
 type ErrInvalidMountPath struct {
 	Path   string
 	Reason string

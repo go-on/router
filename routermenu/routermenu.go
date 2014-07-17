@@ -1,6 +1,7 @@
-package router
+package routermenu
 
 import (
+	"github.com/go-on/router"
 	"github.com/go-on/router/route"
 	"github.com/metakeule/menu"
 )
@@ -21,7 +22,7 @@ type MenuAdder interface {
 
 // Menu creates a menu item for each route via solver
 // and adds it via appender
-func (r *Router) Menu(adder MenuAdder, solver MenuParameter) {
+func Menu(r *router.Router, adder MenuAdder, solver MenuParameter) {
 	fn := func(mountPoint string, rt *route.Route) {
 		if rt.HasParams() {
 			paramsArr := solver.Params(rt)

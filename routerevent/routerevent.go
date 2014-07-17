@@ -1,4 +1,4 @@
-package channeldispatch
+package routerevent
 
 import (
 	"fmt"

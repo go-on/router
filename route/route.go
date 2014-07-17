@@ -116,16 +116,34 @@ func (r *Route) Handler(meth method.Method) http.Handler {
 func (rt *Route) SetHandlerForMethod(handler http.Handler, m method.Method) {
 	switch m {
 	case method.GET:
+		if rt.GETHandler != nil {
+			panic("handler for GET already defined")
+		}
 		rt.GETHandler = handler
 	case method.PUT:
+		if rt.PUTHandler != nil {
+			panic("handler for PUT already defined")
+		}
 		rt.PUTHandler = handler
 	case method.POST:
+		if rt.POSTHandler != nil {
+			panic("handler for POST already defined")
+		}
 		rt.POSTHandler = handler
 	case method.DELETE:
+		if rt.DELETEHandler != nil {
+			panic("handler for DELETE already defined")
+		}
 		rt.DELETEHandler = handler
 	case method.PATCH:
+		if rt.PATCHHandler != nil {
+			panic("handler for PATCH already defined")
+		}
 		rt.PATCHHandler = handler
 	case method.OPTIONS:
+		if rt.OPTIONSHandler != nil {
+			panic("handler for OPTIONS already defined")
+		}
 		rt.OPTIONSHandler = handler
 	default:
 		panic("unsupported method " + m)
@@ -139,6 +157,7 @@ func (rt *Route) SetHandlerForMethods(handler http.Handler, methods ...method.Me
 }
 
 func (r *Route) EachHandler(fn func(http.Handler) error) error {
+
 	if r.GETHandler != nil {
 		err := fn(r.GETHandler)
 		if err != nil {
@@ -232,7 +251,39 @@ func (r *Route) MustURLMap(params map[string]string) string {
 }
 
 func (r *Route) HasParams() bool {
-	// return strings.Contains(r.DefinitionPath, _WILDCARD_SEPARATOR)
-	//r.DefinitionPath
 	return strings.ContainsRune(r.DefinitionPath, ':')
+}
+
+func Options(r *Route) []string {
+	allow := []string{method.OPTIONS.String()}
+
+	if r.GETHandler != nil {
+		allow = append(allow, method.GET.String())
+		allow = append(allow, method.HEAD.String())
+	}
+
+	if r.POSTHandler != nil {
+		allow = append(allow, method.POST.String())
+	}
+
+	if r.DELETEHandler != nil {
+		allow = append(allow, method.DELETE.String())
+	}
+
+	if r.PATCHHandler != nil {
+		allow = append(allow, method.PATCH.String())
+	}
+
+	if r.PUTHandler != nil {
+		allow = append(allow, method.PUT.String())
+	}
+
+	return allow
+}
+
+func (r *Route) SetOPTIONSHandler() {
+	optionsString := strings.Join(Options(r), ",")
+	r.OPTIONSHandler = http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.Header().Set("Allow", optionsString)
+	})
 }

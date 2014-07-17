@@ -1,13 +1,16 @@
-package router
+package routerstatic
 
 import (
 	"fmt"
 	"html"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"regexp"
 
 	"code.google.com/p/go-html-transform/html/transform"
+	"github.com/go-on/lib/internal/meta"
+	"github.com/go-on/router"
 	"github.com/go-on/router/route"
 	"github.com/go-on/wrap-contrib/helper"
 	// "net/http/httptest"
@@ -31,6 +34,16 @@ var staticRedirectTemplate = `<!DOCTYPE html>
 		</body>
 </html>
 		`
+
+type ParameterFunc func(*route.Route) []map[string]string
+
+func (rpf ParameterFunc) Params(rt *route.Route) []map[string]string {
+	return rpf(rt)
+}
+
+type Parameter interface {
+	Params(*route.Route) []map[string]string
+}
 
 // transformLink transforms relative links, that do not have a  fileextension and
 // adds a .html to them
@@ -167,22 +180,8 @@ func DumpPaths(server http.Handler, paths []string, targetDir string) (errors ma
 	return
 }
 
-func (r *Router) EachRoute(fn func(mountPoint string, route *route.Route)) {
-	for mP, rt := range r.routes {
-		fn(mP, rt)
-	}
-}
-
-func (r *Router) EachGETRoute(fn func(mountPoint string, route *route.Route)) {
-	for mP, rt := range r.routes {
-		if rt.GETHandler != nil {
-			fn(mP, rt)
-		}
-	}
-}
-
 // the paths of all get routes
-func (r *Router) AllGETPaths(paramSolver RouteParameter) (paths []string) {
+func AllGETPaths(r *router.Router, paramSolver Parameter) (paths []string) {
 	paths = []string{}
 	fn := func(mountPoint string, rt *route.Route) {
 
@@ -203,19 +202,46 @@ func (r *Router) AllGETPaths(paramSolver RouteParameter) (paths []string) {
 }
 
 // saves the results of all get routes
-func (r *Router) SavePages(paramSolver RouteParameter, mainHandler http.Handler, targetDir string) map[string]error {
-	return DumpPaths(mainHandler, r.AllGETPaths(paramSolver), targetDir)
+func SavePages(r *router.Router, paramSolver Parameter, mainHandler http.Handler, targetDir string) map[string]error {
+	return DumpPaths(mainHandler, AllGETPaths(r, paramSolver), targetDir)
 }
 
-func (r *Router) MustSavePages(paramSolver RouteParameter, mainHandler http.Handler, targetDir string) {
-	errs := r.SavePages(paramSolver, mainHandler, targetDir)
+func MustSavePages(r *router.Router, paramSolver Parameter, mainHandler http.Handler, targetDir string) {
+	errs := SavePages(r, paramSolver, mainHandler, targetDir)
 	for _, err := range errs {
 		panic(err.Error())
 	}
 }
 
+var strTy = reflect.TypeOf("")
+
+func URLStruct(ø *route.Route, paramStruct interface{}, tagKey string) (string, error) {
+	val := reflect.ValueOf(paramStruct)
+	params := map[string]string{}
+	stru, err := meta.StructByValue(val)
+	if err != nil {
+		return "", err
+	}
+
+	fn := func(field *meta.Field, tagVal string) {
+		params[tagVal] = field.Value.Convert(strTy).String()
+	}
+
+	stru.EachTag(tagKey, fn)
+
+	return ø.URLMap(params)
+}
+
+func MustURLStruct(ø *route.Route, paramStruct interface{}, tagKey string) string {
+	u, err := URLStruct(ø, paramStruct, tagKey)
+	if err != nil {
+		panic(err.Error())
+	}
+	return u
+}
+
 // map[string][]interface{} is tag => []struct
-func (r *Router) GETPathsByStruct(parameters map[*route.Route]map[string][]interface{}) (paths []string) {
+func GETPathsByStruct(r *router.Router, parameters map[*route.Route]map[string][]interface{}) (paths []string) {
 	paths = []string{}
 
 	fn := func(mountPoint string, route *route.Route) {
@@ -237,22 +263,22 @@ func (r *Router) GETPathsByStruct(parameters map[*route.Route]map[string][]inter
 	return
 }
 
-func (r *Router) DynamicRoutes() (routes []*route.Route) {
+func DynamicRoutes(r *router.Router) (routes []*route.Route) {
 	routes = []*route.Route{}
-	for _, rt := range r.routes {
+	r.EachRoute(func(s string, rt *route.Route) {
 		if rt.HasParams() {
 			routes = append(routes, rt)
 		}
-	}
+	})
 	return routes
 }
 
-func (r *Router) StaticRoutePaths() (paths []string) {
+func StaticRoutePaths(r *router.Router) (paths []string) {
 	paths = []string{}
-	for _, rt := range r.routes {
+	r.EachRoute(func(s string, rt *route.Route) {
 		if !rt.HasParams() {
 			paths = append(paths, rt.MustURL())
 		}
-	}
+	})
 	return paths
 }

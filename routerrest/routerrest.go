@@ -1,8 +1,9 @@
-package rest
+package routerrest
 
 import (
-	"github.com/go-on/method"
 	"net/http"
+
+	"github.com/go-on/method"
 
 	"github.com/go-on/router"
 	"github.com/go-on/router/route"

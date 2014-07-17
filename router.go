@@ -10,15 +10,8 @@ import (
 	"github.com/go-on/method"
 	"github.com/go-on/router/route"
 	"github.com/go-on/wrap"
+	"github.com/go-on/wrap-contrib/wraps"
 )
-
-const (
-// _WILDCARD_SEPARATOR = ":"
-)
-
-var _WILDCARD_SEPARATOR_RUNE = ':'
-
-// var _WILDCARD_SEPARATOR_BYTE = []byte(_WILDCARD_SEPARATOR)[0]
 
 // Router is a mountable router routing paths to routes.
 //
@@ -37,8 +30,25 @@ type Router struct {
 	NotFound http.Handler
 }
 
-// New creates a new bare router
-func New() *Router {
+// the given wrappers are near the inner call and called before the
+// etag and IfMatch and IfNoneMatch wrappers. wrappers around them
+// could be easily done by making a go-on/wrap.New() and use the Router
+// as final http.Handler surrounded by other middleware
+func (r *Router) addWrappers(wrapper ...wrap.Wrapper) {
+	if r.IsMounted() {
+		panic(ErrAddWrappersAfterMount{})
+	}
+	r.wrapper = append(r.wrapper, wrapper...)
+}
+
+// New creates a new router with optional wrappers
+func New(wrapper ...wrap.Wrapper) (r *Router) {
+	r = newRouter()
+	r.addWrappers(wrapper...)
+	return
+}
+
+func newRouter() *Router {
 	return &Router{
 		routes: map[string]*route.Route{},
 		node:   newNode(),
@@ -52,12 +62,33 @@ func (ø *Router) MustAdd(rt *route.Route) {
 	}
 }
 
-// the given wrappers are near the inner call and called before the
-// etag and IfMatch and IfNoneMatch wrappers. wrappers around them
-// could be easily done by making a go-on/wrap.New() and use the Router
-// as final http.Handler surrounded by other middleware
-func (r *Router) AddWrappers(wrapper ...wrap.Wrapper) {
-	r.wrapper = append(r.wrapper, wrapper...)
+func (r *Router) IsMounted() bool {
+	return r.mountPoint != ""
+}
+
+// Serve serves the request on the top level. It handles method override and path cleaning
+// and then serves via the corresponding http.Handler of the route or passes it to a given wrapper
+//
+// Serve will selfmount the router under / if it is not already mounted
+func (ø *Router) ServingHandler() http.Handler {
+	if !ø.IsMounted() {
+		ø.Mount("/", nil)
+	}
+	stack := []wrap.Wrapper{}
+	if !ø.muxed {
+		stack = append(stack, wraps.PrepareLikeMux())
+	}
+	// we can't handle the method override as part of the wraps, because it has to
+	// be run before we look for the method (or we would have to run all wrappers before)
+	// maybe we should not handle this case since it can be handled by given wrapper
+	stack = append(stack, wraps.MethodOverride())
+	/*
+		if wrapper != nil {
+			stack = append(stack, wrapper)
+		}
+	*/
+	stack = append(stack, wrap.Handler(ø))
+	return wrap.New(stack...)
 }
 
 func (ø *Router) Add(rt *route.Route) error {
@@ -74,42 +105,6 @@ func (ø *Router) MountPath() string { return ø.path }
 func (ø *Router) RequestRoute(rq *http.Request) (rt *route.Route) {
 	_, rt, _ = ø.getHandler(rq)
 	return
-}
-
-// SetOPTIONSHandlers sets the OPTIONSHandler for all routes of the router.
-// If routes of subrouter could be set via SetAllOPTIONSHandlers
-func (r *Router) SetOPTIONSHandlers() {
-	for _, rt := range r.routes {
-		SetOPTIONSHandler(rt)
-	}
-}
-
-func setAllOPTIONSHandlers(h http.Handler) error {
-	if rtr, ok := h.(*Router); ok {
-		rtr.SetAllOPTIONSHandlers()
-	}
-	return nil
-}
-
-// SetAllOPTIONSHandlers is like SetOPTIONSHandlers but also does so recursively in subrouters
-func (r *Router) SetAllOPTIONSHandlers() {
-	for _, rt := range r.routes {
-		SetOPTIONSHandler(rt)
-		rt.EachHandler(setAllOPTIONSHandlers)
-	}
-}
-
-// ServeOPTIONS serves OPTIONS request by setting the Allow header for all
-// defined methods of the request handling route.
-// Performance could be improved, if the OPTIONSHandler is set for the route.
-// This could be done via SetOPTIONSHandlers and SetAllOPTIONSHandlers
-func (r *Router) ServeOPTIONS(w http.ResponseWriter, rq *http.Request) {
-	h, rt := r.findHandler(0, len(rq.URL.Path), rq, method.OPTIONS)
-	if h != nil {
-		h.ServeHTTP(w, rq)
-		return
-	}
-	w.Header().Set("Allow", optionsString(rt))
 }
 
 // ServeHTTP serves the request via the http.Handler that is defined in the route
@@ -164,38 +159,12 @@ func (ø *Router) Wrap(h http.Handler) http.Handler {
 	return h
 }
 
-// MayMount mounts the router under the given path, i.e. all routing paths will be
-// relative to this path. If a ServeMux is given, its Handle method is used to mount
-// the router. Otherwise the router is self mounted and will be the main handler.
-func (ø *Router) MayMount(path string, m *http.ServeMux) error {
-	// bytes.IndexByte(s, c)
-	//if strings.Index(path, _WILDCARD_SEPARATOR) > -1 {
-	if bytes.IndexByte([]byte(path), route.WILDCARD_SEPARATOR) > -1 {
-		return ErrInvalidMountPath{path, fmt.Sprintf("path with wildcardseparator not allowed")}
-	}
-
-	if ø.mountPoint != "" {
-		return ErrDoubleMounted{ø.path}
-	}
-
-	ø.mountPoint = path
-	ø.setPaths()
-	ø.prepareRoutes()
-
-	if m != nil {
-		ø.muxed = true
-		if path == "/" {
-			m.Handle("/", ø)
-			return nil
-		}
-
-		m.Handle(ø.path+"/", ø)
-	}
-	return nil
+type Muxer interface {
+	Handle(path string, handler http.Handler)
 }
 
-func (r *Router) Mount(path string, m *http.ServeMux) {
-	err := r.MayMount(path, m)
+func (r *Router) Mount(path string, m Muxer) {
+	err := r.mayMount(path, m)
 	if err != nil {
 		panic(err)
 	}
@@ -213,16 +182,34 @@ func (r *Router) HandleMethods(path string, handler http.Handler, methods ...met
 	return rt
 }
 
-// Handle registers a all route
+// Handle registers a handler for all routes. Use it to mount sub routers
 func (r *Router) Handle(path string, handler http.Handler) {
-	rt := r.newRoute(path)
-	rt.GETHandler = handler
-	rt.POSTHandler = handler
-	rt.PATCHHandler = handler
-	rt.PUTHandler = handler
-	rt.DELETEHandler = handler
-	rt.OPTIONSHandler = handler
+	r.HandleMethods(
+		path, handler,
+		method.GET,
+		method.POST,
+		method.PATCH,
+		method.PUT,
+		method.DELETE,
+		method.OPTIONS,
+	)
 }
+
+func (r *Router) EachRoute(fn func(mountPoint string, route *route.Route)) {
+	for mP, rt := range r.routes {
+		fn(mP, rt)
+	}
+}
+
+/*
+func (r *Router) EachGETRoute(fn func(mountPoint string, route *route.Route)) {
+	for mP, rt := range r.routes {
+		if rt.GETHandler != nil {
+			fn(mP, rt)
+		}
+	}
+}
+*/
 
 // private methods
 
@@ -352,4 +339,41 @@ func (r *Router) newRoute(path string) *route.Route {
 		r.MustAdd(rt)
 	}
 	return rt
+}
+
+// MayMount mounts the router under the given path, i.e. all routing paths will be
+// relative to this path.
+// If parent is a *Router, the current router will be sub router of parent.
+// If parent is a http.ServeMux its Handle method is used to mount the router.
+// If parent is nil the router is self mounted and will be the main handler.
+func (ø *Router) mayMount(path string, parent Muxer) error {
+	if parentRtr, ok := parent.(*Router); ok {
+		parentRtr.Handle(path, ø)
+		return nil
+	}
+
+	// bytes.IndexByte(s, c)
+	//if strings.Index(path, _WILDCARD_SEPARATOR) > -1 {
+	if bytes.IndexByte([]byte(path), route.WILDCARD_SEPARATOR) > -1 {
+		return ErrInvalidMountPath{path, fmt.Sprintf("path with wildcardseparator not allowed")}
+	}
+
+	if ø.mountPoint != "" {
+		return ErrDoubleMounted{ø.path}
+	}
+
+	ø.mountPoint = path
+	ø.setPaths()
+	ø.prepareRoutes()
+
+	if parent != nil {
+		ø.muxed = true
+		if path == "/" {
+			parent.Handle("/", ø)
+			return nil
+		}
+
+		parent.Handle(ø.path+"/", ø)
+	}
+	return nil
 }
