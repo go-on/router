@@ -28,11 +28,14 @@ var pkg = "github.com/go-on/router"
 func TestFileServer(t *testing.T) {
 	gpath := findGoPathForPackage(pkg)
 
-	if gpath == "" {
-		panic("cannot find GOPATH dir for package " + pkg)
+	var dir string
+	if gpath != "" {
+		dir = filepath.Join(gpath, "src", pkg, "internal", "_fileserver")
+		// panic("cannot find GOPATH dir for package " + pkg)
+	} else {
+		wd, _ := os.Getwd()
+		dir = filepath.Join(wd, "internal", "_fileserver")
 	}
-
-	dir := filepath.Join(gpath, "src", pkg, "internal", "_fileserver")
 
 	router1 := New()
 	fs1 := router1.FileServer("/files", dir)
