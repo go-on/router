@@ -98,6 +98,7 @@ func (ø *Router) AddRoute(rt *route.Route) error {
 	}
 	ø.routes[rt.DefinitionPath] = rt
 	rt.Router = ø
+	rt.Id = fmt.Sprintf("//%p", rt)
 	return nil
 }
 

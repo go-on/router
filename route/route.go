@@ -1,7 +1,6 @@
 package route
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -86,7 +85,7 @@ type Route struct {
 
 func New(path string) *Route {
 	rt := &Route{DefinitionPath: path}
-	rt.Id = fmt.Sprintf("//%p", rt)
+	// rt.Id = fmt.Sprintf("//%p", rt)
 	return rt
 }
 
@@ -101,7 +100,7 @@ func (r *Route) Clone() *Route {
 		DefinitionPath: r.DefinitionPath,
 		Router:         r.Router,
 	}
-	rt.Id = fmt.Sprintf("//%p", rt)
+	// rt.Id = fmt.Sprintf("//%p", rt)
 	return rt
 }
 
