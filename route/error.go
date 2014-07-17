@@ -2,6 +2,8 @@ package route
 
 import "github.com/go-on/method"
 
+// TODO: add the mountedPath to every error message
+
 type ErrAjaxAlreadyRegistered struct{}
 
 func (ErrAjaxAlreadyRegistered) Error() string {
@@ -31,9 +33,10 @@ func (ErrPairParams) Error() string {
 }
 
 type ErrMissingParam struct {
-	param string
+	param       string
+	mountedPath string
 }
 
 func (e ErrMissingParam) Error() string {
-	return "parameter " + e.param + " is missing"
+	return "parameter " + e.param + " is missing for route " + e.mountedPath
 }

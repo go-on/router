@@ -263,7 +263,7 @@ func (r *Route) URLMap(params map[string]string) (string, error) {
 		if part[0] == WILDCARD_SEPARATOR {
 			param, has := params[part[1:]]
 			if !has {
-				return "", ErrMissingParam{part[1:]}
+				return "", ErrMissingParam{part[1:], r.MountedPath()}
 			}
 			parts[i] = param
 		}
