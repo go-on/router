@@ -9,8 +9,8 @@ import (
 )
 
 type matchRoute struct {
-	*route.Route
 	router *router.Router
+	*route.Route
 }
 
 func (mr *matchRoute) Match(r *http.Request) bool {
@@ -19,6 +19,6 @@ func (mr *matchRoute) Match(r *http.Request) bool {
 
 // MatchRoute returns a  wraps.Matcher that allows forking within middleware based on
 // route matching
-func MatchRoute(rtr *Router, rt *route.Route) wraps.Matcher {
+func MatchRoute(rtr *router.Router, rt *route.Route) wraps.Matcher {
 	return &matchRoute{rtr, rt}
 }

@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
-	event "github.com/go-on/router/event"
+	event "github.com/go-on/router/internal/routerevent"
 )
 
-var (
-	UserGetMail = event.New("user.GetMail")
-)
+var UserGetMail = event.New("user.GetMail")
 
 func EMailAddress(ev event.Event) {
 	name := ev.Param().(string)

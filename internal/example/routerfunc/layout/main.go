@@ -1,12 +1,13 @@
 package main
 
 import (
+	"net/http"
+
 	. "github.com/go-on/lib/html"
 	. "github.com/go-on/lib/internal/shared"
 	ph "github.com/go-on/lib/internal/shared/placeholder"
 	"github.com/go-on/lib/internal/template/placeholder"
 	"github.com/go-on/router"
-	"net/http"
 )
 
 var (
@@ -62,15 +63,20 @@ func NewApp() http.Handler {
 
 var Router = router.New()
 
+type RouterFunc func() http.Handler
+
+func (rf RouterFunc) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	rf().ServeHTTP(rw, req)
+}
+
 func main() {
-	appRouterFunc := router.RouterFunc(NewApp)
+	appRouterFunc := RouterFunc(NewApp)
 
 	Router.GET("/", layout)
 	Router.GET("/app", appRouterFunc)
 	Router.GET("/other", appRouterFunc)
-	// or Router.MustHandle("/", method.GET|method.POST, appRouterFunc)
 
-	router.MustMount("/", Router)
+	Router.Mount("/", nil)
 
 	http.ListenAndServe(":8085", nil)
 }

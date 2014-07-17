@@ -2,8 +2,9 @@ package site
 
 import (
 	"fmt"
-	. "github.com/go-on/lib/html"
 	"net/http"
+
+	. "github.com/go-on/lib/html"
 
 	"github.com/go-on/router"
 )
@@ -20,19 +21,19 @@ func menu(rw http.ResponseWriter, req *http.Request) {
 	// filepath.Rel(req.URL.String(), targpath)
 	UL(
 		LI(
-			AHref(router.MustURL(HomeRoute), "Home"),
+			AHref(HomeRoute.MustURL(), "Home"),
 		),
 		LI(
-			AHref(router.MustURL(ARoute), "a"),
+			AHref(ARoute.MustURL(), "a"),
 		),
 		LI(
-			AHref(router.MustURL(DRoute, "a", "a0", "b", "b0", "d", "d0.html"), "d0"),
+			AHref(DRoute.MustURL("a", "a0", "b", "b0", "d", "d0.html"), "d0"),
 		),
 		LI(
-			AHref(router.MustURL(DRoute, "a", "a1", "b", "b1", "d", "d1.html"), "d1"),
+			AHref(DRoute.MustURL("a", "a1", "b", "b1", "d", "d1.html"), "d1"),
 		),
 		LI(
-			AHref(router.MustURL(DRoute, "a", "a2", "b", "b2", "d", "d2.html"), "d2"),
+			AHref(DRoute.MustURL("a", "a2", "b", "b2", "d", "d2.html"), "d2"),
 		),
 	).WriteTo(rw)
 }

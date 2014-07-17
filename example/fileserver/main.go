@@ -2,6 +2,7 @@ package main
 
 import (
 	"go/build"
+	"net/http"
 	"path/filepath"
 
 	"github.com/go-on/wrap-contrib/wraps"
@@ -18,5 +19,6 @@ func main() {
 	url := fs.MustURL("/hiho.txt")
 	//rtr.GET("/", write(url))
 	rtr.GET("/", wraps.TextString(url))
-	rtr.ListenAndServe(":8084", nil)
+
+	http.ListenAndServe(":8084", rtr.ServingHandler())
 }

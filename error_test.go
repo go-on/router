@@ -122,8 +122,8 @@ func TestInvalidMountPath(t *testing.T) {
 }
 
 func TestDoubleRegistration(t *testing.T) {
-	route1 := route.NewRoute("/double")
-	route2 := route.NewRoute("/double")
+	route1 := route.New("/double")
+	route2 := route.New("/double")
 	router := New()
 	router.MustAddRoute(route1)
 

@@ -1,9 +1,10 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/go-on/wrap"
 	"github.com/go-on/wrap-contrib/wraps"
-	"net/http"
 
 	"github.com/go-on/router"
 	"github.com/go-on/wrap-contrib/helper"
@@ -22,7 +23,7 @@ func main() {
 	rt.GET("/hu", helper.Write("hu"))
 
 	//http.Handle("/", rt)
-	router.Mount("/", rt)
+	rt.Mount("/", nil)
 
 	wrapper := wrap.New(
 		wraps.Fallback(

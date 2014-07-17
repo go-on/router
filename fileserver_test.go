@@ -11,7 +11,7 @@ import (
 
 var gopath = build.Default.GOPATH
 
-func findGoPathorPackage(pkg string) string {
+func findGoPathForPackage(pkg string) string {
 	paths := filepath.SplitList(gopath)
 
 	for _, path := range paths {
@@ -26,13 +26,13 @@ func findGoPathorPackage(pkg string) string {
 var pkg = "github.com/go-on/router"
 
 func TestFileServer(t *testing.T) {
-	gpath := findGoPathorPackage(pkg)
+	gpath := findGoPathForPackage(pkg)
 
 	if gpath == "" {
 		panic("cannot find GOPATH dir for package " + pkg)
 	}
 
-	dir := filepath.Join(gpath, "src", pkg, "_fileserver")
+	dir := filepath.Join(gpath, "src", pkg, "internal", "_fileserver")
 
 	router1 := New()
 	fs1 := router1.FileServer("/files", dir)

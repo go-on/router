@@ -78,7 +78,7 @@ func TestEachRoute(t *testing.T) {
 }
 
 func TestAddRoute(t *testing.T) {
-	route := route.NewRoute("/route")
+	route := route.New("/route")
 	route.GETHandler = write("ROUTE")
 	router := New()
 	router.MustAddRoute(route)
@@ -185,7 +185,7 @@ func TestHandleMethods(t *testing.T) {
 func TestOptions(t *testing.T) {
 	router := New()
 	route := router.HandleMethods("/options", write("options"), method.GET, method.POST, method.DELETE)
-	route.SetOPTIONSHandler()
+	SetOPTIONSHandler(route)
 	// router.SetOPTIONSHandlers()
 	router.Mount("/", nil)
 	errMsg := assertResponseHeader(method.OPTIONS, "/options", router, "Allow", "OPTIONS,GET,HEAD,POST,DELETE")
@@ -270,11 +270,11 @@ func TestSubRouter(t *testing.T) {
 func TestOptionsWithSub(t *testing.T) {
 	sub := New()
 	route3 := sub.HandleMethods("/options", write("options"), method.GET, method.POST, method.DELETE)
-	route3.SetOPTIONSHandler()
+	SetOPTIONSHandler(route3)
 
 	router := New()
 	route1 := router.HandleMethods("/options", write("options"), method.GET, method.PUT)
-	route1.SetOPTIONSHandler()
+	SetOPTIONSHandler(route1)
 	router.Handle("/sub", sub)
 	router.Mount("/api/1", nil)
 

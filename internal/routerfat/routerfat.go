@@ -1,11 +1,11 @@
 package routerfat
 
 import (
+	"reflect"
+
 	. "github.com/go-on/lib/internal/fat"
 	"github.com/go-on/lib/internal/meta"
-	"github.com/go-on/router"
 	"github.com/go-on/router/route"
-	"reflect"
 )
 
 var strTy = reflect.TypeOf("")
@@ -27,7 +27,7 @@ func Url(rt *route.Route, øfatstruct interface{}, tag string) (string, error) {
 		}
 	}
 	stru.EachTag(tag, fn)
-	return router.URLMap(rt, params)
+	return rt.URLMap(params)
 }
 
 func MustUrl(rt *route.Route, øfatstruct interface{}, tag string) string {

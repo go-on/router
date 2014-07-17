@@ -2,9 +2,17 @@ package router
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/go-on/router/route"
 )
+
+func SetOPTIONSHandler(r *route.Route) {
+	optionsString := strings.Join(route.Options(r), ",")
+	r.OPTIONSHandler = http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.Header().Set("Allow", optionsString)
+	})
+}
 
 /*
 // if server is nil, the default server is used

@@ -1,7 +1,5 @@
 package router
 
-// FileServer serves the files from the given directory under the given path
-
 import (
 	"net/http"
 	"os"
@@ -10,6 +8,7 @@ import (
 	"github.com/go-on/router/route"
 )
 
+// FileServer serves the files from the given directory under the given path
 func (r *Router) FileServer(path, dir string) *FileServer {
 	rt := r.newRoute(path)
 	fs := &FileServer{

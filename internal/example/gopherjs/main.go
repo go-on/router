@@ -1,8 +1,7 @@
 package main
 
 import (
-	"github.com/go-on/router/example/gopherjs/routes"
-	"github.com/go-on/router/route"
+	"github.com/go-on/router/internal/example/gopherjs/routes"
 	"github.com/gopherjs/gopherjs/js"
 )
 
@@ -17,7 +16,7 @@ func setInnerHTML(o js.Object, html string) {
 func setPath() {
 	setInnerHTML(
 		getElementById("content"),
-		route.MustURL(routes.GetArticle, "id", "23242"),
+		routes.GetArticle.MustURL("id", "23242"),
 	)
 }
 

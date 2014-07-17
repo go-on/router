@@ -11,20 +11,56 @@ import (
 
 // MountedRouter is a minimalistic routing interface for a mountable router
 type MountedRouter interface {
-	// Wrap wraps the inner (final) http.Handler
-	Wrap(inner http.Handler) http.Handler
-
 	// MountPath returns the path where the router is mounted
 	MountPath() string
+}
+
+type PseudoRouter string
+
+func (mp PseudoRouter) MountPath() string {
+	return string(mp)
 }
 
 var ajax AjaxHandler
 
 func RegisterAjaxHandler(aj AjaxHandler) {
 	if ajax != nil {
-		panic("already registered")
+		panic(ErrAjaxAlreadyRegistered{})
 	}
 	ajax = aj
+}
+
+type PseudoAjaxHandler struct {
+	GET     func(url string, callback func(js.Object))
+	POST    func(url string, data interface{}, callback func(js.Object))
+	PUT     func(url string, data interface{}, callback func(js.Object))
+	PATCH   func(url string, data interface{}, callback func(js.Object))
+	DELETE  func(url string, callback func(js.Object))
+	OPTIONS func(url string, callback func(js.Object))
+}
+
+func (ps *PseudoAjaxHandler) Get(url string, callback func(js.Object)) {
+	ps.GET(url, callback)
+}
+
+func (ps *PseudoAjaxHandler) Post(url string, data interface{}, callback func(js.Object)) {
+	ps.POST(url, data, callback)
+}
+
+func (ps *PseudoAjaxHandler) Put(url string, data interface{}, callback func(js.Object)) {
+	ps.PUT(url, data, callback)
+}
+
+func (ps *PseudoAjaxHandler) Patch(url string, data interface{}, callback func(js.Object)) {
+	ps.PATCH(url, data, callback)
+}
+
+func (ps *PseudoAjaxHandler) Delete(url string, callback func(js.Object)) {
+	ps.DELETE(url, callback)
+}
+
+func (ps *PseudoAjaxHandler) Options(url string, callback func(js.Object)) {
+	ps.OPTIONS(url, callback)
 }
 
 type AjaxHandler interface {
@@ -48,7 +84,7 @@ type Route struct {
 	Id             string
 }
 
-func NewRoute(path string) *Route {
+func New(path string) *Route {
 	rt := &Route{DefinitionPath: path}
 	rt.Id = fmt.Sprintf("//%p", rt)
 	return rt
@@ -96,8 +132,8 @@ func (r *Route) Put(data interface{}, callback func(js.Object), params ...string
 	ajax.Put(r.MustURL(params...), data, callback)
 }
 
-func (r *Route) Options(data interface{}, callback func(js.Object), params ...string) {
-	ajax.Put(r.MustURL(params...), data, callback)
+func (r *Route) Options(callback func(js.Object), params ...string) {
+	ajax.Options(r.MustURL(params...), callback)
 }
 
 func (r *Route) Handler(meth method.Method) http.Handler {
@@ -122,36 +158,36 @@ func (rt *Route) SetHandlerForMethod(handler http.Handler, m method.Method) {
 	switch m {
 	case method.GET:
 		if rt.GETHandler != nil {
-			panic("handler for GET already defined")
+			panic(ErrHandlerAlreadyDefined{m})
 		}
 		rt.GETHandler = handler
 	case method.PUT:
 		if rt.PUTHandler != nil {
-			panic("handler for PUT already defined")
+			panic(ErrHandlerAlreadyDefined{m})
 		}
 		rt.PUTHandler = handler
 	case method.POST:
 		if rt.POSTHandler != nil {
-			panic("handler for POST already defined")
+			panic(ErrHandlerAlreadyDefined{m})
 		}
 		rt.POSTHandler = handler
 	case method.DELETE:
 		if rt.DELETEHandler != nil {
-			panic("handler for DELETE already defined")
+			panic(ErrHandlerAlreadyDefined{m})
 		}
 		rt.DELETEHandler = handler
 	case method.PATCH:
 		if rt.PATCHHandler != nil {
-			panic("handler for PATCH already defined")
+			panic(ErrHandlerAlreadyDefined{m})
 		}
 		rt.PATCHHandler = handler
 	case method.OPTIONS:
 		if rt.OPTIONSHandler != nil {
-			panic("handler for OPTIONS already defined")
+			panic(ErrHandlerAlreadyDefined{m})
 		}
 		rt.OPTIONSHandler = handler
 	default:
-		panic("unsupported method " + m)
+		panic(ErrUnknownMethod{m})
 	}
 }
 
@@ -210,7 +246,7 @@ func (r *Route) EachHandler(fn func(http.Handler) error) error {
 // params are key/value pairs
 func (r *Route) URL(params ...string) (string, error) {
 	if len(params)%2 != 0 {
-		panic("number of params must be even (pairs of key, value)")
+		panic(ErrPairParams{})
 	}
 	vars := map[string]string{}
 	for i := 0; i < len(params); i += 2 {
@@ -222,21 +258,18 @@ func (r *Route) URL(params ...string) (string, error) {
 var WILDCARD_SEPARATOR = []byte(":")[0]
 
 func (r *Route) URLMap(params map[string]string) (string, error) {
-	// mounted path mustalways begin with a /
-	parts := strings.Split(r.MountedPath()[1:], "/")
+	mountedPath := r.MountedPath()
+	parts := strings.Split(mountedPath[1:], "/")
 	for i, part := range parts {
 		if part[0] == WILDCARD_SEPARATOR {
 			param, has := params[part[1:]]
 			if !has {
-				return "", fmt.Errorf("missing parameter: %s", part[1:])
+				return "", ErrMissingParam{part[1:]}
 			}
 			parts[i] = param
 		}
 	}
-	if r.Router.MountPath() == "/" {
-		return "/" + strings.Join(parts, "/"), nil
-	}
-	return r.Router.MountPath() + "/" + strings.Join(parts, "/"), nil
+	return "/" + strings.Join(parts, "/"), nil
 }
 
 func (r *Route) MustURL(params ...string) string {
@@ -284,11 +317,4 @@ func Options(r *Route) []string {
 	}
 
 	return allow
-}
-
-func (r *Route) SetOPTIONSHandler() {
-	optionsString := strings.Join(Options(r), ",")
-	r.OPTIONSHandler = http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.Header().Set("Allow", optionsString)
-	})
 }

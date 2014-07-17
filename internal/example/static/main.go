@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-on/router/example/static/site"
 	"net/http"
 	"os"
 	"path/filepath"
 
-	"github.com/go-on/router"
+	"github.com/go-on/router/internal/example/static/site"
+
+	"github.com/go-on/router/internal/routerstatic"
 	"github.com/go-on/router/route"
 )
 
@@ -22,12 +23,12 @@ func (rs resolver) Params(rt *route.Route) []map[string]string {
 			map[string]string{"a": "a2", "b": "b2", "d": "d2.html"},
 		}
 	default:
-		panic("unhandled route: " + rt.OriginalPath)
+		panic("unhandled route: " + rt.DefinitionPath)
 	}
 }
 
 func main() {
-	router.Mount("/", site.Router)
+	site.Router.Mount("/", nil)
 
 	gopath := os.Getenv("GOPATH")
 	dir := filepath.Join(gopath, "src", "github.com", "go-on", "router", "example", "static", "result")
@@ -36,7 +37,8 @@ func main() {
 	os.Mkdir(dir, os.FileMode(0755))
 
 	fmt.Println("dump paths")
-	site.Router.MustSavePages(resolver{}, site.App, dir)
+
+	routerstatic.MustSavePages(site.Router, resolver{}, site.App, dir)
 
 	fmt.Println("running static fileserver at localhost:8080")
 

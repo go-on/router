@@ -140,8 +140,7 @@ func (r *Router) Dispatch(rq *http.Request) http.Handler {
 	}
 
 	if meth != method.OPTIONS {
-		return rt.Router.Wrap(h)
-		//return rt.Router.(*Router).wrapHandler(h)
+		return rt.Router.(*Router).wrap(h)
 	}
 	return h
 }
@@ -150,12 +149,12 @@ func (r *Router) Dispatch(rq *http.Request) http.Handler {
 // of the router and its parents
 // Wrap is part of the route/MountedRouter interface and should
 // only be used internally, even if being exported
-func (ø *Router) Wrap(h http.Handler) http.Handler {
+func (ø *Router) wrap(h http.Handler) http.Handler {
 	for i := len(ø.wrapper) - 1; i >= 0; i-- {
 		h = ø.wrapper[i].Wrap(h)
 	}
 	if ø.parent != nil {
-		return ø.parent.Wrap(h)
+		return ø.parent.wrap(h)
 	}
 	return h
 }
@@ -223,16 +222,6 @@ func (r *Router) EachRoute(fn func(mountPoint string, route *route.Route)) {
 		fn(mP, rt)
 	}
 }
-
-/*
-func (r *Router) EachGETRoute(fn func(mountPoint string, route *route.Route)) {
-	for mP, rt := range r.routes {
-		if rt.GETHandler != nil {
-			fn(mP, rt)
-		}
-	}
-}
-*/
 
 // private methods
 
@@ -320,7 +309,6 @@ func (r *Router) setPaths() {
 				if err := rtr.submount(rt.DefinitionPath, r); err != nil {
 					panic(err)
 				}
-				// println("router path " + rtr.path)
 				rtr.setPaths()
 			}
 			if fs, has := h.(*FileServer); has {
@@ -343,12 +331,7 @@ func (r *Router) submount(path string, parent *Router) error {
 	if r.submounted && r.parent == parent {
 		return nil
 	}
-	/*
-		if r.parent == parent {
-			return nil
-		}
-	*/
-	// if strings.Index(path, _WILDCARD_SEPARATOR) > -1 {
+
 	if bytes.IndexByte([]byte(path), route.WILDCARD_SEPARATOR) > -1 {
 		return ErrInvalidMountPath{path, fmt.Sprintf("mount path must not contain wildcardseparator")}
 	}
@@ -365,7 +348,7 @@ func (r *Router) submount(path string, parent *Router) error {
 func (r *Router) newRoute(path string) *route.Route {
 	rt := r.routes[path]
 	if rt == nil {
-		rt = route.NewRoute(path)
+		rt = route.New(path)
 		r.MustAddRoute(rt)
 	}
 	return rt
@@ -377,8 +360,6 @@ func (r *Router) newRoute(path string) *route.Route {
 // If parent is a http.ServeMux its Handle method is used to mount the router.
 // If parent is nil the router is self mounted and will be the main handler.
 func (ø *Router) mayMount(path string, parent Muxer) error {
-	// bytes.IndexByte(s, c)
-	//if strings.Index(path, _WILDCARD_SEPARATOR) > -1 {
 	if bytes.IndexByte([]byte(path), route.WILDCARD_SEPARATOR) > -1 {
 		return ErrInvalidMountPath{path, fmt.Sprintf("path with wildcardseparator not allowed")}
 	}
@@ -395,7 +376,6 @@ func (ø *Router) mayMount(path string, parent Muxer) error {
 	ø.mountPoint = path
 	ø.setPaths()
 	ø.prepareRoutes()
-	// ø.setFileHandlers()
 
 	if parent != nil {
 		ø.muxed = true

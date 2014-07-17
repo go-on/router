@@ -2,14 +2,16 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/go-on/router/internal/routermenu"
 	// "github.com/go-on/lib/html"
+	"os"
+
 	"github.com/go-on/lib/internal/menu"
 	"github.com/go-on/lib/internal/menu/menuhtml"
 	"github.com/go-on/lib/internal/shared"
-	"github.com/go-on/router/example/static/site"
-	"os"
+	"github.com/go-on/router/internal/example/static/site"
 
-	"github.com/go-on/router"
 	"github.com/go-on/router/route"
 )
 
@@ -27,7 +29,7 @@ func (rs *resolver) Text(rt *route.Route, params map[string]string) string {
 	case site.ARoute:
 		return "A"
 	default:
-		panic("unhandled route for text: " + rt.OriginalPath)
+		panic("unhandled route for text: " + rt.DefinitionPath)
 	}
 }
 
@@ -41,7 +43,7 @@ func (rs *resolver) Params(rt *route.Route) []map[string]string {
 			map[string]string{"a": "a2", "b": "b2", "d": "d2.html"},
 		}
 	default:
-		panic("unhandled route: " + rt.OriginalPath)
+		panic("unhandled route: " + rt.DefinitionPath)
 	}
 }
 
@@ -62,7 +64,7 @@ func (rs *resolver) Add(l menu.Leaf, rt *route.Route, params map[string]string) 
 }
 
 func main() {
-	router.Mount("/", site.Router)
+	site.Router.Mount("/", nil)
 
 	root := &menu.Node{}
 	solver := &resolver{
@@ -70,7 +72,8 @@ func main() {
 		subs: map[string]*menu.Node{},
 	}
 
-	site.Router.Menu(solver, solver)
+	routermenu.Menu(site.Router, solver, solver)
+	// site.Router.Menu(solver, solver)
 
 	menuhtml.NewUL(
 		shared.Class("menu-open"),

@@ -184,20 +184,21 @@ func DumpPaths(server http.Handler, paths []string, targetDir string) (errors ma
 func AllGETPaths(r *router.Router, paramSolver Parameter) (paths []string) {
 	paths = []string{}
 	fn := func(mountPoint string, rt *route.Route) {
+		if rt.GETHandler != nil {
+			if rt.HasParams() {
+				paramsArr := paramSolver.Params(rt)
 
-		if rt.HasParams() {
-			paramsArr := paramSolver.Params(rt)
+				for _, params := range paramsArr {
+					paths = append(paths, rt.MustURLMap(params))
+				}
 
-			for _, params := range paramsArr {
-				paths = append(paths, rt.MustURLMap(params))
+			} else {
+				paths = append(paths, rt.MustURL())
 			}
-
-		} else {
-			paths = append(paths, rt.MustURL())
 		}
 	}
 
-	r.EachGETRoute(fn)
+	r.EachRoute(fn)
 	return paths
 }
 
@@ -245,21 +246,23 @@ func GETPathsByStruct(r *router.Router, parameters map[*route.Route]map[string][
 	paths = []string{}
 
 	fn := func(mountPoint string, route *route.Route) {
-		paramPairs := parameters[route]
+		if route.GETHandler != nil {
+			paramPairs := parameters[route]
 
-		// if route has : it has parameters
-		if route.HasParams() {
-			for tag, structs := range paramPairs {
-				for _, stru := range structs {
-					paths = append(paths, MustURLStruct(route, stru, tag))
+			// if route has : it has parameters
+			if route.HasParams() {
+				for tag, structs := range paramPairs {
+					for _, stru := range structs {
+						paths = append(paths, MustURLStruct(route, stru, tag))
+					}
 				}
+			} else {
+				paths = append(paths, route.MustURL())
 			}
-		} else {
-			paths = append(paths, route.MustURL())
 		}
 	}
 
-	r.EachGETRoute(fn)
+	r.EachRoute(fn)
 	return
 }
 
