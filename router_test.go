@@ -77,6 +77,19 @@ func TestEachRoute(t *testing.T) {
 
 }
 
+func TestAddRoute(t *testing.T) {
+	route := route.NewRoute("/route")
+	route.GETHandler = write("ROUTE")
+	router := New()
+	router.MustAddRoute(route)
+	router.Mount("/", nil)
+
+	errMsg := assertResponse(method.GET, "/route", router, "GET ROUTE|", 200)
+	if errMsg != "" {
+		t.Error(errMsg)
+	}
+}
+
 func TestBody(t *testing.T) {
 	router := makeRouter()
 	router.Mount("/", nil)
@@ -223,7 +236,6 @@ func TestWrappers(t *testing.T) {
 }
 
 func TestWrappersWithSub(t *testing.T) {
-
 	router := New(wraps.Around(writeString("^"), writeString("$")))
 	router.GET("/body", write("body"))
 
@@ -296,19 +308,37 @@ func TestRoute(t *testing.T) {
 	}
 }
 
-/*
 func TestHead(t *testing.T) {
 	router := New()
-	router.GET("/head", write("nothing to see"))
-	// mux := http.NewServeMux()
-	router.Mount("/", http.DefaultServeMux)
+	router.GET("/head", write("will be hidden by server"))
+	router.Mount("/", nil)
 
-	errMsg := assertResponse(method.HEAD, "/head", http.DefaultServeMux, "", 200)
+	errMsg := assertResponse(method.HEAD, "/head", router, "HEAD will be hidden by server|", 200)
 	if errMsg != "" {
 		t.Error(errMsg)
 	}
 }
-*/
+
+func TestServeMux(t *testing.T) {
+	mux := http.NewServeMux()
+
+	router1 := New()
+	router1.GET("/route", write("route"))
+	router1.Mount("/app", mux)
+
+	errMsg := assertResponse(method.GET, "/app/route", mux, "GET route|", 200)
+	if errMsg != "" {
+		t.Error(errMsg)
+	}
+	router2 := New()
+	router2.GET("/", write("root"))
+	router2.Mount("/", mux)
+
+	errMsg = assertResponse(method.GET, "/", mux, "GET root|", 200)
+	if errMsg != "" {
+		t.Error(errMsg)
+	}
+}
 
 func TestServe(t *testing.T) {
 	router := New()
@@ -354,6 +384,39 @@ func TestGetRouteId(t *testing.T) {
 		t.Errorf("must not have id: %#v", route2.Id)
 	}
 
+}
+
+func TestEtagged(t *testing.T) {
+	router := NewETagged()
+	router.GET("/etag", writeString("etag"))
+	router.Mount("/", nil)
+
+	errMsg := assertResponseHeader(method.GET, "/etag", router, "Etag", "1872ade88f3013edeb33decd74a4f947")
+	if errMsg != "" {
+		t.Error(errMsg)
+	}
+
+	errMsg = assertResponse(method.GET, "/etag", router, "etag", 200)
+	if errMsg != "" {
+		t.Error(errMsg)
+	}
+}
+
+// TestEtaggedWrapped tests that the wrappers do not affect the etag
+func TestEtaggedWrapped(t *testing.T) {
+	router := NewETagged(wraps.Around(writeString("^"), writeString("$")))
+	router.GET("/etag", writeString("etag"))
+	router.Mount("/", nil)
+
+	errMsg := assertResponseHeader(method.GET, "/etag", router, "Etag", "1872ade88f3013edeb33decd74a4f947")
+	if errMsg != "" {
+		t.Error(errMsg)
+	}
+
+	errMsg = assertResponse(method.GET, "/etag", router, "^etag$", 200)
+	if errMsg != "" {
+		t.Error(errMsg)
+	}
 }
 
 /*

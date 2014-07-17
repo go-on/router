@@ -16,12 +16,6 @@ func (e ErrNotMounted) Error() string {
 	return "router is not mounted"
 }
 
-type ErrAddWrappersAfterMount struct{}
-
-func (e ErrAddWrappersAfterMount) Error() string {
-	return "wrappers may not be added after mounting"
-}
-
 type ErrInvalidMountPath struct {
 	Path   string
 	Reason string
@@ -33,6 +27,12 @@ func (e ErrInvalidMountPath) Error() string {
 
 type ErrDoubleMounted struct {
 	Path string
+}
+
+type ErrRouterNotAllowed struct{}
+
+func (e ErrRouterNotAllowed) Error() string {
+	return "handler must not be a *Router, use Handle() or Mount() instead"
 }
 
 func (e ErrDoubleMounted) Error() string {

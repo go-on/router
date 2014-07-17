@@ -43,14 +43,13 @@ type Route struct {
 	PATCHHandler   http.Handler
 	DELETEHandler  http.Handler
 	OPTIONSHandler http.Handler
-	MountedPath    string
 	DefinitionPath string
 	Router         MountedRouter
 	Id             string
 }
 
 func NewRoute(path string) *Route {
-	rt := &Route{DefinitionPath: path, MountedPath: path}
+	rt := &Route{DefinitionPath: path}
 	rt.Id = fmt.Sprintf("//%p", rt)
 	return rt
 }
@@ -63,12 +62,18 @@ func (r *Route) Clone() *Route {
 		PATCHHandler:   r.PATCHHandler,
 		DELETEHandler:  r.DELETEHandler,
 		OPTIONSHandler: r.OPTIONSHandler,
-		MountedPath:    r.MountedPath,
 		DefinitionPath: r.DefinitionPath,
 		Router:         r.Router,
 	}
 	rt.Id = fmt.Sprintf("//%p", rt)
 	return rt
+}
+
+func (r *Route) MountedPath() string {
+	if r.Router.MountPath() == "/" {
+		return r.DefinitionPath
+	}
+	return r.Router.MountPath() + r.DefinitionPath
 }
 
 func (r *Route) Get(callback func(js.Object), params ...string) {
@@ -218,7 +223,7 @@ var WILDCARD_SEPARATOR = []byte(":")[0]
 
 func (r *Route) URLMap(params map[string]string) (string, error) {
 	// mounted path mustalways begin with a /
-	parts := strings.Split(r.MountedPath[1:], "/")
+	parts := strings.Split(r.MountedPath()[1:], "/")
 	for i, part := range parts {
 		if part[0] == WILDCARD_SEPARATOR {
 			param, has := params[part[1:]]

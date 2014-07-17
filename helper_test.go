@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 
 	"github.com/go-on/method"
@@ -81,4 +82,17 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 func mount(r *Router, mountpoint string) *Router {
 	r.Mount(mountpoint, http.NewServeMux())
 	return r
+}
+
+func errorMustBe(err interface{}, class interface{}) string {
+	classTy := reflect.TypeOf(class)
+	if err == nil {
+		return fmt.Sprintf("error must be of type %s but is nil", classTy)
+	}
+
+	errTy := reflect.TypeOf(err)
+	if errTy.String() != classTy.String() {
+		return fmt.Sprintf("error must be of type %s but is of type %s", classTy, errTy)
+	}
+	return ""
 }

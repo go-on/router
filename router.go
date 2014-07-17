@@ -25,6 +25,7 @@ type Router struct {
 	mountPoint string
 	path       string
 	muxed      bool
+	submounted bool
 	// NotFound is called, if a http.Handler could not be found.
 	// If it is set to nil, the status 405 is set
 	NotFound http.Handler
@@ -34,17 +35,17 @@ type Router struct {
 // etag and IfMatch and IfNoneMatch wrappers. wrappers around them
 // could be easily done by making a go-on/wrap.New() and use the Router
 // as final http.Handler surrounded by other middleware
+/*
 func (r *Router) addWrappers(wrapper ...wrap.Wrapper) {
-	if r.IsMounted() {
-		panic(ErrAddWrappersAfterMount{})
-	}
 	r.wrapper = append(r.wrapper, wrapper...)
 }
+*/
 
 // New creates a new router with optional wrappers
 func New(wrapper ...wrap.Wrapper) (r *Router) {
 	r = newRouter()
-	r.addWrappers(wrapper...)
+	r.wrapper = append(r.wrapper, wrapper...)
+	// r.addWrappers(wrapper...)
 	return
 }
 
@@ -55,10 +56,10 @@ func newRouter() *Router {
 	}
 }
 
-func (ø *Router) MustAdd(rt *route.Route) {
-	err := ø.Add(rt)
+func (ø *Router) MustAddRoute(rt *route.Route) {
+	err := ø.AddRoute(rt)
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 }
 
@@ -91,7 +92,7 @@ func (ø *Router) ServingHandler() http.Handler {
 	return wrap.New(stack...)
 }
 
-func (ø *Router) Add(rt *route.Route) error {
+func (ø *Router) AddRoute(rt *route.Route) error {
 	if _, has := ø.routes[rt.DefinitionPath]; has {
 		return ErrDoubleRegistration{rt.DefinitionPath}
 	}
@@ -170,21 +171,43 @@ func (r *Router) Mount(path string, m Muxer) {
 	}
 }
 
+func mustNotBeRouter(handler http.Handler) {
+	if _, is := handler.(*Router); is {
+		panic(ErrRouterNotAllowed{})
+	}
+}
+
 func (r *Router) HandleMethod(path string, handler http.Handler, m method.Method) *route.Route {
+	mustNotBeRouter(handler)
 	rt := r.newRoute(path)
 	rt.SetHandlerForMethod(handler, m)
 	return rt
 }
 
-func (r *Router) HandleMethods(path string, handler http.Handler, methods ...method.Method) *route.Route {
+func (r *Router) handleMethods(path string, handler http.Handler, methods ...method.Method) *route.Route {
 	rt := r.newRoute(path)
 	rt.SetHandlerForMethods(handler, methods...)
 	return rt
 }
 
+func (r *Router) HandleMethods(path string, handler http.Handler, methods ...method.Method) *route.Route {
+	mustNotBeRouter(handler)
+	return r.handleMethods(path, handler, methods...)
+}
+
 // Handle registers a handler for all routes. Use it to mount sub routers
 func (r *Router) Handle(path string, handler http.Handler) {
-	r.HandleMethods(
+	if rtr, is := handler.(*Router); is {
+		if rtr.parent != nil {
+			panic(ErrDoubleMounted{Path: rtr.path})
+		}
+		if rtr.path != "" {
+			panic(ErrDoubleRegistration{DefinitionPath: rtr.path})
+		}
+		rtr.path = path
+		rtr.parent = r
+	}
+	r.handleMethods(
 		path, handler,
 		method.GET,
 		method.POST,
@@ -295,8 +318,9 @@ func (r *Router) setPaths() {
 		rt.EachHandler(func(h http.Handler) error {
 			if rtr, has := h.(*Router); has {
 				if err := rtr.submount(rt.DefinitionPath, r); err != nil {
-					panic(err.Error())
+					panic(err)
 				}
+				// println("router path " + rtr.path)
 				rtr.setPaths()
 			}
 			if fs, has := h.(*FileServer); has {
@@ -316,9 +340,14 @@ func (r *Router) prepareRoutes() {
 }
 
 func (r *Router) submount(path string, parent *Router) error {
-	if r.parent == parent {
+	if r.submounted && r.parent == parent {
 		return nil
 	}
+	/*
+		if r.parent == parent {
+			return nil
+		}
+	*/
 	// if strings.Index(path, _WILDCARD_SEPARATOR) > -1 {
 	if bytes.IndexByte([]byte(path), route.WILDCARD_SEPARATOR) > -1 {
 		return ErrInvalidMountPath{path, fmt.Sprintf("mount path must not contain wildcardseparator")}
@@ -328,6 +357,7 @@ func (r *Router) submount(path string, parent *Router) error {
 	}
 	r.mountPoint = path
 	r.parent = parent
+	r.submounted = true
 	r.prepareRoutes()
 	return nil
 }
@@ -336,7 +366,7 @@ func (r *Router) newRoute(path string) *route.Route {
 	rt := r.routes[path]
 	if rt == nil {
 		rt = route.NewRoute(path)
-		r.MustAdd(rt)
+		r.MustAddRoute(rt)
 	}
 	return rt
 }
@@ -347,15 +377,15 @@ func (r *Router) newRoute(path string) *route.Route {
 // If parent is a http.ServeMux its Handle method is used to mount the router.
 // If parent is nil the router is self mounted and will be the main handler.
 func (ø *Router) mayMount(path string, parent Muxer) error {
-	if parentRtr, ok := parent.(*Router); ok {
-		parentRtr.Handle(path, ø)
-		return nil
-	}
-
 	// bytes.IndexByte(s, c)
 	//if strings.Index(path, _WILDCARD_SEPARATOR) > -1 {
 	if bytes.IndexByte([]byte(path), route.WILDCARD_SEPARATOR) > -1 {
 		return ErrInvalidMountPath{path, fmt.Sprintf("path with wildcardseparator not allowed")}
+	}
+
+	if parentRtr, ok := parent.(*Router); ok {
+		parentRtr.Handle(path, ø)
+		return nil
 	}
 
 	if ø.mountPoint != "" {
@@ -365,6 +395,7 @@ func (ø *Router) mayMount(path string, parent Muxer) error {
 	ø.mountPoint = path
 	ø.setPaths()
 	ø.prepareRoutes()
+	// ø.setFileHandlers()
 
 	if parent != nil {
 		ø.muxed = true

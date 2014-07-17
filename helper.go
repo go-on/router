@@ -92,15 +92,16 @@ func (et *Etagged) Wrap(next http.Handler) http.Handler {
 }
 */
 
-func NewETagged(wrappers ...wrap.Wrapper) (ø *Router) {
-	ø = newRouter()
+func NewETagged(wrappers ...wrap.Wrapper) (r *Router) {
+	r = newRouter()
 	wrappers = append(
 		wrappers,
 		wraps.IfNoneMatch,
-		wraps.IfMatch(ø),
+		wraps.IfMatch(r),
 		wraps.ETag,
 	)
-	ø.addWrappers(wrappers...)
+	r.wrapper = append(r.wrapper, wrappers...)
+	// r.addWrappers(wrappers...)
 	return
 }
 

@@ -3,7 +3,6 @@ package router
 // FileServer serves the files from the given directory under the given path
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -30,18 +29,15 @@ type FileServer struct {
 }
 
 func (fs *FileServer) SetHandler() {
-	fs.Handler = http.StripPrefix(fs.route.MountedPath, fs.fs)
+	fs.Handler = http.StripPrefix(fs.route.MountedPath(), fs.fs)
 }
 
 func (fs *FileServer) URL(relativePath string) (string, error) {
-	f, err := os.Stat(filepath.Join(fs.Dir, relativePath))
+	_, err := os.Stat(filepath.Join(fs.Dir, relativePath))
 	if err != nil {
 		return "", err
 	}
-	if f.IsDir() {
-		return "", fmt.Errorf("is directory")
-	}
-	return filepath.Join(fs.route.MountedPath, relativePath), nil
+	return filepath.Join(fs.route.MountedPath(), relativePath), nil
 }
 
 func (fs *FileServer) MustURL(relativePath string) string {
