@@ -1,5 +1,6 @@
 package route
 
+/*
 import (
 	"fmt"
 	"net/http"
@@ -253,35 +254,7 @@ func TestRoute(t *testing.T) {
 	if len(methCalled) != expectedMethCalled {
 		t.Errorf("ajax %s not called", method.OPTIONS)
 	}
-
-	/*
-		defer func() {
-			e := recover()
-			if e == nil {
-				t.Errorf("should not second registration of ajax handler")
-			}
-		}()
-		RegisterAjaxHandler(aj)
-	*/
 }
-
-/*
-func TestUnknownMethod(t *testing.T) {
-	route := NewRoute("/route")
-	if route.Handler(method.Method("unknown")) != nil {
-		t.Errorf("should find not handler for unknown method")
-	}
-
-	defer func() {
-		e := recover()
-		if e == nil {
-			t.Errorf("should not allow registration of unknown handler")
-		}
-	}()
-
-	route.SetHandlerForMethod(noop{}, method.Method("unknown"))
-}
-*/
 
 func TestHasParams(t *testing.T) {
 	route1 := New("/route/:param")
@@ -295,3 +268,4 @@ func TestHasParams(t *testing.T) {
 	}
 
 }
+*/
