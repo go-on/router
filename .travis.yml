@@ -1,9 +1,12 @@
 language: go
+
 go:
   - 1.2
   - 1.3
   - tip
+
 install:
+  - go get code.google.com/p/go.tools/cmd/cover
   - go get github.com/go-on/wrap
   - go get github.com/go-on/wrap-contrib/helper
   - go get github.com/go-on/wrap-contrib/wraps
@@ -15,10 +18,21 @@ install:
   - go get code.google.com/p/go-html-transform/html/transform
   - go get github.com/gopherjs/gopherjs/js
   - go get github.com/go-on/router
+
+before_script:
+  - mkdir -p shippable/testresults
+  - mkdir -p shippable/codecoverage
+
 script:
-  - go get code.google.com/p/go.tools/cmd/cover
-  - go install code.google.com/p/go.tools/cmd/cover
-  - go test -covermode=count -coverprofile=profile.cov
-  - go get github.com/mattn/goveralls
-  - go install github.com/mattn/goveralls
-  - ../../../../bin/goveralls -coverprofile=profile.cov -service=travis-ci
+  - export GOPATH=$PWD
+  - export PATH=$PATH:$GOPATH/bin
+  - go get github.com/t-yuki/gocover-cobertura
+  - go get github.com/onsi/gomega
+  - go get github.com/onsi/ginkgo
+  - go install github.com/OneRedOak/sample
+  - go test -coverprofile=coverage.txt -covermode count github.com/OneRedOak/sample
+  - gocover-cobertura < coverage.txt > coverage.xml
+
+after_script:
+  - mv $PWD/src/github.com/OneRedOak/sample/junit.xml $PWD/shippable/testresults/
+  - mv $PWD/coverage.xml $PWD/shippable/codecoverage/
