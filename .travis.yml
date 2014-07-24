@@ -28,7 +28,7 @@ script:
   - export GOPATH=$PWD
   - export PATH=$PATH:$GOPATH/bin
   - go get github.com/t-yuki/gocover-cobertura
-  - go test -coverprofile=coverage.txt -covermode count github.com/go-on/router
+  - go test -coverprofile=coverage.txt -covermode count .
   - gocover-cobertura < coverage.txt > coverage.xml
 
 after_script:
