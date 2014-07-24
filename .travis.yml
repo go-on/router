@@ -14,6 +14,7 @@ install:
   - go get github.com/go-on/lib/internal/fat
   - go get code.google.com/p/go-html-transform/html/transform
   - go get github.com/gopherjs/gopherjs/js
+  - go get github.com/go-on/router
 script:
   - go get code.google.com/p/go.tools/cmd/cover
   - go install code.google.com/p/go.tools/cmd/cover
