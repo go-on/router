@@ -29,10 +29,10 @@ script:
   - go get github.com/t-yuki/gocover-cobertura
   - go get github.com/onsi/gomega
   - go get github.com/onsi/ginkgo
-  - go install github.com/OneRedOak/sample
-  - go test -coverprofile=coverage.txt -covermode count github.com/OneRedOak/sample
+  - go install github.com/go-on/router
+  - go test -coverprofile=coverage.txt -covermode count github.com/go-on/router
   - gocover-cobertura < coverage.txt > coverage.xml
 
 after_script:
-  - mv $PWD/src/github.com/OneRedOak/sample/junit.xml $PWD/shippable/testresults/
+  - mv $PWD/src/github.com/go-on/router/junit.xml $PWD/shippable/testresults/
   - mv $PWD/coverage.xml $PWD/shippable/codecoverage/
