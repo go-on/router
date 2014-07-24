@@ -7,6 +7,8 @@ go:
 
 install:
   - go get code.google.com/p/go.tools/cmd/cover
+  - go get github.com/go-on/router/route
+  - go get github.com/go-on/method
   - go get github.com/go-on/wrap
   - go get github.com/go-on/wrap-contrib/helper
   - go get github.com/go-on/wrap-contrib/wraps
@@ -20,16 +22,13 @@ install:
   - go get github.com/go-on/router
 
 before_script:
-  - mkdir -p shippable/testresults
   - mkdir -p shippable/codecoverage
 
 script:
   - export GOPATH=$PWD
   - export PATH=$PATH:$GOPATH/bin
   - go get github.com/t-yuki/gocover-cobertura
-  - go get github.com/onsi/gomega
-  - go get github.com/onsi/ginkgo
-  - go test -coverprofile=coverage.txt -covermode count
+  - go test -coverprofile=coverage.txt -covermode count github.com/go-on/router
   - gocover-cobertura < coverage.txt > coverage.xml
 
 after_script:
