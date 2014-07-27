@@ -21,15 +21,11 @@ install:
   - go get github.com/gopherjs/gopherjs/js
   - go get github.com/go-on/router
 
-before_script:
-  - mkdir -p shippable/codecoverage
-
 script:
-  - export GOPATH=$PWD
-  - export PATH=$PATH:$GOPATH/bin
-  - go get github.com/t-yuki/gocover-cobertura
-  - go test -coverprofile=coverage.txt -covermode count .
-  - gocover-cobertura < coverage.txt > coverage.xml
+  - go get code.google.com/p/go.tools/cmd/cover
+  - go install code.google.com/p/go.tools/cmd/cover
+  - go test -covermode=count -coverprofile=profile.cov
+  - go get github.com/mattn/goveralls
+  - go install github.com/mattn/goveralls
+  - ../../../../bin/goveralls -coverprofile=profile.cov -service=travis-ci
 
-after_script:
-  - mv $PWD/coverage.xml $PWD/shippable/codecoverage/
