@@ -18,14 +18,14 @@ import (
 // Concurrently adding and serving routes is not supported.
 // Routes must be defined none concurrently and before serving
 type Router struct {
-	node       *node
-	wrapper    []wrap.Wrapper
-	routes     map[string]*routeHandler
-	parent     *Router
-	mountPoint string
-	path       string
-	muxed      bool
-	submounted bool
+	node          *node
+	wrapper       []wrap.Wrapper
+	routeHandlers map[string]*routeHandler
+	parent        *Router
+	mountPoint    string
+	path          string
+	muxed         bool
+	submounted    bool
 	// NotFound is called, if a http.Handler could not be found.
 	// If it is set to nil, the status 405 is set
 	NotFound http.Handler
@@ -51,13 +51,13 @@ func New(wrapper ...wrap.Wrapper) (r *Router) {
 
 func newRouter() *Router {
 	return &Router{
-		routes: map[string]*routeHandler{},
-		node:   newNode(),
+		routeHandlers: map[string]*routeHandler{},
+		node:          newNode(),
 	}
 }
 
-func (ø *Router) mustAddRoute(rt *routeHandler) {
-	err := ø.addRoute(rt)
+func (ø *Router) mustAddRouteHandler(rt *routeHandler) {
+	err := ø.addRouteHandler(rt)
 	if err != nil {
 		panic(err)
 	}
@@ -92,11 +92,11 @@ func (ø *Router) ServingHandler() http.Handler {
 	return wrap.New(stack...)
 }
 
-func (ø *Router) addRoute(rt *routeHandler) error {
-	if _, has := ø.routes[rt.DefinitionPath]; has {
+func (ø *Router) addRouteHandler(rt *routeHandler) error {
+	if _, has := ø.routeHandlers[rt.DefinitionPath]; has {
 		return ErrDoubleRegistration{rt.DefinitionPath}
 	}
-	ø.routes[rt.DefinitionPath] = rt
+	ø.routeHandlers[rt.DefinitionPath] = rt
 	rt.Router = ø
 	rt.Id = fmt.Sprintf("//%p", rt)
 	return nil
@@ -188,18 +188,18 @@ func mustNotBeRouter(handler http.Handler) {
 
 func (r *Router) HandleMethod(path string, handler http.Handler, m method.Method) *route.Route {
 	mustNotBeRouter(handler)
-	rt := r.newRoute(path, m)
+	rt := r.newRouteHandler(path, m)
 	rt.SetHandlerForMethod(handler, m)
 	return rt.Route
 }
 
 func (r *Router) HandleRoute(rt *route.Route, handler http.Handler) {
 	mustNotBeRouter(handler)
-	if _, has := r.routes[rt.DefinitionPath]; has {
+	if _, has := r.routeHandlers[rt.DefinitionPath]; has {
 		panic(ErrDoubleRegistration{rt.DefinitionPath})
 	}
 	rh := newRouteHandler(rt)
-	r.mustAddRoute(rh)
+	r.mustAddRouteHandler(rh)
 	methods := []method.Method{}
 
 	for m := range rt.Methods {
@@ -227,12 +227,12 @@ func (r *Router) HandleRouteMethods(rt *route.Route, handler http.Handler, metho
 		}
 	}
 
-	if _, has := r.routes[rt.DefinitionPath]; has {
+	if _, has := r.routeHandlers[rt.DefinitionPath]; has {
 		panic(ErrDoubleRegistration{rt.DefinitionPath})
 	}
 
 	rh := newRouteHandler(rt)
-	r.mustAddRoute(rh)
+	r.mustAddRouteHandler(rh)
 	rh.SetHandlerForMethods(handler, method1, furtherMethods...)
 }
 
@@ -241,7 +241,7 @@ func (r *Router) HandleRouteMethodsFunc(rt *route.Route, handler http.HandlerFun
 }
 
 func (r *Router) handleMethods(path string, handler http.Handler, method1 method.Method, furtherMethods ...method.Method) *routeHandler {
-	rt := r.newRoute(path, method1, furtherMethods...)
+	rt := r.newRouteHandler(path, method1, furtherMethods...)
 	rt.SetHandlerForMethods(handler, method1, furtherMethods...)
 	return rt
 }
@@ -275,7 +275,7 @@ func (r *Router) Handle(path string, handler http.Handler) {
 }
 
 func (r *Router) EachRoute(fn func(mountPoint string, route *route.Route)) {
-	for mP, rt := range r.routes {
+	for mP, rt := range r.routeHandlers {
 		fn(mP, rt.Route)
 	}
 }
@@ -328,13 +328,13 @@ func (ø *Router) findHandler(start, end int, req *http.Request, meth method.Met
 	return
 }
 
-func (ø *Router) getHandler(rq *http.Request) (h http.Handler, rt *routeHandler, meth method.Method) {
+func (ø *Router) getHandler(rq *http.Request) (h http.Handler, rh *routeHandler, meth method.Method) {
 	meth = method.Method(rq.Method)
 	if meth == method.HEAD {
 		meth = method.GET
 	}
 
-	h, rt = ø.findHandler(0, len(rq.URL.Path), rq, meth)
+	h, rh = ø.findHandler(0, len(rq.URL.Path), rq, meth)
 	return
 }
 
@@ -360,10 +360,10 @@ func (r *Router) setPath() {
 
 func (r *Router) setPaths() {
 	r.setPath()
-	for _, rt := range r.routes {
-		rt.EachHandler(func(h http.Handler) error {
+	for _, rh := range r.routeHandlers {
+		rh.EachHandler(func(h http.Handler) error {
 			if rtr, has := h.(*Router); has {
-				if err := rtr.submount(rt.DefinitionPath, r); err != nil {
+				if err := rtr.submount(rh.DefinitionPath, r); err != nil {
 					panic(err)
 				}
 				rtr.setPaths()
@@ -378,13 +378,13 @@ func (r *Router) setPaths() {
 	}
 }
 
-func (r *Router) prepareRoutes() {
-	for p, rt := range r.routes {
-		missing := rt.MissingHandler()
+func (r *Router) prepareRouteHandlers() {
+	for p, rh := range r.routeHandlers {
+		missing := rh.MissingHandler()
 		if len(missing) > 0 {
-			panic(&ErrMissingHandler{missing, rt.Route})
+			panic(&ErrMissingHandler{missing, rh.Route})
 		}
-		r.node.add(p, rt)
+		r.node.add(p, rh)
 	}
 }
 
@@ -402,17 +402,17 @@ func (r *Router) submount(path string, parent *Router) error {
 	r.mountPoint = path
 	r.parent = parent
 	r.submounted = true
-	r.prepareRoutes()
+	r.prepareRouteHandlers()
 	return nil
 }
 
-func (r *Router) newRoute(path string, method1 method.Method, furtherMethods ...method.Method) *routeHandler {
+func (r *Router) newRouteHandler(path string, method1 method.Method, furtherMethods ...method.Method) *routeHandler {
 	// methods := append(furtherMethods, method1)
-	rt := r.routes[path]
+	rt := r.routeHandlers[path]
 	if rt == nil {
 		rt = newRouteHandler(route.New(path, method1, furtherMethods...))
 		// rt = route.New(path)
-		r.mustAddRoute(rt)
+		r.mustAddRouteHandler(rt)
 	} else {
 		methods := append(furtherMethods, method1)
 
@@ -446,7 +446,7 @@ func (ø *Router) mayMount(path string, parent Muxer) error {
 
 	ø.mountPoint = path
 	ø.setPaths()
-	ø.prepareRoutes()
+	ø.prepareRouteHandlers()
 
 	if parent != nil {
 		ø.muxed = true

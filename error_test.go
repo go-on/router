@@ -127,7 +127,7 @@ func TestDoubleRegistration(t *testing.T) {
 	route1 := route.New("/double", method.GET)
 	route2 := route.New("/double", method.POST)
 	router := New()
-	router.mustAddRoute(newRouteHandler(route1))
+	router.mustAddRouteHandler(newRouteHandler(route1))
 
 	defer func() {
 		e := recover()
@@ -146,7 +146,7 @@ func TestDoubleRegistration(t *testing.T) {
 		}
 	}()
 
-	router.mustAddRoute(newRouteHandler(route2))
+	router.mustAddRouteHandler(newRouteHandler(route2))
 	// router.Mount("/", nil)
 }
 

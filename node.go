@@ -12,13 +12,13 @@ func newNode() *node {
 }
 
 type node struct {
-	edges    map[string]*node // the empty key is for the next wildcard node (the node after my wildcard)
-	wildcard []byte           //string
-	route    *routeHandler
-	sub      *node
+	edges       map[string]*node // the empty key is for the next wildcard node (the node after my wildcard)
+	wildcard    []byte           //string
+	routeHander *routeHandler
+	sub         *node
 }
 
-func (pn *node) add(path string, rt *routeHandler) {
+func (pn *node) add(path string, rh *routeHandler) {
 
 	node := pn
 	var start int = 1
@@ -66,10 +66,10 @@ func (pn *node) add(path string, rt *routeHandler) {
 
 		start = end + 1
 	}
-	node.route = rt
+	node.routeHander = rh
 }
 
-func (n *node) FindPlaceholders(start int, end int, req *http.Request) (parms *[]byte, rt *routeHandler) {
+func (n *node) FindPlaceholders(start int, end int, req *http.Request) (parms *[]byte, rh *routeHandler) {
 	return n.findPositions(start+1, end, req, nil)
 }
 
@@ -92,7 +92,7 @@ func (n *node) findEdge(start int, endPath int, req *http.Request, params *[]byt
 	for k, val := range n.edges {
 		if k == req.URL.Path[start:end] {
 			if len(val.edges) == 0 && val.wildcard == nil {
-				return params, val.route
+				return params, val.routeHander
 			}
 			return val.findPositions(end+1, endPath, req, params)
 		}
@@ -102,7 +102,7 @@ func (n *node) findEdge(start int, endPath int, req *http.Request, params *[]byt
 
 func (n *node) findPositions(start int, endPath int, req *http.Request, params *[]byte) (*[]byte, *routeHandler) {
 	if endPath-start < 1 {
-		return params, n.route
+		return params, n.routeHander
 	}
 
 	pos := n.findSlash(req, start, endPath)
@@ -112,10 +112,10 @@ func (n *node) findPositions(start int, endPath int, req *http.Request, params *
 		end = endPath
 	}
 
-	var edgeRoute *routeHandler
-	params, edgeRoute = n.findEdge(start, endPath, req, params)
-	if edgeRoute != nil {
-		return params, edgeRoute
+	var edgeHandler *routeHandler
+	params, edgeHandler = n.findEdge(start, endPath, req, params)
+	if edgeHandler != nil {
+		return params, edgeHandler
 	}
 
 	if n.wildcard != nil {

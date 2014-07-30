@@ -81,7 +81,7 @@ func TestAddRoute(t *testing.T) {
 	route := newRouteHandler(route.New("/route", method.GET))
 	route.GETHandler = write("ROUTE")
 	router := New()
-	router.mustAddRoute(route)
+	router.mustAddRouteHandler(route)
 	router.Mount("/", nil)
 
 	errMsg := assertResponse(method.GET, "/route", router, "GET ROUTE|", 200)

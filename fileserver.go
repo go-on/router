@@ -6,15 +6,16 @@ import (
 	"path/filepath"
 
 	"github.com/go-on/method"
+	"github.com/go-on/router/route"
 )
 
 // FileServer serves the files from the given directory under the given path
 func (r *Router) FileServer(path, dir string) *FileServer {
-	rt := r.newRoute(path, method.GET)
+	rt := r.newRouteHandler(path, method.GET)
 	fs := &FileServer{
 		fs:    http.FileServer(http.Dir(dir)),
 		Dir:   dir,
-		route: rt,
+		route: rt.Route,
 	}
 	rt.GETHandler = fs
 	return fs
@@ -23,7 +24,7 @@ func (r *Router) FileServer(path, dir string) *FileServer {
 type FileServer struct {
 	fs    http.Handler
 	Dir   string
-	route *routeHandler
+	route *route.Route
 	http.Handler
 }
 
