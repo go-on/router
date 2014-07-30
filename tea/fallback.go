@@ -30,7 +30,9 @@ func listOfRoutes() http.Handler {
 	return routesDefined
 }
 
-var FALLBACK = func(rw http.ResponseWriter, req *http.Request) {
+var FALLBACK func(rw http.ResponseWriter, req *http.Request) = defaultFallback
+
+func defaultFallback(rw http.ResponseWriter, req *http.Request) {
 	wraps.HTMLContentType.SetContentType(rw)
 
 	rw.WriteHeader(http.StatusMethodNotAllowed)

@@ -115,7 +115,9 @@ var ignoreFuncPrefixes = []string{
 	"net/http",
 }
 
-var CATCHER = func(recovered interface{}, rw http.ResponseWriter, req *http.Request) {
+var CATCHER func(recovered interface{}, rw http.ResponseWriter, req *http.Request) = defaultCatcher
+
+func defaultCatcher(recovered interface{}, rw http.ResponseWriter, req *http.Request) {
 	wraps.HTMLContentType.SetContentType(rw)
 
 	btComplete := backtrace.BackTrace()
