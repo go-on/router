@@ -1,11 +1,10 @@
 package router
 
 import (
-	"github.com/go-on/router/route"
-
 	"net/http"
 
 	"github.com/go-on/method"
+	"github.com/go-on/router/route"
 )
 
 type routeHandler struct {
@@ -23,31 +22,12 @@ func newRouteHandler(rt *route.Route) *routeHandler {
 	return rh
 }
 
-/*
-func (r *routeHandler) Clone() *routeHandler {
-	rh := &routeHandler{
-		GETHandler:     r.GETHandler,
-		POSTHandler:    r.POSTHandler,
-		PUTHandler:     r.PUTHandler,
-		PATCHHandler:   r.PATCHHandler,
-		DELETEHandler:  r.DELETEHandler,
-		OPTIONSHandler: r.OPTIONSHandler,
-		Route:          r.Route,
-	}
-	// rt.Id = fmt.Sprintf("//%p", rt)
-	return rh
-}
-*/
-
 func (r *routeHandler) MissingHandler() (missing []method.Method) {
-	// fmt.Printf("running MissingHandler for %s\n", r.Route.DefinitionPath)
 	for m := range r.Route.Methods {
-		// fmt.Printf("checking %s\n", m)
 		if r.Handler(m) == nil {
 			missing = append(missing, m)
 		}
 	}
-	// fmt.Printf("MissingHandler for %s: %v\n", r.Route.DefinitionPath, missing)
 	return
 }
 
