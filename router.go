@@ -276,6 +276,13 @@ func (r *Router) Handle(path string, handler http.Handler) {
 	)
 }
 
+func (r *Router) Route(definitionPath string) *route.Route {
+	if rh, has := r.routeHandlers[definitionPath]; has {
+		return rh.Route
+	}
+	return nil
+}
+
 func (r *Router) EachRoute(fn func(mountPoint string, route *route.Route)) {
 	for mP, rt := range r.routeHandlers {
 		fn(mP, rt.Route)
