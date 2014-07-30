@@ -227,8 +227,14 @@ func (r *Router) HandleRouteMethods(rt *route.Route, handler http.Handler, metho
 		}
 	}
 
-	if _, has := r.routeHandlers[rt.DefinitionPath]; has {
-		panic(ErrDoubleRegistration{rt.DefinitionPath})
+	if rh, has := r.routeHandlers[rt.DefinitionPath]; has {
+		for _, m := range methods {
+			if rh.Handler(m) != nil {
+				panic(ErrDoubleRegistration{rt.DefinitionPath})
+			}
+		}
+		rh.SetHandlerForMethods(handler, method1, furtherMethods...)
+		return
 	}
 
 	rh := newRouteHandler(rt)
