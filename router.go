@@ -213,10 +213,6 @@ func (r *Router) HandleRoute(rt *route.Route, handler http.Handler) {
 	rh.SetHandlerForMethods(handler, methods[0], methods[1:]...)
 }
 
-func (r *Router) HandleRouteFunc(rt *route.Route, handler http.HandlerFunc) {
-	r.HandleRoute(rt, handler)
-}
-
 func (r *Router) HandleRouteMethods(rt *route.Route, handler http.Handler, method1 method.Method, furtherMethods ...method.Method) {
 	mustNotBeRouter(handler)
 	methods := append(furtherMethods, method1)

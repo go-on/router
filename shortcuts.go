@@ -92,3 +92,55 @@ func (r *Router) PATCHFunc(path string, handler http.HandlerFunc) *route.Route {
 func (r *Router) DELETEFunc(path string, handler http.HandlerFunc) *route.Route {
 	return r.DELETE(path, handler)
 }
+
+func (r *Router) HandleRouteFunc(rt *route.Route, handler http.HandlerFunc) {
+	r.HandleRoute(rt, handler)
+}
+
+func (r *Router) HandleRouteGET(rt *route.Route, handler http.Handler) {
+	r.HandleRouteMethods(rt, handler, method.GET)
+}
+
+func (r *Router) HandleRoutePOST(rt *route.Route, handler http.Handler) {
+	r.HandleRouteMethods(rt, handler, method.POST)
+}
+
+func (r *Router) HandleRoutePUT(rt *route.Route, handler http.Handler) {
+	r.HandleRouteMethods(rt, handler, method.PUT)
+}
+
+func (r *Router) HandleRoutePATCH(rt *route.Route, handler http.Handler) {
+	r.HandleRouteMethods(rt, handler, method.PATCH)
+}
+
+func (r *Router) HandleRouteDELETE(rt *route.Route, handler http.Handler) {
+	r.HandleRouteMethods(rt, handler, method.DELETE)
+}
+
+func (r *Router) HandleRouteOPTIONS(rt *route.Route, handler http.Handler) {
+	r.HandleRouteMethods(rt, handler, method.OPTIONS)
+}
+
+func (r *Router) HandleRouteGETFunc(rt *route.Route, handler http.HandlerFunc) {
+	r.HandleRouteMethods(rt, handler, method.GET)
+}
+
+func (r *Router) HandleRoutePOSTFunc(rt *route.Route, handler http.HandlerFunc) {
+	r.HandleRouteMethods(rt, handler, method.POST)
+}
+
+func (r *Router) HandleRoutePUTFunc(rt *route.Route, handler http.HandlerFunc) {
+	r.HandleRouteMethods(rt, handler, method.PUT)
+}
+
+func (r *Router) HandleRoutePATCHFunc(rt *route.Route, handler http.HandlerFunc) {
+	r.HandleRouteMethods(rt, handler, method.PATCH)
+}
+
+func (r *Router) HandleRouteDELETEFunc(rt *route.Route, handler http.HandlerFunc) {
+	r.HandleRouteMethods(rt, handler, method.DELETE)
+}
+
+func (r *Router) HandleRouteOPTIONSFunc(rt *route.Route, handler http.HandlerFunc) {
+	r.HandleRouteMethods(rt, handler, method.OPTIONS)
+}
