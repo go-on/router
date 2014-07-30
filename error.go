@@ -1,6 +1,12 @@
 package router
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/go-on/router/route"
+
+	"github.com/go-on/method"
+)
 
 type ErrDoubleRegistration struct {
 	DefinitionPath string
@@ -37,4 +43,38 @@ func (e ErrRouterNotAllowed) Error() string {
 
 func (e ErrDoubleMounted) Error() string {
 	return fmt.Sprintf("router is already mounted at %#v", e.Path)
+}
+
+type ErrHandlerAlreadyDefined struct {
+	method.Method
+}
+
+type ErrUnknownMethod struct {
+	method.Method
+}
+
+func (e ErrUnknownMethod) Error() string {
+	return "unknown method " + e.Method.String()
+}
+
+func (e ErrHandlerAlreadyDefined) Error() string {
+	return "handler for " + e.Method.String() + " already defined"
+}
+
+type ErrMethodNotDefinedForRoute struct {
+	method.Method
+	Route *route.Route
+}
+
+func (e *ErrMethodNotDefinedForRoute) Error() string {
+	return "method " + e.Method.String() + " is not defined for route " + e.Route.DefinitionPath
+}
+
+type ErrMissingHandler struct {
+	methods []method.Method
+	Route   *route.Route
+}
+
+func (e *ErrMissingHandler) Error() string {
+	return fmt.Sprintf("route %s has no handler defined for the methods %v", e.Route.DefinitionPath, e.methods)
 }

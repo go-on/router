@@ -3,6 +3,8 @@ package router
 import (
 	"testing"
 
+	"github.com/go-on/method"
+
 	"github.com/go-on/router/route"
 )
 
@@ -122,10 +124,10 @@ func TestInvalidMountPath(t *testing.T) {
 }
 
 func TestDoubleRegistration(t *testing.T) {
-	route1 := route.New("/double")
-	route2 := route.New("/double")
+	route1 := route.New("/double", method.GET)
+	route2 := route.New("/double", method.POST)
 	router := New()
-	router.MustAddRoute(route1)
+	router.mustAddRoute(newRouteHandler(route1))
 
 	defer func() {
 		e := recover()
@@ -144,7 +146,7 @@ func TestDoubleRegistration(t *testing.T) {
 		}
 	}()
 
-	router.MustAddRoute(route2)
+	router.mustAddRoute(newRouteHandler(route2))
 	// router.Mount("/", nil)
 }
 
@@ -191,4 +193,65 @@ func TestRouterNotAllowed(t *testing.T) {
 	}()
 
 	router.GET("/sub", sub)
+}
+
+func TestMethodNotDefinedForRoute(t *testing.T) {
+	rt := route.New("/", method.POST)
+	router := New()
+
+	defer func() {
+		e := recover()
+		errMsg := errorMustBe(e, &ErrMethodNotDefinedForRoute{})
+
+		if errMsg != "" {
+			t.Error(errMsg)
+			return
+		}
+
+		err := e.(*ErrMethodNotDefinedForRoute)
+		_ = err.Error()
+
+		if err.Method != method.GET {
+			t.Errorf("wrong method: %#v, expected: %v", err.Method, method.GET)
+		}
+
+		if err.Route != rt {
+			t.Errorf("wrong route: %v, expected: %v", err.Route, rt)
+		}
+	}()
+
+	router.HandleRouteMethods(rt, writeString("a"), method.GET, method.POST)
+}
+
+func TestErrMissingHandler(t *testing.T) {
+	rt := route.New("/missing_handler", method.GET, method.POST)
+	router := New()
+	router.HandleRouteMethods(rt, writeString("a"), method.POST)
+
+	defer func() {
+		e := recover()
+		errMsg := errorMustBe(e, &ErrMissingHandler{})
+
+		if errMsg != "" {
+			t.Error(errMsg)
+			return
+		}
+
+		err := e.(*ErrMissingHandler)
+		_ = err.Error()
+
+		if len(err.methods) != 1 {
+			t.Errorf("wrong number of methods: %d, expected: 1", len(err.methods))
+		}
+
+		if err.methods[0] != method.GET {
+			t.Errorf("wrong method: %#v, expected: %v", err.methods[0], method.GET)
+		}
+
+		if err.Route != rt {
+			t.Errorf("wrong route: %v, expected: %v", err.Route, rt)
+		}
+	}()
+
+	router.Mount("/", nil)
 }

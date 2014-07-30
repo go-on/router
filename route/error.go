@@ -2,28 +2,16 @@ package route
 
 import "github.com/go-on/method"
 
-// TODO: add the mountedPath to every error message
+type ErrXHRServiceAlreadyRegistered struct{}
 
-type ErrAjaxAlreadyRegistered struct{}
-
-func (ErrAjaxAlreadyRegistered) Error() string {
-	return "ajax handler already registered"
+func (ErrXHRServiceAlreadyRegistered) Error() string {
+	return "XHR handler already registered"
 }
 
-type ErrHandlerAlreadyDefined struct {
-	method.Method
-}
+type ErrXHRServiceNotRegistered struct{}
 
-func (e ErrHandlerAlreadyDefined) Error() string {
-	return "handler for " + e.Method.String() + " already defined"
-}
-
-type ErrUnknownMethod struct {
-	method.Method
-}
-
-func (e ErrUnknownMethod) Error() string {
-	return "unknown method " + e.Method.String()
+func (ErrXHRServiceNotRegistered) Error() string {
+	return "XHR handler not registered"
 }
 
 type ErrPairParams struct{}
@@ -39,4 +27,36 @@ type ErrMissingParam struct {
 
 func (e ErrMissingParam) Error() string {
 	return "parameter " + e.param + " is missing for route " + e.mountedPath
+}
+
+type ErrRouteIsNil struct{}
+
+func (e ErrRouteIsNil) Error() string {
+	return "route is nil"
+}
+
+type ErrUnknownMethod struct {
+	method.Method
+}
+
+func (e ErrUnknownMethod) Error() string {
+	return "unknown method " + e.Method.String()
+}
+
+type ErrMethodNotDefined struct {
+	method.Method
+	Route *Route
+}
+
+func (e *ErrMethodNotDefined) Error() string {
+	return "method " + e.Method.String() + " is not defined for route " + e.Route.DefinitionPath
+}
+
+type ErrDoubleMounted struct {
+	Path  string
+	Route *Route
+}
+
+func (e *ErrDoubleMounted) Error() string {
+	return "route " + e.Route.DefinitionPath + " is already mounted at " + e.Path
 }

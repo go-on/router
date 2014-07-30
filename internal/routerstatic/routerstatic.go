@@ -8,11 +8,15 @@ import (
 	"reflect"
 	"regexp"
 
+	"github.com/go-on/method"
+
+	"github.com/go-on/wrap"
+
 	"code.google.com/p/go-html-transform/html/transform"
 	"github.com/go-on/lib/internal/meta"
 	"github.com/go-on/router"
 	"github.com/go-on/router/route"
-	"github.com/go-on/wrap-contrib/helper"
+
 	// "net/http/httptest"
 	"os"
 	"path/filepath"
@@ -81,7 +85,7 @@ func savePath(server http.Handler, p, targetDir string) error {
 	}
 
 	// rec := httptest.NewRecorder()
-	buf := helper.NewResponseBuffer(nil)
+	buf := wrap.NewRWBuffer(nil)
 
 	server.ServeHTTP(buf, req)
 	loc := buf.Header().Get("Location")
@@ -184,7 +188,7 @@ func DumpPaths(server http.Handler, paths []string, targetDir string) (errors ma
 func AllGETPaths(r *router.Router, paramSolver Parameter) (paths []string) {
 	paths = []string{}
 	fn := func(mountPoint string, rt *route.Route) {
-		if rt.GETHandler != nil {
+		if rt.HasMethod(method.GET) {
 			if rt.HasParams() {
 				paramsArr := paramSolver.Params(rt)
 
@@ -246,7 +250,7 @@ func GETPathsByStruct(r *router.Router, parameters map[*route.Route]map[string][
 	paths = []string{}
 
 	fn := func(mountPoint string, route *route.Route) {
-		if route.GETHandler != nil {
+		if route.HasMethod(method.GET) {
 			paramPairs := parameters[route]
 
 			// if route has : it has parameters

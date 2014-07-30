@@ -1,249 +1,70 @@
+// Package route provides slim representation of routes that is used by go-on/router.Router
+// and may be used by client side libraries such as gopherjs.
+//
+// A route intentionally has no handler. That is left to be defined/assigned by the server side
+// library - that is go-on/router. Therefor some properties of Route that must not be changed
+// by hand are exported to allow go-on/router to do its work.
+
 package route
 
 import (
-	"net/http"
 	"strings"
 
 	"github.com/go-on/method"
-	"github.com/gopherjs/gopherjs/js"
 )
 
-// MountedRouter is a minimalistic routing interface for a mountable router
-type MountedRouter interface {
-	// MountPath returns the path where the router is mounted
-	MountPath() string
-}
+// Route is a slim representation of a Route mainly to get the corresponding URLs.
+// However a route can and must be "mounted" beneath a path either via Mount() (for clientside
+// libraries) or via the go-on/router.Router.
+//
+// Routes could be shared between client and server by defining them in a seperate package and
+// mounting them to a shared mountpoint. This package is then imported from the client and the
+// server. The server then remounts the routes to a router with the same mountpath and assigns
+// the handler for the various methods.
 
-type PseudoRouter string
-
-func (mp PseudoRouter) MountPath() string {
-	return string(mp)
-}
-
-var ajax AjaxHandler
-
-func RegisterAjaxHandler(aj AjaxHandler) {
-	if ajax != nil {
-		panic(ErrAjaxAlreadyRegistered{})
-	}
-	ajax = aj
-}
-
-type PseudoAjaxHandler struct {
-	GET     func(url string, callback func(js.Object))
-	POST    func(url string, data interface{}, callback func(js.Object))
-	PUT     func(url string, data interface{}, callback func(js.Object))
-	PATCH   func(url string, data interface{}, callback func(js.Object))
-	DELETE  func(url string, callback func(js.Object))
-	OPTIONS func(url string, callback func(js.Object))
-}
-
-func (ps *PseudoAjaxHandler) Get(url string, callback func(js.Object)) {
-	ps.GET(url, callback)
-}
-
-func (ps *PseudoAjaxHandler) Post(url string, data interface{}, callback func(js.Object)) {
-	ps.POST(url, data, callback)
-}
-
-func (ps *PseudoAjaxHandler) Put(url string, data interface{}, callback func(js.Object)) {
-	ps.PUT(url, data, callback)
-}
-
-func (ps *PseudoAjaxHandler) Patch(url string, data interface{}, callback func(js.Object)) {
-	ps.PATCH(url, data, callback)
-}
-
-func (ps *PseudoAjaxHandler) Delete(url string, callback func(js.Object)) {
-	ps.DELETE(url, callback)
-}
-
-func (ps *PseudoAjaxHandler) Options(url string, callback func(js.Object)) {
-	ps.OPTIONS(url, callback)
-}
-
-type AjaxHandler interface {
-	Get(url string, callback func(js.Object))
-	Post(url string, data interface{}, callback func(js.Object))
-	Put(url string, data interface{}, callback func(js.Object))
-	Patch(url string, data interface{}, callback func(js.Object))
-	Delete(url string, callback func(js.Object))
-	Options(url string, callback func(js.Object))
-}
-
+// Don't directly change the properties of Route.
+// Instead use only the methods.
+// These properties only are exported to be used by Router
 type Route struct {
-	GETHandler     http.Handler
-	POSTHandler    http.Handler
-	PUTHandler     http.Handler
-	PATCHHandler   http.Handler
-	DELETEHandler  http.Handler
-	OPTIONSHandler http.Handler
+
+	// Id will be set by the go-on/router.Router, don't touch it!
+	Id string
+
+	// Methods will be read by the go-on/router.Router, don't touch it!
+	Methods map[method.Method]struct{}
+
+	// DefinitionPath will be read by the go-on/router.Router, don't touch it!
 	DefinitionPath string
-	Router         MountedRouter
-	Id             string
+
+	// Router will be set by either Mount or go-on/router.Router, don't touch it!
+	Router interface {
+		// MountPath returns the path where the router is mounted
+		MountPath() string
+	}
 }
 
-func New(path string) *Route {
-	rt := &Route{DefinitionPath: path}
-	// rt.Id = fmt.Sprintf("//%p", rt)
-	return rt
-}
-
-func (r *Route) Clone() *Route {
+// New creates a new route for the given path and methods.
+// The methods for the route must not be changed after the call of New
+func New(path string, method1 method.Method, furtherMethods ...method.Method) *Route {
+	methods := append(furtherMethods, method1)
 	rt := &Route{
-		GETHandler:     r.GETHandler,
-		POSTHandler:    r.POSTHandler,
-		PUTHandler:     r.PUTHandler,
-		PATCHHandler:   r.PATCHHandler,
-		DELETEHandler:  r.DELETEHandler,
-		OPTIONSHandler: r.OPTIONSHandler,
-		DefinitionPath: r.DefinitionPath,
-		Router:         r.Router,
+		DefinitionPath: path,
+		Methods:        map[method.Method]struct{}{},
 	}
-	// rt.Id = fmt.Sprintf("//%p", rt)
+	for _, m := range methods {
+		if !m.IsKnown() {
+			panic(ErrUnknownMethod{m})
+		}
+		rt.Methods[m] = struct{}{}
+	}
 	return rt
 }
 
-func (r *Route) MountedPath() string {
-	if r.Router.MountPath() == "/" {
-		return r.DefinitionPath
-	}
-	return r.Router.MountPath() + r.DefinitionPath
-}
-
-func (r *Route) Get(callback func(js.Object), params ...string) {
-	ajax.Get(r.MustURL(params...), callback)
-}
-
-func (r *Route) Delete(callback func(js.Object), params ...string) {
-	ajax.Delete(r.MustURL(params...), callback)
-}
-
-func (r *Route) Post(data interface{}, callback func(js.Object), params ...string) {
-	ajax.Post(r.MustURL(params...), data, callback)
-}
-
-func (r *Route) Patch(data interface{}, callback func(js.Object), params ...string) {
-	ajax.Patch(r.MustURL(params...), data, callback)
-}
-
-func (r *Route) Put(data interface{}, callback func(js.Object), params ...string) {
-	ajax.Put(r.MustURL(params...), data, callback)
-}
-
-func (r *Route) Options(callback func(js.Object), params ...string) {
-	ajax.Options(r.MustURL(params...), callback)
-}
-
-func (r *Route) Handler(meth method.Method) http.Handler {
-	switch meth {
-	case method.GET:
-		return r.GETHandler
-	case method.POST:
-		return r.POSTHandler
-	case method.PUT:
-		return r.PUTHandler
-	case method.PATCH:
-		return r.PATCHHandler
-	case method.DELETE:
-		return r.DELETEHandler
-	case method.OPTIONS:
-		return r.OPTIONSHandler
-	}
-	return nil
-}
-
-func (rt *Route) SetHandlerForMethod(handler http.Handler, m method.Method) {
-	switch m {
-	case method.GET:
-		if rt.GETHandler != nil {
-			panic(ErrHandlerAlreadyDefined{m})
-		}
-		rt.GETHandler = handler
-	case method.PUT:
-		if rt.PUTHandler != nil {
-			panic(ErrHandlerAlreadyDefined{m})
-		}
-		rt.PUTHandler = handler
-	case method.POST:
-		if rt.POSTHandler != nil {
-			panic(ErrHandlerAlreadyDefined{m})
-		}
-		rt.POSTHandler = handler
-	case method.DELETE:
-		if rt.DELETEHandler != nil {
-			panic(ErrHandlerAlreadyDefined{m})
-		}
-		rt.DELETEHandler = handler
-	case method.PATCH:
-		if rt.PATCHHandler != nil {
-			panic(ErrHandlerAlreadyDefined{m})
-		}
-		rt.PATCHHandler = handler
-	case method.OPTIONS:
-		if rt.OPTIONSHandler != nil {
-			panic(ErrHandlerAlreadyDefined{m})
-		}
-		rt.OPTIONSHandler = handler
-	default:
-		panic(ErrUnknownMethod{m})
-	}
-}
-
-func (rt *Route) SetHandlerForMethods(handler http.Handler, methods ...method.Method) {
-	for _, m := range methods {
-		rt.SetHandlerForMethod(handler, m)
-	}
-}
-
-func (r *Route) EachHandler(fn func(http.Handler) error) error {
-
-	if r.GETHandler != nil {
-		err := fn(r.GETHandler)
-		if err != nil {
-			return err
-		}
-	}
-
-	if r.POSTHandler != nil {
-		err := fn(r.POSTHandler)
-		if err != nil {
-			return err
-		}
-	}
-
-	if r.PUTHandler != nil {
-		err := fn(r.PUTHandler)
-		if err != nil {
-			return err
-		}
-	}
-
-	if r.PATCHHandler != nil {
-		err := fn(r.PATCHHandler)
-		if err != nil {
-			return err
-		}
-	}
-
-	if r.DELETEHandler != nil {
-		err := fn(r.DELETEHandler)
-		if err != nil {
-			return err
-		}
-	}
-
-	if r.OPTIONSHandler != nil {
-		err := fn(r.OPTIONSHandler)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// params are key/value pairs
+// URL returns the url of the mounted route for the given params (key/value pairs)
 func (r *Route) URL(params ...string) (string, error) {
+	if len(params) == 0 {
+		return r.URLMap(nil)
+	}
 	if len(params)%2 != 0 {
 		panic(ErrPairParams{})
 	}
@@ -254,13 +75,20 @@ func (r *Route) URL(params ...string) (string, error) {
 	return r.URLMap(vars)
 }
 
-var WILDCARD_SEPARATOR = []byte(":")[0]
+var PARAM_PREFIX = []byte(":")[0]
 
+// URL returns the url of the mounted route for the given params (map)
 func (r *Route) URLMap(params map[string]string) (string, error) {
+	if r == nil {
+		panic(ErrRouteIsNil{})
+	}
+	if params == nil && !r.HasParams() {
+		return r.MountedPath(), nil
+	}
 	mountedPath := r.MountedPath()
 	parts := strings.Split(mountedPath[1:], "/")
 	for i, part := range parts {
-		if part[0] == WILDCARD_SEPARATOR {
+		if part[0] == PARAM_PREFIX {
 			param, has := params[part[1:]]
 			if !has {
 				return "", ErrMissingParam{part[1:], r.MountedPath()}
@@ -271,49 +99,66 @@ func (r *Route) URLMap(params map[string]string) (string, error) {
 	return "/" + strings.Join(parts, "/"), nil
 }
 
+// MustURL is like URL but panics on errors
 func (r *Route) MustURL(params ...string) string {
 	url, err := r.URL(params...)
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 	return url
 }
 
+// MustURLMap is like URLMap but panics on errors
 func (r *Route) MustURLMap(params map[string]string) string {
 	url, err := r.URLMap(params)
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 	return url
 }
 
+// HasMethod checks if the route has the given method.
+func (r *Route) HasMethod(m method.Method) (has bool) {
+	if m == method.HEAD {
+		return r.HasMethod(method.GET)
+	}
+	_, has = r.Methods[m]
+	return
+}
+
+// HasParams checks if the path of the route has placeholders for params
 func (r *Route) HasParams() bool {
 	return strings.ContainsRune(r.DefinitionPath, ':')
 }
 
-func Options(r *Route) []string {
-	allow := []string{method.OPTIONS.String()}
-
-	if r.GETHandler != nil {
-		allow = append(allow, method.GET.String())
-		allow = append(allow, method.HEAD.String())
+// MountedPath returns the path of the mounted route
+func (r *Route) MountedPath() string {
+	if r.Router.MountPath() == "/" {
+		return r.DefinitionPath
 	}
+	return r.Router.MountPath() + r.DefinitionPath
+}
 
-	if r.POSTHandler != nil {
-		allow = append(allow, method.POST.String())
+// Mount mounts the given routes beneath the given mountPoint
+// It should be used in libraries that are used by a client or shared
+// between client and server
+func Mount(mountPoint string, routes ...*Route) {
+	for _, rt := range routes {
+		rt.mount(mountPoint)
 	}
+}
 
-	if r.DELETEHandler != nil {
-		allow = append(allow, method.DELETE.String())
+// mount is a helper for client side mounting, making use of pseudoRouter
+func (r *Route) mount(mountPoint string) {
+	if r.Router != nil {
+		panic(&ErrDoubleMounted{r.Router.MountPath(), r})
 	}
+	r.Router = pseudoRouter(mountPoint)
+}
 
-	if r.PATCHHandler != nil {
-		allow = append(allow, method.PATCH.String())
-	}
+// pseudoRouter is a helper to mount based on a string
+type pseudoRouter string
 
-	if r.PUTHandler != nil {
-		allow = append(allow, method.PUT.String())
-	}
-
-	return allow
+func (mp pseudoRouter) MountPath() string {
+	return string(mp)
 }

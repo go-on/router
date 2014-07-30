@@ -1,12 +1,12 @@
 package route
 
-/*
 import (
 	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/go-on/method"
+	"github.com/gopherjs/gopherjs/js"
 )
 
 func errorMustBe(err interface{}, class interface{}) string {
@@ -22,26 +22,221 @@ func errorMustBe(err interface{}, class interface{}) string {
 	return ""
 }
 
-func TestDoubleRegisteredAjax(t *testing.T) {
-	ajax = nil
-	aj := &PseudoAjaxHandler{}
-	RegisterAjaxHandler(aj)
+func TestDoubleRegisteredXHRService(t *testing.T) {
+	xhr = nil
+	aj := &XHRFuncs{}
+	RegisterXHRService(aj)
 
 	defer func() {
 		e := recover()
-		errMsg := errorMustBe(e, ErrAjaxAlreadyRegistered{})
+		errMsg := errorMustBe(e, ErrXHRServiceAlreadyRegistered{})
 
 		if errMsg != "" {
 			t.Error(errMsg)
 			return
 		}
 
-		_ = e.(ErrAjaxAlreadyRegistered).Error()
+		_ = e.(ErrXHRServiceAlreadyRegistered).Error()
 	}()
 
-	RegisterAjaxHandler(ajax)
+	RegisterXHRService(aj)
 }
 
+func TestNotRegisteredXHRService(t *testing.T) {
+	xhr = nil
+	rt := New("/", method.GET)
+	Mount("/", rt)
+	defer func() {
+		e := recover()
+		errMsg := errorMustBe(e, ErrXHRServiceNotRegistered{})
+
+		if errMsg != "" {
+			t.Error(errMsg)
+			return
+		}
+
+		_ = e.(ErrXHRServiceNotRegistered).Error()
+	}()
+
+	rt.Get(func(js.Object) {})
+}
+
+func TestUnknownMethod(t *testing.T) {
+
+	defer func() {
+		e := recover()
+		errMsg := errorMustBe(e, ErrUnknownMethod{})
+
+		if errMsg != "" {
+			t.Error(errMsg)
+			return
+		}
+
+		err := e.(ErrUnknownMethod)
+		_ = err.Error()
+
+		if err.Method.String() != "unknown" {
+			t.Errorf("wrong method: %#v, expected: %v", err.Method, "unknown")
+		}
+	}()
+
+	New("/route", method.Method("unknown"))
+}
+
+func TestErrPairParams(t *testing.T) {
+	route := New("/route", method.GET)
+
+	defer func() {
+		e := recover()
+		errMsg := errorMustBe(e, ErrPairParams{})
+
+		if errMsg != "" {
+			t.Error(errMsg)
+			return
+		}
+
+		err := e.(ErrPairParams)
+		_ = err.Error()
+	}()
+
+	route.MustURL("param1")
+}
+
+func TestErrMissingParams(t *testing.T) {
+	route := New("/route/:name", method.GET)
+
+	Mount("/a", route)
+
+	defer func() {
+		e := recover()
+		errMsg := errorMustBe(e, ErrMissingParam{})
+
+		if errMsg != "" {
+			t.Error(errMsg)
+			return
+		}
+
+		err := e.(ErrMissingParam)
+		_ = err.Error()
+
+		if err.param != "name" {
+			t.Errorf("wrong param: %#v, expected: %v", err.param, "name")
+		}
+
+		if err.mountedPath != "/a/route/:name" {
+			t.Errorf("wrong mountedPath: %#v, expected: %v", err.mountedPath, "/a/route/:name")
+		}
+	}()
+
+	route.MustURL()
+}
+
+func TestDoubleMounted(t *testing.T) {
+	route := New("/route/:name", method.GET)
+
+	Mount("/a", route)
+
+	defer func() {
+		e := recover()
+		errMsg := errorMustBe(e, &ErrDoubleMounted{})
+
+		if errMsg != "" {
+			t.Error(errMsg)
+			return
+		}
+
+		err := e.(*ErrDoubleMounted)
+		_ = err.Error()
+
+		if err.Path != "/a" {
+			t.Errorf("wrong Path: %#v, expected: %v", err.Path, "/a")
+		}
+
+		if err.Route != route {
+			t.Errorf("wrong route: %#v, expected: %v", err.Route.DefinitionPath, route.DefinitionPath)
+		}
+	}()
+
+	Mount("/b", route)
+}
+
+func testMethodNotDefined(has method.Method, hasNot method.Method, t *testing.T) {
+	xhr = nil
+	route := New("/route/:name", has)
+
+	Mount("/a", route)
+
+	x := &XHRFuncs{}
+	RegisterXHRService(x)
+
+	defer func() {
+		e := recover()
+		errMsg := errorMustBe(e, &ErrMethodNotDefined{})
+
+		if errMsg != "" {
+			t.Error(errMsg)
+			return
+		}
+
+		err := e.(*ErrMethodNotDefined)
+		_ = err.Error()
+
+		if err.Method != hasNot {
+			t.Errorf("wrong method: %#v, expected: %v", err.Method.String(), hasNot.String())
+		}
+
+		if err.Route != route {
+			t.Errorf("wrong route: %#v, expected: %v", err.Route.DefinitionPath, route.DefinitionPath)
+		}
+	}()
+
+	switch hasNot {
+	case method.GET:
+		route.Get(nil)
+	case method.POST:
+		route.Post(nil, nil)
+	case method.PUT:
+		route.Put(nil, nil)
+	case method.PATCH:
+		route.Patch(nil, nil)
+	case method.DELETE:
+		route.Delete(nil)
+	case method.OPTIONS:
+		route.Options(nil)
+	}
+}
+
+func TestMethodNotDefined(t *testing.T) {
+	testMethodNotDefined(method.POST, method.GET, t)
+	testMethodNotDefined(method.POST, method.PUT, t)
+	testMethodNotDefined(method.POST, method.PATCH, t)
+	testMethodNotDefined(method.POST, method.DELETE, t)
+	testMethodNotDefined(method.POST, method.OPTIONS, t)
+	testMethodNotDefined(method.GET, method.POST, t)
+	testMethodNotDefined(method.OPTIONS, method.GET, t)
+}
+
+func TestRouteIsNil(t *testing.T) {
+	var route *Route
+
+	defer func() {
+		e := recover()
+		errMsg := errorMustBe(e, ErrRouteIsNil{})
+
+		if errMsg != "" {
+			t.Error(errMsg)
+			return
+		}
+
+		err := e.(ErrRouteIsNil)
+		_ = err.Error()
+
+	}()
+
+	route.MustURL()
+}
+
+/*
 func TestHandlerAlreadyDefined(t *testing.T) {
 	route := New("/route")
 	route.SetHandlerForMethod(noop{}, method.GET)
@@ -66,47 +261,8 @@ func TestHandlerAlreadyDefined(t *testing.T) {
 	route.SetHandlerForMethod(noop{}, method.GET)
 }
 
-func TestUnknownMethod(t *testing.T) {
-	route := New("/route")
 
-	defer func() {
-		e := recover()
-		errMsg := errorMustBe(e, ErrUnknownMethod{})
-
-		if errMsg != "" {
-			t.Error(errMsg)
-			return
-		}
-
-		err := e.(ErrUnknownMethod)
-		_ = err.Error()
-
-		if err.Method.String() != "unknown" {
-			t.Errorf("wrong method: %#v, expected: %v", err.Method, "unknown")
-		}
-	}()
-
-	route.SetHandlerForMethod(noop{}, method.Method("unknown"))
-}
 
 // ErrPairParams
 
-func TestErrPairParams(t *testing.T) {
-	route := New("/route")
-
-	defer func() {
-		e := recover()
-		errMsg := errorMustBe(e, ErrPairParams{})
-
-		if errMsg != "" {
-			t.Error(errMsg)
-			return
-		}
-
-		err := e.(ErrPairParams)
-		_ = err.Error()
-	}()
-
-	route.MustURL("param1")
-}
 */

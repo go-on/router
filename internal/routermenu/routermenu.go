@@ -2,6 +2,7 @@ package routermenu
 
 import (
 	"github.com/go-on/lib/internal/menu"
+	"github.com/go-on/method"
 	"github.com/go-on/router"
 	"github.com/go-on/router/route"
 )
@@ -24,7 +25,7 @@ type MenuAdder interface {
 // and adds it via appender
 func Menu(r *router.Router, adder MenuAdder, solver MenuParameter) {
 	fn := func(mountPoint string, rt *route.Route) {
-		if rt.GETHandler != nil {
+		if rt.HasMethod(method.GET) {
 			if rt.HasParams() {
 				paramsArr := solver.Params(rt)
 				for _, params := range paramsArr {

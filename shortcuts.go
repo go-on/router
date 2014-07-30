@@ -4,11 +4,13 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go-on/method"
+
 	"github.com/go-on/router/route"
 )
 
-func SetOPTIONSHandler(r *route.Route) {
-	optionsString := strings.Join(route.Options(r), ",")
+func SetOPTIONSHandler(r *routeHandler) {
+	optionsString := strings.Join(route.Options(r.Route), ",")
 	r.OPTIONSHandler = http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		rw.Header().Set("Allow", optionsString)
 	})
@@ -37,37 +39,37 @@ func (ø *Router) ListenAndServeTLS(addr string, certFile string, keyFile string
 
 func (r *Router) GET(path string, handler http.Handler) *route.Route {
 	mustNotBeRouter(handler)
-	rt := r.newRoute(path)
+	rt := r.newRoute(path, method.GET)
 	rt.GETHandler = handler
-	return rt
+	return rt.Route
 }
 
 func (r *Router) POST(path string, handler http.Handler) *route.Route {
 	mustNotBeRouter(handler)
-	rt := r.newRoute(path)
+	rt := r.newRoute(path, method.POST)
 	rt.POSTHandler = handler
-	return rt
+	return rt.Route
 }
 
 func (r *Router) PUT(path string, handler http.Handler) *route.Route {
 	mustNotBeRouter(handler)
-	rt := r.newRoute(path)
+	rt := r.newRoute(path, method.PUT)
 	rt.PUTHandler = handler
-	return rt
+	return rt.Route
 }
 
 func (r *Router) PATCH(path string, handler http.Handler) *route.Route {
 	mustNotBeRouter(handler)
-	rt := r.newRoute(path)
+	rt := r.newRoute(path, method.PATCH)
 	rt.PATCHHandler = handler
-	return rt
+	return rt.Route
 }
 
 func (r *Router) DELETE(path string, handler http.Handler) *route.Route {
 	mustNotBeRouter(handler)
-	rt := r.newRoute(path)
+	rt := r.newRoute(path, method.DELETE)
 	rt.DELETEHandler = handler
-	return rt
+	return rt.Route
 }
 
 func (r *Router) GETFunc(path string, handler http.HandlerFunc) *route.Route {

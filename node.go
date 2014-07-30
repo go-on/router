@@ -14,11 +14,11 @@ func newNode() *node {
 type node struct {
 	edges    map[string]*node // the empty key is for the next wildcard node (the node after my wildcard)
 	wildcard []byte           //string
-	route    *route.Route
+	route    *routeHandler
 	sub      *node
 }
 
-func (pn *node) add(path string, rt *route.Route) {
+func (pn *node) add(path string, rt *routeHandler) {
 
 	node := pn
 	var start int = 1
@@ -42,7 +42,7 @@ func (pn *node) add(path string, rt *route.Route) {
 			end += start
 		}
 
-		if path[start] == route.WILDCARD_SEPARATOR {
+		if path[start] == route.PARAM_PREFIX {
 			node.wildcard = []byte(path[start+1 : end])
 
 			if node.sub == nil {
@@ -69,7 +69,7 @@ func (pn *node) add(path string, rt *route.Route) {
 	node.route = rt
 }
 
-func (n *node) FindPlaceholders(start int, end int, req *http.Request) (parms *[]byte, rt *route.Route) {
+func (n *node) FindPlaceholders(start int, end int, req *http.Request) (parms *[]byte, rt *routeHandler) {
 	return n.findPositions(start+1, end, req, nil)
 }
 
@@ -82,7 +82,7 @@ func (n *node) findSlash(req *http.Request, start int, end int) (pos int) {
 	return -1
 }
 
-func (n *node) findEdge(start int, endPath int, req *http.Request, params *[]byte) (*[]byte, *route.Route) {
+func (n *node) findEdge(start int, endPath int, req *http.Request, params *[]byte) (*[]byte, *routeHandler) {
 	pos := n.findSlash(req, start, endPath)
 	end := start + pos
 	if pos == -1 {
@@ -100,7 +100,7 @@ func (n *node) findEdge(start int, endPath int, req *http.Request, params *[]byt
 	return params, nil
 }
 
-func (n *node) findPositions(start int, endPath int, req *http.Request, params *[]byte) (*[]byte, *route.Route) {
+func (n *node) findPositions(start int, endPath int, req *http.Request, params *[]byte) (*[]byte, *routeHandler) {
 	if endPath-start < 1 {
 		return params, n.route
 	}
@@ -112,7 +112,7 @@ func (n *node) findPositions(start int, endPath int, req *http.Request, params *
 		end = endPath
 	}
 
-	var edgeRoute *route.Route
+	var edgeRoute *routeHandler
 	params, edgeRoute = n.findEdge(start, endPath, req, params)
 	if edgeRoute != nil {
 		return params, edgeRoute

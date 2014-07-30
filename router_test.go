@@ -5,9 +5,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-on/router/route"
 	"github.com/go-on/wrap"
 
-	"github.com/go-on/router/route"
 	"github.com/go-on/wrap-contrib/wraps"
 
 	"github.com/go-on/method"
@@ -78,10 +78,10 @@ func TestEachRoute(t *testing.T) {
 }
 
 func TestAddRoute(t *testing.T) {
-	route := route.New("/route")
+	route := newRouteHandler(route.New("/route", method.GET))
 	route.GETHandler = write("ROUTE")
 	router := New()
-	router.MustAddRoute(route)
+	router.mustAddRoute(route)
 	router.Mount("/", nil)
 
 	errMsg := assertResponse(method.GET, "/route", router, "GET ROUTE|", 200)
@@ -184,7 +184,7 @@ func TestHandleMethods(t *testing.T) {
 
 func TestOptions(t *testing.T) {
 	router := New()
-	route := router.HandleMethods("/options", write("options"), method.GET, method.POST, method.DELETE)
+	route := router.handleMethods("/options", write("options"), method.GET, method.POST, method.DELETE)
 	SetOPTIONSHandler(route)
 	// router.SetOPTIONSHandlers()
 	router.Mount("/", nil)
@@ -269,11 +269,11 @@ func TestSubRouter(t *testing.T) {
 
 func TestOptionsWithSub(t *testing.T) {
 	sub := New()
-	route3 := sub.HandleMethods("/options", write("options"), method.GET, method.POST, method.DELETE)
+	route3 := sub.handleMethods("/options", write("options"), method.GET, method.POST, method.DELETE)
 	SetOPTIONSHandler(route3)
 
 	router := New()
-	route1 := router.HandleMethods("/options", write("options"), method.GET, method.PUT)
+	route1 := router.handleMethods("/options", write("options"), method.GET, method.PUT)
 	SetOPTIONSHandler(route1)
 	router.Handle("/sub", sub)
 	router.Mount("/api/1", nil)
@@ -384,6 +384,12 @@ func TestGetRouteId(t *testing.T) {
 		t.Errorf("must not have id: %#v", route2.Id)
 	}
 
+	rq, _ = http.NewRequest("GET", "/route-not-existent", nil)
+	got = GetRouteId(rq)
+
+	if got != "" {
+		t.Errorf(`route id should be "", but is %#v`, got)
+	}
 }
 
 func TestEtagged(t *testing.T) {
@@ -417,6 +423,70 @@ func TestEtaggedWrapped(t *testing.T) {
 	if errMsg != "" {
 		t.Error(errMsg)
 	}
+}
+
+// TestHandleRoute tests that the wrappers do not affect the etag
+func TestHandleRouteMethods(t *testing.T) {
+	rt := route.New("/a", method.GET)
+	router := New()
+	router.HandleRouteMethods(rt, writeString("A"), method.GET)
+	router.Mount("/c", nil)
+
+	errMsg := assertResponse(method.GET, "/c/a", router, "A", 200)
+	if errMsg != "" {
+		t.Error(errMsg)
+	}
+
+}
+
+func TestHandleRouteFunc(t *testing.T) {
+	rt := route.New("/a", method.GET, method.POST)
+	router := New()
+	router.HandleRouteFunc(rt, writeString("A").ServeHTTP)
+	router.Mount("/c", nil)
+
+	errMsg := assertResponse(method.GET, "/c/a", router, "A", 200)
+	if errMsg != "" {
+		t.Error(errMsg)
+	}
+
+	errMsg = assertResponse(method.POST, "/c/a", router, "A", 200)
+	if errMsg != "" {
+		t.Error(errMsg)
+	}
+
+}
+
+func TestHandleRoute(t *testing.T) {
+	rt := route.New("/a", method.GET)
+	router := New()
+	router.HandleRoute(rt, writeString("A"))
+	router.Mount("/c", nil)
+
+	errMsg := assertResponse(method.GET, "/c/a", router, "A", 200)
+	if errMsg != "" {
+		t.Error(errMsg)
+	}
+
+}
+
+// TestHandleRoute tests that the wrappers do not affect the etag
+func TestHandleRouteMethodsFunc(t *testing.T) {
+	rt := route.New("/a", method.GET, method.PUT)
+	router := New()
+	router.HandleRouteMethodsFunc(rt, writeString("A").ServeHTTP, method.GET, method.PUT)
+	router.Mount("/c", nil)
+
+	errMsg := assertResponse(method.GET, "/c/a", router, "A", 200)
+	if errMsg != "" {
+		t.Error(errMsg)
+	}
+
+	errMsg = assertResponse(method.PUT, "/c/a", router, "A", 200)
+	if errMsg != "" {
+		t.Error(errMsg)
+	}
+
 }
 
 /*

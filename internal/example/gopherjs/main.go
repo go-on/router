@@ -16,7 +16,7 @@ func setInnerHTML(o js.Object, html string) {
 func setPath() {
 	setInnerHTML(
 		getElementById("content"),
-		routes.GetArticle.MustURL("id", "23242"),
+		"created url via gopherjs: "+routes.Article.MustURL(routes.Id_, "23242"),
 	)
 }
 

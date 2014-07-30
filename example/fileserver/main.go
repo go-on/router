@@ -17,7 +17,6 @@ func main() {
 	rtr := router.New()
 	fs := rtr.FileServer("/files", static)
 	url := fs.MustURL("/hiho.txt")
-	//rtr.GET("/", write(url))
 	rtr.GET("/", wraps.TextString(url))
 
 	http.ListenAndServe(":8084", rtr.ServingHandler())
