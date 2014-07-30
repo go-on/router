@@ -18,9 +18,13 @@ var DEVELOPMENT = true
 
 var (
 	Router        = router.New()
-	nonFileServer = router.NewETagged()
+	nonFileServer = router.New()
 	middlewares   = []wrap.Wrapper{}
 )
+
+func CACHE_WITH_ETAGS() {
+	nonFileServer = router.NewETagged()
+}
 
 func USE(middleware ...wrap.Wrapper) {
 	middlewares = append(middlewares, middleware...)
