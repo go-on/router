@@ -53,7 +53,7 @@ type Parameter interface {
 // adds a .html to them
 func transformLink(in string) (out string) {
 	if in == "/" {
-		return "index.html"
+		return "/index.html"
 	}
 
 	if !strings.HasPrefix(in, "/") {
@@ -74,14 +74,14 @@ func staticRedirect(location string) string {
 
 var htmlContentType = regexp.MustCompile("html")
 
-func savePath(server http.Handler, p, targetDir string) error {
+func requestBody(server http.Handler, p string) (string, error) {
 	req, err := http.NewRequest("GET", p, nil)
 	if req.Body != nil {
 		defer req.Body.Close()
 	}
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// rec := httptest.NewRecorder()
@@ -102,12 +102,12 @@ func savePath(server http.Handler, p, targetDir string) error {
 
 		x, err := transform.NewFromReader(&buf.Buffer)
 		if err != nil {
-			return err
+			return "", err
 		}
 		err = x.Apply(transform.CopyAnd(transform.TransformAttrib("href", transformLink)), "a")
 
 		if err != nil {
-			return err
+			return "", err
 		}
 
 		body = x.String()
@@ -127,14 +127,21 @@ func savePath(server http.Handler, p, targetDir string) error {
 	case 200, 0:
 		// body = buf.Buffer.Bytes()
 	default:
-		return fmt.Errorf("Status: %d, Body: %s", buf.Code, body)
+		return "", fmt.Errorf("Status: %d, Body: %s", buf.Code, body)
 	}
-
+	return body, nil
 	/*
 		if rec.Code != 200 {
 			return fmt.Errorf("Status: %d, Body: %s", rec.Code, rec.Body.String())
 		}
 	*/
+}
+
+func savePath(server http.Handler, p, targetDir string) error {
+	body, err := requestBody(server, p)
+	if err != nil {
+		return err
+	}
 
 	if p != "" {
 		p = transformLink(p)

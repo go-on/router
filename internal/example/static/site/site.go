@@ -10,11 +10,19 @@ import (
 )
 
 func cHandler(rw http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(rw, "c is %#v", req.FormValue(":c"))
+	fmt.Fprintf(rw, "c is %#v", router.GetRouteParam(req, "c"))
 }
 
 func dHandler(rw http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(rw, "a is %#v, b is %#v, d is %#v whooho", req.FormValue(":a"), req.FormValue(":b"), req.FormValue(":d"))
+	fmt.Fprintf(rw, "a is %#v, b is %#v, d is %#v whooho",
+		router.GetRouteParam(req, "a"),
+		router.GetRouteParam(req, "b"),
+		router.GetRouteParam(req, "d"),
+	)
+}
+
+func redirect(rw http.ResponseWriter, req *http.Request) {
+	http.Redirect(rw, req, ARoute.MustURL(), 302)
 }
 
 func menu(rw http.ResponseWriter, req *http.Request) {
@@ -49,6 +57,7 @@ var (
 	HomeRoute = Router.GET("/", write("index"))
 	ARoute    = Router.GET("/a.html", write("A"))
 	DRoute    = Router.GET("/d/:a/x/:b/:d", http.HandlerFunc(dHandler))
+	Redirect  = Router.GETFunc("/redirect", redirect)
 	App       = HTML5(
 		HTML(
 			BODY(
