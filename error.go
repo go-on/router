@@ -31,14 +31,14 @@ func (e ErrInvalidMountPath) Error() string {
 	return fmt.Sprintf("mount path %#v is invalid: %s", e.Path, e.Reason)
 }
 
-type ErrDoubleMounted struct {
-	Path string
-}
-
 type ErrRouterNotAllowed struct{}
 
 func (e ErrRouterNotAllowed) Error() string {
 	return "handler must not be a *Router, use Handle() or Mount() instead"
+}
+
+type ErrDoubleMounted struct {
+	Path string
 }
 
 func (e ErrDoubleMounted) Error() string {
