@@ -31,12 +31,12 @@ func (c Context) Wrap(next http.Handler) http.Handler {
 
 func start(next http.Handler, w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
-	w.(wrap.RWContext).SetContext(&now)
+	w.(wrap.Contexter).SetContext(&now)
 	next.ServeHTTP(w, r)
 }
 
 func stop(w http.ResponseWriter, r *http.Request) {
 	var t time.Time
-	w.(wrap.RWContext).Context(&t)
+	w.(wrap.Contexter).Context(&t)
 	fmt.Fprintf(w, "Time elapsed: %0.5f secs", time.Since(t).Seconds())
 }

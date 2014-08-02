@@ -5,26 +5,11 @@ go:
   - 1.3
   - tip
 
-install:
-  - go get code.google.com/p/go.tools/cmd/cover
-  - go get github.com/go-on/router/route
-  - go get github.com/go-on/method
-  - go get github.com/go-on/wrap
-  - go get github.com/go-on/wrap-contrib/helper
-  - go get github.com/go-on/wrap-contrib/wraps
-  - go get github.com/go-on/method
-  - go get github.com/go-on/wrap-contrib-testing/wrapstesting
-  - go get github.com/go-on/lib/internal/menu
-  - go get github.com/go-on/lib/html
-  - go get github.com/go-on/lib/internal/fat
-  - go get code.google.com/p/go-html-transform/html/transform
-  - go get github.com/gopherjs/gopherjs/js
-  - go get github.com/go-on/router
-
 script:
+  - go get -t github.com/go-on/router/...
   - go get code.google.com/p/go.tools/cmd/cover
   - go install code.google.com/p/go.tools/cmd/cover
-  - go test -covermode=count -coverprofile=profile.cov
+  - go test ./... -covermode=count -coverprofile=profile.cov
   - go get github.com/mattn/goveralls
   - go install github.com/mattn/goveralls
   - ../../../../bin/goveralls -coverprofile=profile.cov -service=travis-ci

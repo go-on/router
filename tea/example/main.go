@@ -21,7 +21,7 @@ func main() {
 
 	tea.USE(
 		Context{},
-		wrap.ServeHandlerFunc(start),
+		wrap.NextHandlerFunc(start),
 		wraps.HTMLContentType,
 	)
 

@@ -7,7 +7,7 @@ import (
 	"github.com/go-on/wrap-contrib/wraps"
 
 	"github.com/go-on/router"
-	"github.com/go-on/wrap-contrib/helper"
+	// "github.com/go-on/wrap-contrib/helper"
 )
 
 func missing(rw http.ResponseWriter, req *http.Request) {
@@ -18,9 +18,9 @@ func missing(rw http.ResponseWriter, req *http.Request) {
 func main() {
 	rt := router.New()
 
-	rt.GET("/", helper.Write("root"))
+	rt.GET("/", wraps.String("root"))
 	rt.GETFunc("/missing", missing)
-	rt.GET("/hu", helper.Write("hu"))
+	rt.GET("/hu", wraps.String("hu"))
 
 	//http.Handle("/", rt)
 	rt.Mount("/", nil)
@@ -29,7 +29,7 @@ func main() {
 		wraps.Fallback(
 			[]int{405}, // ignore 405 method not allowed status code
 			rt,
-			helper.Write("fallback"),
+			wraps.String("fallback"),
 		),
 	)
 

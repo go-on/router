@@ -85,7 +85,7 @@ func requestBody(server http.Handler, p string) (string, error) {
 	}
 
 	// rec := httptest.NewRecorder()
-	buf := wrap.NewRWBuffer(nil)
+	buf := wrap.NewBuffer(nil)
 
 	server.ServeHTTP(buf, req)
 	loc := buf.Header().Get("Location")
