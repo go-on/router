@@ -18,6 +18,9 @@ import (
 var mainDir = flag.String("dir", ".", "directory that should be monitored and has pid file in it")
 var buildCMD = flag.String("command", "go build .", "command that should be run to build the binary")
 
+// TODO:
+// 1. build and run binary before watching
+// 2. kill the server on STRG+D/STRG+C
 func main() {
 	flag.Parse()
 

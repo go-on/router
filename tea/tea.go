@@ -101,6 +101,11 @@ func mkHandler() http.Handler {
 	return wrap.New(mw...)
 }
 
+// MOUNT mounts the given router under the given path
+func MOUNT(mountpoint string, rtr *router.Router) {
+	rtr.Mount(mountpoint, Router)
+}
+
 func SERVE() {
 	pid := os.Getpid()
 	wd, err := os.Getwd()
