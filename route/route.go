@@ -1,10 +1,12 @@
-// Package route provides slim representation of routes that is used by go-on/router.Router
-// and may be used by client side libraries such as gopherjs.
-//
-// A route intentionally has no handler. That is left to be defined/assigned by the server side
-// library - that is go-on/router. Therefor some properties of Route that must not be changed
-// by hand are exported to allow go-on/router to do its work.
+/*
+ Package route provides slim representation of routes that is used by go-on/router.Router
+ and may be used by client side libraries such as gopherjs.
 
+ A route intentionally has no handler. That is left to be defined/assigned by the server side
+ library - that is go-on/router. Therefor some properties of Route that must not be changed
+ by hand are exported to allow go-on/router to do its work.
+
+*/
 package route
 
 import (
@@ -28,15 +30,19 @@ import (
 type Route struct {
 
 	// Id will be set by the go-on/router.Router, don't touch it!
+	// An internal attribute but exported because it is cross-package
 	Id string
 
 	// Methods will be read by the go-on/router.Router, don't touch it!
+	// An internal attribute but exported because it is cross-package
 	Methods map[method.Method]struct{}
 
 	// DefinitionPath will be read by the go-on/router.Router, don't touch it!
+	// An internal attribute but exported because it is cross-package
 	DefinitionPath string
 
 	// Router will be set by either Mount or go-on/router.Router, don't touch it!
+	// An internal attribute but exported because it is cross-package
 	Router interface {
 		// MountPath returns the path where the router is mounted
 		MountPath() string
