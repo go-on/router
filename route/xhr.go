@@ -97,26 +97,32 @@ type XHRFuncs struct {
 	OPTIONS func(url string, callback func(js.Object))
 }
 
+// Get implements the XHRService.
 func (ps *XHRFuncs) Get(url string, callback func(js.Object)) {
 	ps.GET(url, callback)
 }
 
+// Post implements the XHRService.
 func (ps *XHRFuncs) Post(url string, data interface{}, callback func(js.Object)) {
 	ps.POST(url, data, callback)
 }
 
+// Put implements the XHRService.
 func (ps *XHRFuncs) Put(url string, data interface{}, callback func(js.Object)) {
 	ps.PUT(url, data, callback)
 }
 
+// Patch implements the XHRService.
 func (ps *XHRFuncs) Patch(url string, data interface{}, callback func(js.Object)) {
 	ps.PATCH(url, data, callback)
 }
 
+// Delete implements the XHRService.
 func (ps *XHRFuncs) Delete(url string, callback func(js.Object)) {
 	ps.DELETE(url, callback)
 }
 
+// Options implements the XHRService.
 func (ps *XHRFuncs) Options(url string, callback func(js.Object)) {
 	ps.OPTIONS(url, callback)
 }
