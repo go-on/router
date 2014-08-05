@@ -10,15 +10,21 @@ import (
 
 type Context struct {
 	http.ResponseWriter
-	Time time.Time
+	Time *time.Time
 }
 
-func (c *Context) Context(ctx interface{}) {
-	*(ctx.(*time.Time)) = c.Time
+var _ wrap.Contexter = &Context{}
+
+func (c *Context) Context(ctx interface{}) bool {
+	if c.Time == nil {
+		return false
+	}
+	*(ctx.(*time.Time)) = *c.Time
+	return true
 }
 
 func (c *Context) SetContext(ctx interface{}) {
-	c.Time = *(ctx.(*time.Time))
+	c.Time = ctx.(*time.Time)
 }
 
 func (c Context) Wrap(next http.Handler) http.Handler {

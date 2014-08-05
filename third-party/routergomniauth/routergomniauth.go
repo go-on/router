@@ -49,29 +49,33 @@ func (cb callback) Wrap(next http.Handler) http.Handler {
 	f = func(rw http.ResponseWriter, req *http.Request) {
 
 		var provider common.Provider
-		rw.(wrap.Contexter).Context(&provider)
 
-		m, errMap := objx.FromURLQuery(req.URL.RawQuery)
-		if errMap != nil {
-			rw.(wrap.Contexter).SetContext(&errMap)
-			return
+		ctx := rw.(wrap.Contexter)
+
+		if ctx.Context(&provider) {
+
+			m, errMap := objx.FromURLQuery(req.URL.RawQuery)
+			if errMap != nil {
+				ctx.SetContext(&errMap)
+				return
+			}
+
+			creds, err := provider.CompleteAuth(m)
+
+			if err != nil {
+				ctx.SetContext(&err)
+				return
+			}
+
+			user, userErr := provider.GetUser(creds)
+
+			if userErr != nil {
+				ctx.SetContext(&userErr)
+				return
+			}
+
+			ctx.SetContext(&user)
 		}
-
-		creds, err := provider.CompleteAuth(m)
-
-		if err != nil {
-			rw.(wrap.Contexter).SetContext(&err)
-			return
-		}
-
-		user, userErr := provider.GetUser(creds)
-
-		if userErr != nil {
-			rw.(wrap.Contexter).SetContext(&userErr)
-			return
-		}
-
-		rw.(wrap.Contexter).SetContext(&user)
 		next.ServeHTTP(rw, req)
 	}
 	return f
@@ -95,19 +99,21 @@ func (s setProvider) Wrap(next http.Handler) http.Handler {
 			next.ServeHTTP(rw, req)
 		}
 
+		ctx := rw.(wrap.Contexter)
+
 		if _, has := providers[providerStr]; !has {
 			err := errors.New("unsupported provider: " + providerStr)
-			rw.(wrap.Contexter).SetContext(&err)
+			ctx.SetContext(&err)
 			return
 		}
 
 		provider, err := gomniauth.Provider(providerStr)
 
 		if err != nil {
-			rw.(wrap.Contexter).SetContext(&err)
+			ctx.SetContext(&err)
 			return
 		}
-		rw.(wrap.Contexter).SetContext(&provider)
+		ctx.SetContext(&provider)
 
 		next.ServeHTTP(rw, req)
 	}

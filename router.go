@@ -118,6 +118,7 @@ func (ø *Router) RequestRoute(rq *http.Request) (rt *route.Route) {
 // done once per request, such as protocol checking and path normalization.
 // These should be done by the toplevel Handler, see the Serve() http.HandlerFunc
 func (r *Router) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
+	// fmt.Printf("searching for path: %s %s\n", rq.Method, rq.URL.Path)
 	h := r.Dispatch(rq)
 	if h == nil {
 		// fmt.Println("found no handler")
@@ -145,12 +146,12 @@ func (r *Router) Dispatch(rq *http.Request) http.Handler {
 	h, rt, meth := r.getHandler(rq)
 
 	if h == nil {
-		// fmt.Printf("[dispatch] no handler for %s\n", rq.URL.Path)
+		// fmt.Printf("[dispatch] no handler for %s %s\n", rq.Method, rq.URL.Path)
 		return nil
 	}
 
 	if meth != method.OPTIONS {
-		return rt.Router.(*Router).wrap(h)
+		return rt.Router.(*Router).Wrap(h)
 	}
 	return h
 }
@@ -159,22 +160,36 @@ func (r *Router) Dispatch(rq *http.Request) http.Handler {
 // of the router and its parents
 // Wrap is part of the route/MountedRouter interface and should
 // only be used internally, even if being exported
-func (ø *Router) wrap(h http.Handler) http.Handler {
-	for i := len(ø.wrapper) - 1; i >= 0; i-- {
-		h = ø.wrapper[i].Wrap(h)
-	}
+func (ø *Router) Wrap(h http.Handler) http.Handler {
+	wrappers := []wrap.Wrapper{}
 	if ø.parent != nil {
-		return ø.parent.wrap(h)
+		wrappers = append(wrappers, ø.parent)
 	}
-	return h
+	wrappers = append(wrappers, ø.wrapper...)
+	wrappers = append(wrappers, wrap.Handler(h))
+	return wrap.New(wrappers...)
 }
 
 type Muxer interface {
 	Handle(path string, handler http.Handler)
 }
 
-func (r *Router) Mount(path string, m Muxer) {
-	err := r.mayMount(path, m)
+// Mount mounts the router to the parent at path. The parent might be nil
+// in which case only the mount path is registered inside the router
+func (r *Router) Mount(path string, parent Muxer) {
+	err := r.mayMount(path, parent)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// MountWrapped mounts the router to the parent at path, wrapped by the given
+// wrappers
+func (r *Router) MountWrapped(path string, parent Muxer, wrappers ...wrap.Wrapper) {
+	if parent == nil {
+		panic("parent might not be nil")
+	}
+	err := r.mayMount(path, parent, wrappers...)
 	if err != nil {
 		panic(err)
 	}
@@ -439,13 +454,21 @@ func (r *Router) newRouteHandler(path string, method1 method.Method, furtherMeth
 // If parent is a *Router, the current router will be sub router of parent.
 // If parent is a http.ServeMux its Handle method is used to mount the router.
 // If parent is nil the router is self mounted and will be the main handler.
-func (ø *Router) mayMount(path string, parent Muxer) error {
+// wrappers are wrappers packed around (before) the router while mounting.
+// they are only respected if the parent is not nil
+func (ø *Router) mayMount(path string, parent Muxer, wrappers ...wrap.Wrapper) error {
 	if bytes.IndexByte([]byte(path), route.PARAM_PREFIX) > -1 {
 		return ErrInvalidMountPath{path, fmt.Sprintf("path with wildcardseparator not allowed")}
 	}
 
+	var handler http.Handler = ø
+	if len(wrappers) > 0 {
+		wrappers = append(wrappers, wrap.Handler(handler))
+		handler = wrap.New(wrappers...)
+	}
+
 	if parentRtr, ok := parent.(*Router); ok {
-		parentRtr.Handle(path, ø)
+		parentRtr.Handle(path, handler)
 		return nil
 	}
 
@@ -460,11 +483,20 @@ func (ø *Router) mayMount(path string, parent Muxer) error {
 	if parent != nil {
 		ø.muxed = true
 		if path == "/" {
-			parent.Handle("/", ø)
+			parent.Handle("/", handler)
 			return nil
 		}
 
-		parent.Handle(ø.path+"/", ø)
+		parent.Handle(ø.path+"/", handler)
 	}
 	return nil
 }
+
+/*
+	outer.Handle("/", wrap.New(
+		// wraps.String("hiho"),
+		wraps.MethodOverride(),
+		wraps.MethodOverrideByField("_method"),
+		wrap.Handler(rtr),
+	))
+*/

@@ -22,17 +22,30 @@ type context struct {
 	err      error
 }
 
-func (c *context) Context(ctxPtr interface{}) {
+var _ wrap.Contexter = &context{}
+
+func (c *context) Context(ctxPtr interface{}) (found bool) {
+	found = true
 	switch ty := ctxPtr.(type) {
 	case *error:
+		if c.err == nil {
+			return false
+		}
 		*ty = c.err
 	case *common.Provider:
+		if c.provider == nil {
+			return false
+		}
 		*ty = c.provider
 	case *common.User:
+		if c.user == nil {
+			return false
+		}
 		*ty = c.user
 	default:
 		panic(fmt.Sprintf("unsupported context: %T", ctxPtr))
 	}
+	return
 }
 
 func (c *context) SetContext(ctxPtr interface{}) {
