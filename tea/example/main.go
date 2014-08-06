@@ -5,7 +5,7 @@ import (
 	"github.com/go-on/router"
 	"github.com/go-on/router/route"
 	"github.com/go-on/router/route/routehtml"
-	. "github.com/go-on/router/tea"
+	"github.com/go-on/router/tea/t"
 	"github.com/go-on/wrap"
 	"github.com/go-on/wrap-contrib/wraps"
 )
@@ -19,21 +19,26 @@ var helloRoute, errorRoute, betterRoute *route.Route
 
 func main() {
 
-	USE(
+	t.Use(
 		Context{},
 		wrap.NextHandlerFunc(start),
 		wraps.HTMLContentType,
 	)
 
-	static = STATIC("/static", "./static")
+	static = t.Static("/static", "./static")
 
-	POSTFunc("/with-param/:"+paramName, wrap.NoOp)
+	t.POSTFunc("/with-param/:"+paramName, wrap.NoOp)
 
-	errorRoute = GET("/error", layout(routehtml.AHref(&helloRoute, nil, "should err"), html.PRE(stop)))
+	errorRoute = t.GET("/error", layout(routehtml.AHref(&helloRoute, nil, "should err"), html.PRE(stop)))
 
-	helloRoute = GET("/with-param/:"+paramName, layout(html.H1(headingParam), html.PRE(stop)))
+	helloRoute = t.GET("/with-param/:"+paramName, layout(html.H1(headingParam), html.PRE(stop)))
 
-	betterRoute = GET("/no-params", layout("this page has no parameters"))
+	betterRoute = t.GET("/no-params",
+		layout(
+			"this page has no parameters and links to ",
+			routehtml.AHref(&helloRoute, routehtml.Params(paramName, "Peter"), "hello Peter"),
+		),
+	)
 
-	SERVE()
+	t.Serve()
 }

@@ -13,18 +13,33 @@ type Context struct {
 	Time *time.Time
 }
 
-var _ wrap.Contexter = &Context{}
+var _ = wrap.ValidateContextInjecter(&Context{})
 
-func (c *Context) Context(ctx interface{}) bool {
-	if c.Time == nil {
-		return false
+func (c *Context) Context(ctx interface{}) (found bool) {
+	found = true
+	switch ty := ctx.(type) {
+	case *http.ResponseWriter:
+		*ty = c.ResponseWriter
+	case *time.Time:
+		if c.Time == nil {
+			return false
+		}
+		*ty = *c.Time
+	default:
+		panic(&wrap.ErrUnsupportedContextGetter{ctx})
+
 	}
-	*(ctx.(*time.Time)) = *c.Time
-	return true
+	return
 }
 
 func (c *Context) SetContext(ctx interface{}) {
-	c.Time = ctx.(*time.Time)
+	switch ty := ctx.(type) {
+	case *time.Time:
+		c.Time = ty
+	default:
+		panic(&wrap.ErrUnsupportedContextSetter{ctx})
+
+	}
 }
 
 func (c Context) Wrap(next http.Handler) http.Handler {

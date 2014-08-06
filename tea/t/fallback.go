@@ -1,4 +1,4 @@
-package tea
+package t
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"github.com/go-on/wrap-contrib/wraps"
 )
 
-var createCode = `GETFunc(%#v, func (w http.ResponseWriter, r *http.Request) {
+var createCode = `t.GETFunc(%#v, func (w http.ResponseWriter, r *http.Request) {
     w.Write([]byte("new route for GET %v"))
 })`
 
@@ -30,7 +30,7 @@ func listOfRoutes() http.Handler {
 	return routesDefined
 }
 
-var FALLBACK func(rw http.ResponseWriter, req *http.Request) = defaultFallback
+var Fallback func(rw http.ResponseWriter, req *http.Request) = defaultFallback
 
 func defaultFallback(rw http.ResponseWriter, req *http.Request) {
 	wraps.HTMLContentType.SetContentType(rw)
@@ -45,7 +45,7 @@ func defaultFallback(rw http.ResponseWriter, req *http.Request) {
 		"405 This route is not defined yet",
 		H1("405 This route is not defined yet..."), "To create it, add the following code",
 		CODE(PRE(fmt.Sprintf(createCode, req.URL.Path, req.URL.Path))),
-		H2("Allready there"), listOfRoutes(),
+		H2("Already there"), listOfRoutes(),
 	).ServeHTTP(rw, req)
 
 }

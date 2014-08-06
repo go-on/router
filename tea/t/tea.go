@@ -1,4 +1,4 @@
-package tea
+package t
 
 import (
 	"fmt"
@@ -22,19 +22,19 @@ var (
 	middlewares   = []wrap.Wrapper{}
 )
 
-func CACHE_WITH_ETAGS() {
+func CacheWithEtags() {
 	nonFileServer = router.NewETagged()
 }
 
-func USE(middleware ...wrap.Wrapper) {
+func Use(middleware ...wrap.Wrapper) {
 	middlewares = append(middlewares, middleware...)
 }
 
-func ROUTE_PARAM(req *http.Request, name string) string {
+func RouteParam(req *http.Request, name string) string {
 	return router.GetRouteParam(req, name)
 }
 
-func STATIC(path, directory string) *router.FileServer {
+func Static(path, directory string) *router.FileServer {
 	return Router.FileServer(path, directory)
 }
 
@@ -90,23 +90,23 @@ func mkHandler() http.Handler {
 
 	mw := []wrap.Wrapper{}
 	mw = append(mw,
-		wraps.CatchFunc(CATCHER),
+		wraps.CatchFunc(Catcher),
 		wraps.Fallback(
 			[]int{http.StatusMethodNotAllowed},
 			wrap.New(nonFsStack...),
 			Router.ServingHandler(),
 		),
-		wrap.HandlerFunc(FALLBACK),
+		wrap.HandlerFunc(Fallback),
 	)
 	return wrap.New(mw...)
 }
 
-// MOUNT mounts the given router under the given path
-func MOUNT(mountpoint string, rtr *router.Router) {
+// Mount mounts the given router under the given path
+func Mount(mountpoint string, rtr *router.Router) {
 	rtr.Mount(mountpoint, Router)
 }
 
-func SERVE() {
+func Serve() {
 	pid := os.Getpid()
 	wd, err := os.Getwd()
 	if err != nil {
@@ -126,7 +126,7 @@ func SERVE() {
 	}
 }
 
-func SERVE_ADDRESS(address string) {
+func ServeAddress(address string) {
 	handler := mkHandler()
 	err := mannersagain.ListenAndServe(address, handler)
 	if err != nil {

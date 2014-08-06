@@ -22,11 +22,14 @@ type context struct {
 	err      error
 }
 
-var _ wrap.Contexter = &context{}
+var _ wrap.ContextInjecter = &context{}
+var _ = wrap.ValidateContextInjecter(&context{})
 
 func (c *context) Context(ctxPtr interface{}) (found bool) {
 	found = true
 	switch ty := ctxPtr.(type) {
+	case *http.ResponseWriter:
+		*ty = c.ResponseWriter
 	case *error:
 		if c.err == nil {
 			return false
@@ -43,7 +46,7 @@ func (c *context) Context(ctxPtr interface{}) (found bool) {
 		}
 		*ty = c.user
 	default:
-		panic(fmt.Sprintf("unsupported context: %T", ctxPtr))
+		panic(&wrap.ErrUnsupportedContextGetter{ctxPtr})
 	}
 	return
 }
@@ -57,7 +60,7 @@ func (c *context) SetContext(ctxPtr interface{}) {
 	case *common.User:
 		c.user = *ty
 	default:
-		panic(fmt.Sprintf("unsupported context: %T", ctxPtr))
+		panic(&wrap.ErrUnsupportedContextSetter{ctxPtr})
 	}
 }
 
@@ -97,13 +100,33 @@ func catchPanics(p interface{}, rw http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(rw, "a panic happened: %v", p)
 }
 
-func authApp(rw http.ResponseWriter, req *http.Request) {
+type authApp struct{}
+
+var _ wrap.ContextWrapper = authApp{}
+
+func (authApp) ValidateContext(ctx wrap.Contexter) {
+	var user common.User
+	ctx.Context(&user)
+	ctx.SetContext(&user)
+}
+
+func (a authApp) Wrap(next http.Handler) http.Handler {
+	return a
+}
+
+func (authApp) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	var user common.User
 	rw.(wrap.Contexter).Context(&user)
 	fmt.Fprintf(rw, "email: %s name: %s", user.Email(), user.Name())
 }
 
 func main() {
+	wrap.ValidateWrapperContexts(&context{},
+		authApp{},
+		routergomniauth.Callback{},
+		routergomniauth.SetProvider{},
+	)
+
 	// has to be done once
 	gomniauth.SetSecurityKey(signature.RandomKey(64))
 
@@ -117,7 +140,7 @@ func main() {
 	mainRouter.GETFunc("/", login)
 
 	// then setup the auth router
-	authRouter := routergomniauth.Router(http.HandlerFunc(authApp))
+	authRouter := routergomniauth.Router(authApp{})
 	authRouter.Mount("/auth", mainRouter)
 
 	// then mount your main router

@@ -42,9 +42,23 @@ func (l *_login) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	http.Redirect(rw, req, authUrl, 302)
 }
 
-type callback struct{}
+type Callback struct{}
 
-func (cb callback) Wrap(next http.Handler) http.Handler {
+var _ wrap.ContextWrapper = Callback{}
+
+func (cb Callback) ValidateContext(ctx wrap.Contexter) {
+	var provider common.Provider
+	var err error
+	var user common.User
+	ctx.SetContext(&provider)
+	ctx.Context(&provider)
+	ctx.SetContext(&err)
+	ctx.Context(&err)
+	ctx.SetContext(&user)
+	ctx.Context(&user)
+}
+
+func (cb Callback) Wrap(next http.Handler) http.Handler {
 	var f http.HandlerFunc
 	f = func(rw http.ResponseWriter, req *http.Request) {
 
@@ -87,9 +101,23 @@ func addProvider(s string) {
 	providers[s] = struct{}{}
 }
 
-type setProvider struct{}
+type SetProvider struct{}
 
-func (s setProvider) Wrap(next http.Handler) http.Handler {
+var _ wrap.ContextWrapper = SetProvider{}
+
+func (s SetProvider) ValidateContext(ctx wrap.Contexter) {
+	var provider common.Provider
+	var err error
+	var user common.User
+	ctx.SetContext(&provider)
+	ctx.Context(&provider)
+	ctx.SetContext(&err)
+	ctx.Context(&err)
+	ctx.SetContext(&user)
+	ctx.Context(&user)
+}
+
+func (s SetProvider) Wrap(next http.Handler) http.Handler {
 	var f http.HandlerFunc
 	f = func(rw http.ResponseWriter, req *http.Request) {
 
@@ -134,13 +162,13 @@ func LoginURL(provider string) string {
 
 func Router(app http.Handler) *router.Router {
 
-	authRouter := router.New(setProvider{})
+	authRouter := router.New(SetProvider{})
 
 	loginRoute = authRouter.GET("/:gomniauth_provider/login", login(nil, nil))
 
 	callbackRoute = authRouter.GET("/:gomniauth_provider/callback",
 		wrap.New(
-			callback{},
+			Callback{},
 			wrap.Handler(app),
 		),
 	)

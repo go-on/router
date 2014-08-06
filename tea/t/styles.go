@@ -1,4 +1,4 @@
-package tea
+package t
 
 import (
 	"net/http"

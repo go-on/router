@@ -9,7 +9,7 @@ import (
 	. "github.com/go-on/lib/internal/shared"
 	"github.com/go-on/router"
 	"github.com/go-on/router/route/routehtml"
-	"github.com/go-on/router/tea"
+	"github.com/go-on/router/tea/t"
 )
 
 var noDecoration = Style{"text-decoration", "none"}
@@ -57,5 +57,5 @@ func layout(body ...interface{}) http.Handler {
 }
 
 func headingParam(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "The parameter is: %s", EscapeHTML(tea.ROUTE_PARAM(r, paramName)))
+	fmt.Fprintf(w, "Hello! The parameter is: %s", EscapeHTML(t.RouteParam(r, paramName)))
 }

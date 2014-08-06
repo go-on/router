@@ -1,4 +1,4 @@
-package tea
+package t
 
 import (
 	"fmt"
@@ -115,7 +115,7 @@ var ignoreFuncPrefixes = []string{
 	"net/http",
 }
 
-var CATCHER func(recovered interface{}, rw http.ResponseWriter, req *http.Request) = defaultCatcher
+var Catcher func(recovered interface{}, rw http.ResponseWriter, req *http.Request) = defaultCatcher
 
 func defaultCatcher(recovered interface{}, rw http.ResponseWriter, req *http.Request) {
 	wraps.HTMLContentType.SetContentType(rw)
