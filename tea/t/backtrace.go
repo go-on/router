@@ -13,7 +13,7 @@ import (
 
 	. "github.com/go-on/lib/html"
 	"github.com/go-on/lib/html/internal/element"
-	"github.com/go-on/lib/internal/shared"
+	"github.com/go-on/lib/types"
 	"github.com/go-on/wrap-contrib/wraps"
 	"github.com/metakeule/backtrace"
 )
@@ -71,7 +71,7 @@ func mkTableForTrace(trace []backtrace.FootPrint) *element.Element {
 
 	for _, tr := range trace {
 		path := fmt.Sprintf("%s:%d", tr.File, tr.Line)
-		tbody.Add(TR(TD(tr.Function), TD(shared.HTMLString(urlForFile(path)))))
+		tbody.Add(TR(TD(tr.Function), TD(types.HTMLString(urlForFile(path)))))
 	}
 
 	table.Add(tbody)
@@ -97,7 +97,7 @@ func launchEditor(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	layout("Window closing", SCRIPT(shared.JavaScriptString("window.close();"))).ServeHTTP(rw, req)
+	layout("Window closing", SCRIPT(types.JavaScriptString("window.close();"))).ServeHTTP(rw, req)
 }
 
 var ignoreFileSuffixes = []string{
@@ -146,13 +146,13 @@ func defaultCatcher(recovered interface{}, rw http.ResponseWriter, req *http.Req
 		message += " (" + ty + ")"
 	}
 
-	msg := shared.HTMLString(urlForFile(message))
+	msg := types.HTMLString(urlForFile(message))
 
 	layout(
 		"500 Don't panic - your server already did",
 		H1("500 Don't panic - your server already did it for you..."),
 		P("Click on any file to open it in your editor."),
 		CODE(msg), tblReduced,
-		H2("Backtrace"), DIV(shared.Class("complete-backtrace"), tblComplete),
+		H2("Backtrace"), DIV(types.Class("complete-backtrace"), tblComplete),
 	).ServeHTTP(rw, req)
 }

@@ -4,11 +4,11 @@ import (
 	"net/http"
 
 	. "github.com/go-on/lib/html"
-	"github.com/go-on/lib/internal/shared"
+	"github.com/go-on/lib/types"
 )
 
 var styles = STYLE(
-	shared.HTMLString(
+	types.HTMLString(
 		`
 	body {
 		background-color: rgba(10,120,10,0.05);

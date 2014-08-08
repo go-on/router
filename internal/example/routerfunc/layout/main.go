@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	. "github.com/go-on/lib/html"
-	. "github.com/go-on/lib/internal/shared"
-	ph "github.com/go-on/lib/internal/shared/placeholder"
 	"github.com/go-on/lib/internal/template/placeholder"
+	. "github.com/go-on/lib/types"
+	ph "github.com/go-on/lib/types/placeholder"
 	"github.com/go-on/router"
 )
 

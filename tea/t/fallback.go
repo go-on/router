@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	. "github.com/go-on/lib/html"
-	"github.com/go-on/lib/internal/shared"
+	"github.com/go-on/lib/types"
 	"github.com/go-on/method"
 	"github.com/go-on/router/route"
 	"github.com/go-on/wrap-contrib/wraps"
@@ -16,7 +16,7 @@ var createCode = `t.GETFunc(%#v, func (w http.ResponseWriter, r *http.Request) {
 })`
 
 func listOfRoutes() http.Handler {
-	routesDefined := UL(shared.Class("routes-defined"))
+	routesDefined := UL(types.Class("routes-defined"))
 
 	nonFileServer.EachRoute(func(mountpath string, rt *route.Route) {
 		for m := range rt.Methods {
