@@ -18,9 +18,25 @@ import (
 	"github.com/metakeule/backtrace"
 )
 
+func goPath() string {
+	gp := os.Getenv("GOPATH")
+	if gp == "" {
+		return "/unknown-gopath"
+	}
+	return filepath.Join(filepath.SplitList(gp)[0], "src")
+}
+
+func goROOT() string {
+	gr := build.Default.GOROOT
+	if gr == "" {
+		return "/unknown-goroot"
+	}
+	return filepath.Join(gr, "src", "pkg")
+}
+
 var (
-	gopathsrc     = filepath.Join(filepath.SplitList(os.Getenv("GOPATH"))[0], "src")
-	goroot        = filepath.Join(build.Default.GOROOT, "src", "pkg")
+	gopathsrc     = goPath()
+	goroot        = goROOT()
 	gorootDefault = "/usr/local/go/src/pkg"
 )
 
