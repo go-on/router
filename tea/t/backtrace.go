@@ -19,10 +19,15 @@ import (
 )
 
 var (
-	gopathsrc     = filepath.Join(filepath.SplitList(build.Default.GOPATH)[0], "src")
+	gopathsrc     = filepath.Join(filepath.SplitList(os.Getenv("GOPATH"))[0], "src")
 	goroot        = filepath.Join(build.Default.GOROOT, "src", "pkg")
 	gorootDefault = "/usr/local/go/src/pkg"
 )
+
+func init() {
+	fmt.Printf("GOROOT: %#v\n", goroot)
+	fmt.Printf("GOPATH: %#v\n", gopathsrc)
+}
 
 func stripGoPath(s string) string {
 	if strings.HasPrefix(s, gopathsrc) {
