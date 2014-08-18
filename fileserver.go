@@ -12,13 +12,17 @@ import (
 // FileServer serves the files from the given directory under the given path
 func (r *Router) FileServer(path, dir string) *FileServer {
 	rt := r.newRouteHandler(path, method.GET)
-	fs := &FileServer{
-		fs:    http.FileServer(http.Dir(dir)),
-		Dir:   dir,
-		route: rt.Route,
-	}
+	fs := NewFileServer(http.FileServer(http.Dir(dir)), dir, rt.Route)
 	rt.GETHandler = fs
 	return fs
+}
+
+func NewFileServer(fs http.Handler, dir string, route *route.Route) *FileServer {
+	return &FileServer{
+		fs:    fs,
+		Dir:   dir,
+		route: route,
+	}
 }
 
 type FileServer struct {
@@ -28,6 +32,7 @@ type FileServer struct {
 	http.Handler
 }
 
+// TODO: rename if to mount
 func (fs *FileServer) SetHandler() {
 	fs.Handler = http.StripPrefix(fs.route.MountedPath(), fs.fs)
 }
