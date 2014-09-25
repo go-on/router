@@ -82,7 +82,8 @@ func (ø *Router) ServingHandler() http.Handler {
 	// we can't handle the method override as part of the wraps, because it has to
 	// be run before we look for the method (or we would have to run all wrappers before)
 	// maybe we should not handle this case since it can be handled by given wrapper
-	stack = append(stack, wraps.MethodOverride())
+	stack = append(stack, wraps.MethodOverride(), wraps.MethodOverrideByField("_method"))
+
 	/*
 		if wrapper != nil {
 			stack = append(stack, wrapper)
