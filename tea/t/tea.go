@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cupcake/mannersagain"
+	"gopkg.in/go-on/mannersagain.v1"
 	"gopkg.in/go-on/router.v2"
 	"gopkg.in/go-on/router.v2/route"
 	"gopkg.in/go-on/wrap.v2"
