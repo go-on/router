@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-on/router"
 	"github.com/go-on/router/route"
-	"github.com/go-on/wrap"
+	"gopkg.in/go-on/wrap.v2"
 	"github.com/stretchr/gomniauth"
 	"github.com/stretchr/gomniauth/common"
 	"github.com/stretchr/gomniauth/providers/facebook"

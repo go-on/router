@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"code.google.com/p/go.exp/fsnotify"
+	"gopkg.in/fsnotify.v1"
 )
 
 var mainDir = flag.String("dir", ".", "directory that should be monitored and has pid file in it")
@@ -79,22 +79,26 @@ type ProjectWatcher struct {
 
 func (ø *ProjectWatcher) Run() error {
 	watcher, err := fsnotify.NewWatcher()
+
 	ø.Watcher = watcher
 	if err != nil {
 		return err
 	}
 
+	defer watcher.Close()
+
 	go func() {
 		for {
 			select {
-			case ev := <-ø.Watcher.Event:
-				switch {
-				case ev.IsCreate():
+			case ev := <-ø.Watcher.Events:
+				// switch {
+				if ev.Op&fsnotify.Create == fsnotify.Create {
 					d, err := os.Stat(ev.Name)
 					if err == nil {
 						if d.IsDir() {
 							ø.Lock()
-							ø.Watcher.Watch(ev.Name)
+							// ø.Watcher.Watch(ev.Name)
+							ø.Watcher.Add(ev.Name)
 							ø.Unlock()
 						}
 					}
@@ -104,18 +108,24 @@ func (ø *ProjectWatcher) Run() error {
 						ø.Reload()
 						ø.Unlock()
 					}
-				case ev.IsDelete():
+				}
+				// case ev.IsCreate():
+				if ev.Op&fsnotify.Remove == fsnotify.Remove {
 					d, err := os.Stat(ev.Name)
 					if err == nil && (d.IsDir() || filepath.Ext(ev.Name) == ".go") {
 						ø.Lock()
-						ø.Watcher.RemoveWatch(ev.Name)
+						// ø.Watcher.RemoveWatch(ev.Name)
+						ø.Watcher.Remove(ev.Name)
 						ø.Unlock()
 					}
-
-				case ev.IsModify():
-				case ev.IsRename():
 				}
-			case err := <-ø.Watcher.Error:
+
+				// case ev.IsDelete():
+
+				// case ev.IsModify():
+				// case ev.IsRename():
+				// }
+			case err := <-ø.Watcher.Errors:
 				log.Println("watcher error:", err)
 			}
 		}
@@ -131,7 +141,8 @@ func (ø *ProjectWatcher) Run() error {
 		if !info.IsDir() {
 			return filepath.SkipDir
 		}
-		return ø.Watcher.Watch(path)
+		// return ø.Watcher.Watch(path)
+		return ø.Watcher.Add(path)
 	}))
 
 	if err != nil && err != filepath.SkipDir {

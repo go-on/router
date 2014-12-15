@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-on/router"
 	"github.com/go-on/router/route"
-	"github.com/go-on/wrap-contrib/wraps"
+	"gopkg.in/go-on/wrap-contrib.v2/wraps"
 )
 
 type matchRoute struct {

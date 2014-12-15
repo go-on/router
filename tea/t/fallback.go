@@ -8,7 +8,7 @@ import (
 	"github.com/go-on/lib/types"
 	"github.com/go-on/method"
 	"github.com/go-on/router/route"
-	"github.com/go-on/wrap-contrib/wraps"
+	"gopkg.in/go-on/wrap-contrib.v2/wraps"
 )
 
 var createCode = `t.GETFunc(%#v, func (w http.ResponseWriter, r *http.Request) {

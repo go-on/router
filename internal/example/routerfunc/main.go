@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-on/router/route"
+
 	"github.com/go-on/method"
 	"github.com/go-on/router"
 )
@@ -71,18 +73,24 @@ func (c *Comment) GETList(rw http.ResponseWriter, req *http.Request) {
 }
 
 var (
-	personRouter = router.New()
+	personRouter  = router.New()
+	ArticlesRoute *route.Route
+	ArticleRoute  *route.Route
+	CommentsRoute *route.Route
 	//personRouterFunc = router.RouterFunc(func() http.Handler { return &Person{} })
 	// CommentsRoute    = personRouter.GET("/:person_id/article/:article_id/comment", personRouterFunc)
 	// ArticleRoute     = personRouter.GET("/:person_id/article/:article_id", personRouterFunc)
 	// ArticlesRoute    = personRouter.HandleMethods("/:person_id/article", personRouterFunc, method.GET, method.POST)
-	fn            = Person{}.ServeHTTP
-	CommentsRoute = personRouter.GETFunc("/:person_id/article/:article_id/comment", fn)
-	ArticleRoute  = personRouter.GETFunc("/:person_id/article/:article_id", fn)
-	ArticlesRoute = personRouter.HandleMethods("/:person_id/article", http.HandlerFunc(fn), method.GET, method.POST)
+	fn = Person{}.ServeHTTP
 
 	mainRouter = router.New()
 )
+
+func init() {
+	CommentsRoute = personRouter.GETFunc("/:person_id/article/:article_id/comment", fn)
+	ArticleRoute = personRouter.GETFunc("/:person_id/article/:article_id", fn)
+	ArticlesRoute = personRouter.HandleMethods("/:person_id/article", http.HandlerFunc(fn), method.GET, method.POST)
+}
 
 func main() {
 	mainRouter.Handle("/person", personRouter)

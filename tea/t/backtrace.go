@@ -14,7 +14,7 @@ import (
 	. "github.com/go-on/lib/html"
 	"github.com/go-on/lib/html/internal/element"
 	"github.com/go-on/lib/types"
-	"github.com/go-on/wrap-contrib/wraps"
+	"gopkg.in/go-on/wrap-contrib.v2/wraps"
 	"github.com/metakeule/backtrace"
 )
 
@@ -40,10 +40,12 @@ var (
 	gorootDefault = "/usr/local/go/src/pkg"
 )
 
+/*
 func init() {
 	fmt.Printf("GOROOT: %#v\n", goroot)
 	fmt.Printf("GOPATH: %#v\n", gopathsrc)
 }
+*/
 
 func stripGoPath(s string) string {
 	if strings.HasPrefix(s, gopathsrc) {

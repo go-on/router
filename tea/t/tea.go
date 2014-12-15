@@ -10,8 +10,8 @@ import (
 	"github.com/cupcake/mannersagain"
 	"github.com/go-on/router"
 	"github.com/go-on/router/route"
-	"github.com/go-on/wrap"
-	"github.com/go-on/wrap-contrib/wraps"
+	"gopkg.in/go-on/wrap.v2"
+	"gopkg.in/go-on/wrap-contrib.v2/wraps"
 )
 
 var DEVELOPMENT = true
@@ -106,33 +106,39 @@ func Mount(mountpoint string, rtr *router.Router) {
 	rtr.Mount(mountpoint, Router)
 }
 
-func Serve() {
+func Serve() error {
 	pid := os.Getpid()
 	wd, err := os.Getwd()
 	if err != nil {
-		panic("can't get working directory " + err.Error())
+		fmt.Fprintf(os.Stderr, "can't get working directory: %s", err.Error())
+		return err
 	}
 
-	ioutil.WriteFile(filepath.Join(wd, "main.pid"), []byte(fmt.Sprintf("%d", pid)), 0644)
+	err = ioutil.WriteFile(filepath.Join(wd, "main.pid"), []byte(fmt.Sprintf("%d", pid)), 0644)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return err
+	}
 	handler := mkHandler()
 	port := 8080
 	for i := port; i < port+10; i++ {
-		err := mannersagain.ListenAndServe(fmt.Sprintf(":%d", i), handler)
+		err = mannersagain.ListenAndServe(fmt.Sprintf(":%d", i), handler)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
-			fmt.Fprintln(os.Stdout, err)
+			// fmt.Fprintln(os.Stdout, err)
 		}
-		return
 	}
+	return err
 }
 
-func ServeAddress(address string) {
+func ServeAddress(address string) error {
 	handler := mkHandler()
 	err := mannersagain.ListenAndServe(address, handler)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stdout, err)
-		os.Exit(1)
+		// fmt.Fprintln(os.Stdout, err)
+		// os.Exit(1)
+		return err
 	}
-	return
+	return nil
 }

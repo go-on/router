@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/go-on/wrap-contrib/wraps"
+	"gopkg.in/go-on/wrap-contrib.v2/wraps"
 
 	"github.com/go-on/router"
 )

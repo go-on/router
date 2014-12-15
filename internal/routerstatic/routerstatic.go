@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-on/method"
 
-	"github.com/go-on/wrap"
+	"gopkg.in/go-on/wrap.v2"
 
 	"code.google.com/p/go-html-transform/html/transform"
 	"github.com/go-on/lib/internal/meta"
