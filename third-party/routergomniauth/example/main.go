@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/go-on/router"
-	"github.com/go-on/router/third-party/routergomniauth"
+	"gopkg.in/go-on/router.v2"
+	"gopkg.in/go-on/router.v2/third-party/routergomniauth"
 	"gopkg.in/go-on/wrap.v2"
 	"gopkg.in/go-on/wrap-contrib.v2/wraps"
 	"github.com/stretchr/gomniauth"

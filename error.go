@@ -3,9 +3,9 @@ package router
 import (
 	"fmt"
 
-	"github.com/go-on/router/route"
+	"gopkg.in/go-on/router.v2/route"
 
-	"github.com/go-on/method"
+	"gopkg.in/go-on/method.v1"
 )
 
 type ErrDoubleRegistration struct {

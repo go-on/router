@@ -1,6 +1,6 @@
 package route
 
-import "github.com/go-on/method"
+import "gopkg.in/go-on/method.v1"
 
 // ErrXHRServiceAlreadyRegistered is raised if the XHRService has already been registered.
 type ErrXHRServiceAlreadyRegistered struct{}

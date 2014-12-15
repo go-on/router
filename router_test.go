@@ -5,12 +5,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-on/router/route"
+	"gopkg.in/go-on/router.v2/route"
 	"gopkg.in/go-on/wrap.v2"
 
 	"gopkg.in/go-on/wrap-contrib.v2/wraps"
 
-	"github.com/go-on/method"
+	"gopkg.in/go-on/method.v1"
 )
 
 type routetest struct {

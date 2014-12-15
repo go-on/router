@@ -3,7 +3,7 @@ package router
 import (
 	"testing"
 
-	"github.com/go-on/method"
+	"gopkg.in/go-on/method.v1"
 )
 
 func TestGet(t *testing.T) {

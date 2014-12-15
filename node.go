@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-on/router/route"
+	"gopkg.in/go-on/router.v2/route"
 )
 
 func newNode() *node {

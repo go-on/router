@@ -8,14 +8,14 @@ import (
 	"reflect"
 	"regexp"
 
-	"github.com/go-on/method"
+	"gopkg.in/go-on/method.v1"
 
 	"gopkg.in/go-on/wrap.v2"
 
 	"code.google.com/p/go-html-transform/html/transform"
 	"github.com/go-on/lib/internal/meta"
-	"github.com/go-on/router"
-	"github.com/go-on/router/route"
+	"gopkg.in/go-on/router.v2"
+	"gopkg.in/go-on/router.v2/route"
 
 	// "net/http/httptest"
 	"os"

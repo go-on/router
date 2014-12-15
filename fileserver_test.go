@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/go-on/method"
+	"gopkg.in/go-on/method.v1"
 )
 
 var gopath = build.Default.GOPATH
@@ -23,7 +23,7 @@ func findGoPathForPackage(pkg string) string {
 	return ""
 }
 
-var pkg = "github.com/go-on/router"
+var pkg = "gopkg.in/go-on/router.v2"
 
 func TestFileServer(t *testing.T) {
 	gpath := findGoPathForPackage(pkg)

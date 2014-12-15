@@ -2,10 +2,10 @@ package main
 
 import (
 	"github.com/go-on/lib/html"
-	"github.com/go-on/router"
-	"github.com/go-on/router/route"
-	"github.com/go-on/router/route/routehtml"
-	"github.com/go-on/router/tea/t"
+	"gopkg.in/go-on/router.v2"
+	"gopkg.in/go-on/router.v2/route"
+	"gopkg.in/go-on/router.v2/route/routehtml"
+	"gopkg.in/go-on/router.v2/tea/t"
 	"gopkg.in/go-on/wrap.v2"
 	"gopkg.in/go-on/wrap-contrib.v2/wraps"
 )

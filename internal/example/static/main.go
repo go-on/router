@@ -6,10 +6,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/go-on/router/internal/example/static/site"
+	"gopkg.in/go-on/router.v2/internal/example/static/site"
 
-	"github.com/go-on/router/internal/routerstatic"
-	"github.com/go-on/router/route"
+	"gopkg.in/go-on/router.v2/internal/routerstatic"
+	"gopkg.in/go-on/router.v2/route"
 )
 
 type resolver struct{}

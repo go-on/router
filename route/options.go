@@ -1,6 +1,6 @@
 package route
 
-import "github.com/go-on/method"
+import "gopkg.in/go-on/method.v1"
 
 // Options returns an array that may be used by handlers for the OPTIONS http method
 func Options(r *Route) []string {

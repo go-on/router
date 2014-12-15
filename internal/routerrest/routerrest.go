@@ -3,10 +3,10 @@ package routerrest
 import (
 	"net/http"
 
-	"github.com/go-on/method"
+	"gopkg.in/go-on/method.v1"
 
-	"github.com/go-on/router"
-	"github.com/go-on/router/route"
+	"gopkg.in/go-on/router.v2"
+	"gopkg.in/go-on/router.v2/route"
 )
 
 type GetHandler interface {

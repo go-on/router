@@ -3,8 +3,8 @@ package routematcher
 import (
 	"net/http"
 
-	"github.com/go-on/router"
-	"github.com/go-on/router/route"
+	"gopkg.in/go-on/router.v2"
+	"gopkg.in/go-on/router.v2/route"
 	"gopkg.in/go-on/wrap-contrib.v2/wraps"
 )
 

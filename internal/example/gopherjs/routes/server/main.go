@@ -3,9 +3,9 @@ package main
 import (
 	"net/http"
 
-	"github.com/go-on/method"
-	"github.com/go-on/router"
-	"github.com/go-on/router/internal/example/gopherjs/routes"
+	"gopkg.in/go-on/method.v1"
+	"gopkg.in/go-on/router.v2"
+	"gopkg.in/go-on/router.v2/internal/example/gopherjs/routes"
 )
 
 var Router = router.New()

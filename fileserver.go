@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/go-on/method"
-	"github.com/go-on/router/route"
+	"gopkg.in/go-on/method.v1"
+	"gopkg.in/go-on/router.v2/route"
 )
 
 // FileServer serves the files from the given directory under the given path

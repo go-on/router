@@ -3,8 +3,8 @@ package routerstatic
 import (
 	"testing"
 
-	"github.com/go-on/router/internal/example/static/site"
-	"github.com/go-on/router/route"
+	"gopkg.in/go-on/router.v2/internal/example/static/site"
+	"gopkg.in/go-on/router.v2/route"
 )
 
 func TestTransformLink(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 	"github.com/go-on/lib/html/internal/element"
 
 	"github.com/go-on/lib/html"
-	"github.com/go-on/router/route"
+	"gopkg.in/go-on/router.v2/route"
 )
 
 func Params(params ...string) (res map[string]string) {

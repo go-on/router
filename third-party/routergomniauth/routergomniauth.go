@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-on/router"
-	"github.com/go-on/router/route"
+	"gopkg.in/go-on/router.v2"
+	"gopkg.in/go-on/router.v2/route"
 	"gopkg.in/go-on/wrap.v2"
 	"github.com/stretchr/gomniauth"
 	"github.com/stretchr/gomniauth/common"

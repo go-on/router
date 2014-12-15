@@ -5,7 +5,7 @@ import (
 
 	. "github.com/go-on/lib/internal/fat"
 	"github.com/go-on/lib/internal/meta"
-	"github.com/go-on/router/route"
+	"gopkg.in/go-on/router.v2/route"
 )
 
 var strTy = reflect.TypeOf("")

@@ -2,9 +2,9 @@ package routermenu
 
 import (
 	"github.com/go-on/lib/internal/menu"
-	"github.com/go-on/method"
-	"github.com/go-on/router"
-	"github.com/go-on/router/route"
+	"gopkg.in/go-on/method.v1"
+	"gopkg.in/go-on/router.v2"
+	"gopkg.in/go-on/router.v2/route"
 )
 
 type MenuParameter interface {

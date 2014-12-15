@@ -6,7 +6,7 @@ import (
 
 	. "github.com/go-on/lib/html"
 
-	"github.com/go-on/router"
+	"gopkg.in/go-on/router.v2"
 )
 
 func cHandler(rw http.ResponseWriter, req *http.Request) {

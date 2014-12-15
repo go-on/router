@@ -12,7 +12,7 @@ package route
 import (
 	"strings"
 
-	"github.com/go-on/method"
+	"gopkg.in/go-on/method.v1"
 )
 
 // Route is a slim representation of a Route mainly to get the corresponding URLs.

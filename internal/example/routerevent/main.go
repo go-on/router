@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	event "github.com/go-on/router/internal/routerevent"
+	event "gopkg.in/go-on/router.v2/internal/routerevent"
 )
 
 var UserGetMail = event.New("user.GetMail")

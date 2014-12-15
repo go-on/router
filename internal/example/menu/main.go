@@ -3,16 +3,16 @@ package main
 import (
 	"fmt"
 
-	"github.com/go-on/router/internal/routermenu"
+	"gopkg.in/go-on/router.v2/internal/routermenu"
 	// "github.com/go-on/lib/html"
 	"os"
 
 	"github.com/go-on/lib/internal/menu"
 	"github.com/go-on/lib/internal/menu/menuhtml"
 	"github.com/go-on/lib/types"
-	"github.com/go-on/router/internal/example/static/site"
+	"gopkg.in/go-on/router.v2/internal/example/static/site"
 
-	"github.com/go-on/router/route"
+	"gopkg.in/go-on/router.v2/route"
 )
 
 type resolver struct {

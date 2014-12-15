@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-on/router/route"
+	"gopkg.in/go-on/router.v2/route"
 
-	"github.com/go-on/method"
-	"github.com/go-on/router"
+	"gopkg.in/go-on/method.v1"
+	"gopkg.in/go-on/router.v2"
 )
 
 type Person struct {

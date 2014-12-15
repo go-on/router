@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/go-on/router/internal/example/gopherjs/routes"
+	"gopkg.in/go-on/router.v2/internal/example/gopherjs/routes"
 	"github.com/gopherjs/gopherjs/js"
 )
 

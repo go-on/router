@@ -7,7 +7,7 @@ import (
 	"github.com/go-on/lib/internal/template/placeholder"
 	. "github.com/go-on/lib/types"
 	ph "github.com/go-on/lib/types/placeholder"
-	"github.com/go-on/router"
+	"gopkg.in/go-on/router.v2"
 )
 
 var (

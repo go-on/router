@@ -7,8 +7,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/go-on/method"
-	"github.com/go-on/router/route"
+	"gopkg.in/go-on/method.v1"
+	"gopkg.in/go-on/router.v2/route"
 	"gopkg.in/go-on/wrap.v2"
 	"gopkg.in/go-on/wrap-contrib.v2/wraps"
 )

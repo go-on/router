@@ -7,9 +7,9 @@ import (
 	. "github.com/go-on/lib/html"
 	"github.com/go-on/lib/html/internal/element"
 	. "github.com/go-on/lib/types"
-	"github.com/go-on/router"
-	"github.com/go-on/router/route/routehtml"
-	"github.com/go-on/router/tea/t"
+	"gopkg.in/go-on/router.v2"
+	"gopkg.in/go-on/router.v2/route/routehtml"
+	"gopkg.in/go-on/router.v2/tea/t"
 )
 
 var noDecoration = Style{"text-decoration", "none"}
