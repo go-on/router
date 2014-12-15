@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	. "github.com/go-on/lib/html"
+	. "gopkg.in/go-on/lib.v2/html"
 
 	"gopkg.in/go-on/router.v2"
 )

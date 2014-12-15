@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"runtime"
 
-	"github.com/go-on/lib/html/internal/element"
+	"gopkg.in/go-on/lib.v2/html/internal/element"
 
-	"github.com/go-on/lib/html"
+	"gopkg.in/go-on/lib.v2/html"
 	"gopkg.in/go-on/router.v2/route"
 )
 

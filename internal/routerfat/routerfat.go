@@ -3,8 +3,8 @@ package routerfat
 import (
 	"reflect"
 
-	. "github.com/go-on/lib/internal/fat"
-	"github.com/go-on/lib/internal/meta"
+	. "gopkg.in/go-on/lib.v2/internal/fat"
+	"gopkg.in/go-on/lib.v2/internal/meta"
 	"gopkg.in/go-on/router.v2/route"
 )
 

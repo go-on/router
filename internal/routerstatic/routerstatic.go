@@ -13,7 +13,7 @@ import (
 	"gopkg.in/go-on/wrap.v2"
 
 	"code.google.com/p/go-html-transform/html/transform"
-	"github.com/go-on/lib/internal/meta"
+	"gopkg.in/go-on/lib.v2/internal/meta"
 	"gopkg.in/go-on/router.v2"
 	"gopkg.in/go-on/router.v2/route"
 

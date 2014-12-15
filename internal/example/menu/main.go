@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"gopkg.in/go-on/router.v2/internal/routermenu"
-	// "github.com/go-on/lib/html"
+	// "gopkg.in/go-on/lib.v2/html"
 	"os"
 
-	"github.com/go-on/lib/internal/menu"
-	"github.com/go-on/lib/internal/menu/menuhtml"
-	"github.com/go-on/lib/types"
+	"gopkg.in/go-on/lib.v2/internal/menu"
+	"gopkg.in/go-on/lib.v2/internal/menu/menuhtml"
+	"gopkg.in/go-on/lib.v2/types"
 	"gopkg.in/go-on/router.v2/internal/example/static/site"
 
 	"gopkg.in/go-on/router.v2/route"

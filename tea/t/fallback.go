@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	. "github.com/go-on/lib/html"
-	"github.com/go-on/lib/types"
+	. "gopkg.in/go-on/lib.v2/html"
+	"gopkg.in/go-on/lib.v2/types"
 	"gopkg.in/go-on/method.v1"
 	"gopkg.in/go-on/router.v2/route"
 	"gopkg.in/go-on/wrap-contrib.v2/wraps"
