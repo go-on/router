@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"gopkg.in/go-on/method.v1"
-	"github.com/gopherjs/gopherjs/js"
 
 	"testing"
 )
@@ -100,79 +99,6 @@ var allMethods = []method.Method{
 }
 
 func (noop) ServeHTTP(rw http.ResponseWriter, req *http.Request) {}
-
-func TestHXR(t *testing.T) {
-	route := New("/", method.GET, method.POST, method.PATCH, method.PUT, method.DELETE, method.OPTIONS)
-
-	Mount("/", route)
-
-	aj := &XHRFuncs{}
-
-	methCalled := []method.Method{}
-
-	aj.GET = func(url string, callback func(js.Object)) {
-		methCalled = append(methCalled, method.GET)
-	}
-
-	aj.POST = func(url string, data interface{}, callback func(js.Object)) {
-		methCalled = append(methCalled, method.POST)
-	}
-
-	aj.PUT = func(url string, data interface{}, callback func(js.Object)) {
-		methCalled = append(methCalled, method.PUT)
-	}
-
-	aj.PATCH = func(url string, data interface{}, callback func(js.Object)) {
-		methCalled = append(methCalled, method.PATCH)
-	}
-
-	aj.DELETE = func(url string, callback func(js.Object)) {
-		methCalled = append(methCalled, method.DELETE)
-	}
-
-	aj.OPTIONS = func(url string, callback func(js.Object)) {
-		methCalled = append(methCalled, method.OPTIONS)
-	}
-	xhr = nil
-	RegisterXHRService(aj)
-	expectedMethCalled := 0
-
-	route.Get(nil)
-	expectedMethCalled++
-	if len(methCalled) != expectedMethCalled {
-		t.Errorf("ajax %s not called", method.GET)
-	}
-
-	route.Post(nil, nil)
-	expectedMethCalled++
-	if len(methCalled) != expectedMethCalled {
-		t.Errorf("ajax %s not called", method.POST)
-	}
-
-	route.Put(nil, nil)
-	expectedMethCalled++
-	if len(methCalled) != expectedMethCalled {
-		t.Errorf("ajax %s not called", method.PUT)
-	}
-
-	route.Patch(nil, nil)
-	expectedMethCalled++
-	if len(methCalled) != expectedMethCalled {
-		t.Errorf("ajax %s not called", method.PATCH)
-	}
-
-	route.Delete(nil)
-	expectedMethCalled++
-	if len(methCalled) != expectedMethCalled {
-		t.Errorf("ajax %s not called", method.DELETE)
-	}
-
-	route.Options(nil)
-	expectedMethCalled++
-	if len(methCalled) != expectedMethCalled {
-		t.Errorf("ajax %s not called", method.OPTIONS)
-	}
-}
 
 func TestHasParams(t *testing.T) {
 	route1 := New("/route/:param", method.GET)

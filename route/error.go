@@ -2,20 +2,6 @@ package route
 
 import "gopkg.in/go-on/method.v1"
 
-// ErrXHRServiceAlreadyRegistered is raised if the XHRService has already been registered.
-type ErrXHRServiceAlreadyRegistered struct{}
-
-func (ErrXHRServiceAlreadyRegistered) Error() string {
-	return "XHR handler already registered"
-}
-
-// ErrXHRServiceNotRegistered is raised if no XHRService has been registered.
-type ErrXHRServiceNotRegistered struct{}
-
-func (ErrXHRServiceNotRegistered) Error() string {
-	return "XHR handler not registered"
-}
-
 // ErrPairParams is raised if a variadic parameter group has no pairs.
 type ErrPairParams struct{}
 

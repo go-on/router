@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"gopkg.in/go-on/method.v1"
-	"github.com/gopherjs/gopherjs/js"
 )
 
 func errorMustBe(err interface{}, class interface{}) string {
@@ -20,45 +19,6 @@ func errorMustBe(err interface{}, class interface{}) string {
 		return fmt.Sprintf("error must be of type %s but is of type %s", classTy, errTy)
 	}
 	return ""
-}
-
-func TestDoubleRegisteredXHRService(t *testing.T) {
-	xhr = nil
-	aj := &XHRFuncs{}
-	RegisterXHRService(aj)
-
-	defer func() {
-		e := recover()
-		errMsg := errorMustBe(e, ErrXHRServiceAlreadyRegistered{})
-
-		if errMsg != "" {
-			t.Error(errMsg)
-			return
-		}
-
-		_ = e.(ErrXHRServiceAlreadyRegistered).Error()
-	}()
-
-	RegisterXHRService(aj)
-}
-
-func TestNotRegisteredXHRService(t *testing.T) {
-	xhr = nil
-	rt := New("/", method.GET)
-	Mount("/", rt)
-	defer func() {
-		e := recover()
-		errMsg := errorMustBe(e, ErrXHRServiceNotRegistered{})
-
-		if errMsg != "" {
-			t.Error(errMsg)
-			return
-		}
-
-		_ = e.(ErrXHRServiceNotRegistered).Error()
-	}()
-
-	rt.Get(func(js.Object) {})
 }
 
 func TestUnknownMethod(t *testing.T) {
@@ -158,62 +118,6 @@ func TestDoubleMounted(t *testing.T) {
 	}()
 
 	Mount("/b", route)
-}
-
-func testMethodNotDefined(has method.Method, hasNot method.Method, t *testing.T) {
-	xhr = nil
-	route := New("/route/:name", has)
-
-	Mount("/a", route)
-
-	x := &XHRFuncs{}
-	RegisterXHRService(x)
-
-	defer func() {
-		e := recover()
-		errMsg := errorMustBe(e, &ErrMethodNotDefined{})
-
-		if errMsg != "" {
-			t.Error(errMsg)
-			return
-		}
-
-		err := e.(*ErrMethodNotDefined)
-		_ = err.Error()
-
-		if err.Method != hasNot {
-			t.Errorf("wrong method: %#v, expected: %v", err.Method.String(), hasNot.String())
-		}
-
-		if err.Route != route {
-			t.Errorf("wrong route: %#v, expected: %v", err.Route.DefinitionPath, route.DefinitionPath)
-		}
-	}()
-
-	switch hasNot {
-	case method.GET:
-		route.Get(nil)
-	case method.POST:
-		route.Post(nil, nil)
-	case method.PUT:
-		route.Put(nil, nil)
-	case method.PATCH:
-		route.Patch(nil, nil)
-	case method.DELETE:
-		route.Delete(nil)
-	case method.OPTIONS:
-		route.Options(nil)
-	}
-}
-
-func TestMethodNotDefined(t *testing.T) {
-	testMethodNotDefined(method.POST, method.GET, t)
-	testMethodNotDefined(method.POST, method.PUT, t)
-	testMethodNotDefined(method.POST, method.PATCH, t)
-	testMethodNotDefined(method.POST, method.DELETE, t)
-	testMethodNotDefined(method.POST, method.OPTIONS, t)
-	testMethodNotDefined(method.GET, method.POST, t)
-	testMethodNotDefined(method.OPTIONS, method.GET, t)
 }
 
 func TestRouteIsNil(t *testing.T) {
