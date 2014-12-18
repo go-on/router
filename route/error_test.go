@@ -79,12 +79,12 @@ func TestErrMissingParams(t *testing.T) {
 		err := e.(ErrMissingParam)
 		_ = err.Error()
 
-		if err.param != "name" {
-			t.Errorf("wrong param: %#v, expected: %v", err.param, "name")
+		if err.Param != "name" {
+			t.Errorf("wrong param: %#v, expected: %v", err.Param, "name")
 		}
 
-		if err.mountedPath != "/a/route/:name" {
-			t.Errorf("wrong mountedPath: %#v, expected: %v", err.mountedPath, "/a/route/:name")
+		if err.MountedPath != "/a/route/:name" {
+			t.Errorf("wrong mountedPath: %#v, expected: %v", err.MountedPath, "/a/route/:name")
 		}
 	}()
 

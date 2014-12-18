@@ -11,12 +11,12 @@ func (ErrPairParams) Error() string {
 
 // ErrMissingParam is raised if a route URL parameter is missing.
 type ErrMissingParam struct {
-	param       string
-	mountedPath string
+	Param       string
+	MountedPath string
 }
 
 func (e ErrMissingParam) Error() string {
-	return "parameter " + e.param + " is missing for route " + e.mountedPath
+	return "parameter " + e.Param + " is missing for route " + e.MountedPath
 }
 
 // ErrRouteIsNil is raised if a route is not yet defined.
