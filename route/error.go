@@ -35,16 +35,6 @@ func (e ErrUnknownMethod) Error() string {
 	return "unknown method " + e.Method.String()
 }
 
-// ErrMethodNotDefined is raised if the given http method is not defined for the given route
-type ErrMethodNotDefined struct {
-	method.Method
-	Route *Route
-}
-
-func (e *ErrMethodNotDefined) Error() string {
-	return "method " + e.Method.String() + " is not defined for route " + e.Route.DefinitionPath
-}
-
 // ErrDoubleMounted is raised if the route already has been mounted.
 type ErrDoubleMounted struct {
 	Path  string
