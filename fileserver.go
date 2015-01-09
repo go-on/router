@@ -40,7 +40,7 @@ func (fs *FileServer) SetHandler() {
 // Exists returns if the given file exist beneath the base Dir of the FileServer
 func (fs *FileServer) Exists(relativePath string) bool {
 	_, err := os.Stat(filepath.Join(fs.Dir, relativePath))
-	return err == nil
+	return !os.IsNotExist(err)
 }
 
 func (fs *FileServer) URL(relativePath string) (string, error) {
