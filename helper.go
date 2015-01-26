@@ -2,10 +2,11 @@ package router
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 
-	"gopkg.in/go-on/wrap.v2"
 	"gopkg.in/go-on/wrap-contrib.v2/wraps"
+	"gopkg.in/go-on/wrap.v2"
 )
 
 func GetRouteId(req *http.Request) (id string) {
@@ -17,24 +18,28 @@ func GetRouteId(req *http.Request) (id string) {
 
 var slashB = []byte("/")[0]
 
+func GetRouteParam(req *http.Request, key string) string {
+	return GetURLParam(req.URL, key)
+}
+
 // since req.URL.Path has / unescaped so that originally escaped / are
 // indistinguishable from escaped ones, we are save here, i.e. / is
 // already handled as path splitted and no key or value has / in it
 // also it is save to use req.URL.Fragment since that will never be transmitted
 // by the request
-func GetRouteParam(req *http.Request, key string) (res string) {
+func GetURLParam(u *url.URL, key string) (res string) {
 	start, end := func() (start, end int) {
 		var keyStart = 0
 		var valStart = -1
 		var inSlash bool
-		for i := 0; i < len(req.URL.Fragment); i++ {
-			if req.URL.Fragment[i] == slashB {
+		for i := 0; i < len(u.Fragment); i++ {
+			if u.Fragment[i] == slashB {
 				if inSlash {
 					break
 				}
 				inSlash = true
 				if keyStart > -1 {
-					if req.URL.Fragment[keyStart:i] == key {
+					if u.Fragment[keyStart:i] == key {
 						valStart = i + 1
 					}
 					keyStart = -1
@@ -56,7 +61,7 @@ func GetRouteParam(req *http.Request, key string) (res string) {
 	if start == -1 {
 		return
 	}
-	return req.URL.Fragment[start:end]
+	return u.Fragment[start:end]
 }
 
 func NewETagged(wrappers ...wrap.Wrapper) (r *Router) {
