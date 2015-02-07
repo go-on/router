@@ -3,10 +3,10 @@ package main
 import (
 	"net/http"
 
-	. "gopkg.in/go-on/lib.v2/html"
-	"gopkg.in/go-on/lib.v2/internal/template/placeholder"
-	. "gopkg.in/go-on/lib.v2/types"
-	ph "gopkg.in/go-on/lib.v2/types/placeholder"
+	. "gopkg.in/go-on/lib.v3/html"
+	"gopkg.in/go-on/lib.v3/internal/template/placeholder"
+	. "gopkg.in/go-on/lib.v3/types"
+	ph "gopkg.in/go-on/lib.v3/types/placeholder"
 	"gopkg.in/go-on/router.v2"
 )
 

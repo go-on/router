@@ -1,7 +1,7 @@
 package routermenu
 
 import (
-	"gopkg.in/go-on/lib.v2/internal/menu"
+	"gopkg.in/go-on/lib.v3/internal/menu"
 	"gopkg.in/go-on/method.v1"
 	"gopkg.in/go-on/router.v2"
 	"gopkg.in/go-on/router.v2/route"

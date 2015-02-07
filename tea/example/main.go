@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gopkg.in/go-on/lib.v2/html"
+	"gopkg.in/go-on/lib.v3/html"
 	"gopkg.in/go-on/router.v2"
 	"gopkg.in/go-on/router.v2/route"
 	"gopkg.in/go-on/router.v2/route/routehtml"
