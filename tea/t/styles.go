@@ -3,8 +3,8 @@ package t
 import (
 	"net/http"
 
-	. "gopkg.in/go-on/lib.v3/html"
-	"gopkg.in/go-on/lib.v3/types"
+	. "github.com/go-on/lib/html"
+	"github.com/go-on/lib/types"
 )
 
 var styles = STYLE(

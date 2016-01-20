@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"net/http"
 
-	. "gopkg.in/go-on/lib.v3/html"
-	"gopkg.in/go-on/lib.v3/html/internal/element"
-	. "gopkg.in/go-on/lib.v3/types"
-	"gopkg.in/go-on/router.v2"
-	"gopkg.in/go-on/router.v2/route/routehtml"
-	"gopkg.in/go-on/router.v2/tea/t"
+	. "github.com/go-on/lib/html"
+	"github.com/go-on/lib/html/element"
+	. "github.com/go-on/lib/types"
+	"github.com/go-on/router"
+	"github.com/go-on/router/route/routehtml"
+	"github.com/go-on/router/tea/t"
 )
 
 var noDecoration = Style{"text-decoration", "none"}

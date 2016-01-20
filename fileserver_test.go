@@ -23,7 +23,7 @@ func findGoPathForPackage(pkg string) string {
 	return ""
 }
 
-var pkg = "gopkg.in/go-on/router.v2"
+var pkg = "github.com/go-on/router"
 
 func TestFileServer(t *testing.T) {
 	gpath := findGoPathForPackage(pkg)

@@ -3,11 +3,11 @@ package main
 import (
 	"net/http"
 
-	. "gopkg.in/go-on/lib.v3/html"
-	"gopkg.in/go-on/lib.v3/internal/template/placeholder"
-	. "gopkg.in/go-on/lib.v3/types"
-	ph "gopkg.in/go-on/lib.v3/types/placeholder"
-	"gopkg.in/go-on/router.v2"
+	. "github.com/go-on/lib/html"
+	"github.com/go-on/lib/misc/template/placeholder"
+	. "github.com/go-on/lib/types"
+	ph "github.com/go-on/lib/types/placeholder"
+	"github.com/go-on/router"
 )
 
 var (

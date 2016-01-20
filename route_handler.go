@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"gopkg.in/go-on/method.v1"
-	"gopkg.in/go-on/router.v2/route"
+	"github.com/go-on/router/route"
 )
 
 type routeHandler struct {

@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 
 	"gopkg.in/go-on/mannersagain.v1"
-	"gopkg.in/go-on/router.v2"
-	"gopkg.in/go-on/router.v2/route"
+	"github.com/go-on/router"
+	"github.com/go-on/router/route"
 	"gopkg.in/go-on/wrap.v2"
 	"gopkg.in/go-on/wrap-contrib.v2/wraps"
 )

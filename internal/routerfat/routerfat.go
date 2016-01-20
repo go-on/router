@@ -3,9 +3,9 @@ package routerfat
 import (
 	"reflect"
 
-	. "gopkg.in/go-on/lib.v3/internal/fat"
-	"gopkg.in/go-on/lib.v3/internal/meta"
-	"gopkg.in/go-on/router.v2/route"
+	. "github.com/go-on/lib/misc/fat"
+	"github.com/go-on/lib/misc/meta"
+	"github.com/go-on/router/route"
 )
 
 var strTy = reflect.TypeOf("")

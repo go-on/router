@@ -11,9 +11,9 @@ import (
 	"regexp"
 	"strings"
 
-	. "gopkg.in/go-on/lib.v3/html"
-	"gopkg.in/go-on/lib.v3/html/internal/element"
-	"gopkg.in/go-on/lib.v3/types"
+	. "github.com/go-on/lib/html"
+	"github.com/go-on/lib/html/element"
+	"github.com/go-on/lib/types"
 	"gopkg.in/go-on/wrap-contrib.v2/wraps"
 	"gopkg.in/metakeule/backtrace.v1"
 )

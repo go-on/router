@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"gopkg.in/go-on/router.v2/route"
+	"github.com/go-on/router/route"
 
 	"gopkg.in/go-on/method.v1"
 )

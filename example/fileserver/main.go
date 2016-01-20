@@ -7,7 +7,7 @@ import (
 
 	"gopkg.in/go-on/wrap-contrib.v2/wraps"
 
-	"gopkg.in/go-on/router.v2"
+	"github.com/go-on/router"
 )
 
 var relPath = "src/github.com/go-on/router/example/fileserver/static"

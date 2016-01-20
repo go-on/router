@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"gopkg.in/go-on/method.v1"
-	"gopkg.in/go-on/router.v2/route"
+	"github.com/go-on/router/route"
 	"gopkg.in/go-on/wrap.v2"
 	"gopkg.in/go-on/wrap-contrib.v2/wraps"
 )
@@ -56,27 +56,28 @@ func newRouter() *Router {
 	}
 }
 
-func (ø *Router) mustAddRouteHandler(rt *routeHandler) {
-	err := ø.addRouteHandler(rt)
+func (r *Router) mustAddRouteHandler(rt *routeHandler) {
+	err := r.addRouteHandler(rt)
 	if err != nil {
 		panic(err)
 	}
 }
 
+// IsMounted tells if the router has been mounted
 func (r *Router) IsMounted() bool {
 	return r.mountPoint != ""
 }
 
-// Serve serves the request on the top level. It handles method override and path cleaning
+// ServingHandler returns a handler that serves the request on the top level. It handles method override and path cleaning
 // and then serves via the corresponding http.Handler of the route or passes it to a given wrapper
 //
-// Serve will selfmount the router under / if it is not already mounted
-func (ø *Router) ServingHandler() http.Handler {
-	if !ø.IsMounted() {
-		ø.Mount("/", nil)
+// Will selfmount the router under / if it is not already mounted
+func (r *Router) ServingHandler() http.Handler {
+	if !r.IsMounted() {
+		r.Mount("/", nil)
 	}
 	stack := []wrap.Wrapper{}
-	if !ø.muxed {
+	if !r.muxed {
 		stack = append(stack, wraps.PrepareLikeMux())
 	}
 	// we can't handle the method override as part of the wraps, because it has to
@@ -89,7 +90,7 @@ func (ø *Router) ServingHandler() http.Handler {
 			stack = append(stack, wrapper)
 		}
 	*/
-	stack = append(stack, wrap.Handler(ø))
+	stack = append(stack, wrap.Handler(r))
 	return wrap.New(stack...)
 }
 

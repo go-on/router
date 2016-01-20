@@ -7,10 +7,10 @@ import (
 	"reflect"
 	"testing"
 
-	"gopkg.in/go-on/lib.v3/html"
+	"github.com/go-on/lib/html"
 
+	"github.com/go-on/router/route"
 	"gopkg.in/go-on/method.v1"
-	"gopkg.in/go-on/router.v2/route"
 )
 
 func TestRoutehtml(t *testing.T) {

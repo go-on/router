@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"runtime"
 
-	"gopkg.in/go-on/lib.v3/html/internal/element"
+	"github.com/go-on/lib/html/element"
 
-	"gopkg.in/go-on/lib.v3/html"
-	"gopkg.in/go-on/router.v2/route"
+	"github.com/go-on/lib/html"
+	"github.com/go-on/router/route"
 )
 
 func Params(params ...string) (res map[string]string) {
