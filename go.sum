@@ -31,7 +31,6 @@ gopkg.in/go-on/builtin.v1 v1.3.3 h1:p6N2OKubpicyzzfbfC2m/ysewepSDO99M4m6YWqexX8=
 gopkg.in/go-on/builtin.v1 v1.3.3/go.mod h1:xkUeGvqV+kQsdwGxsaiA8up95A87RZmCb8BtqEUFSX8=
 gopkg.in/go-on/goagain.v1 v1.0.0-20141216105804-57df1cf1051b h1:zayury9jEXIXX/mma+c1aLm0Lypr5/GRENNk1KTqCPE=
 gopkg.in/go-on/goagain.v1 v1.0.0-20141216105804-57df1cf1051b/go.mod h1:n2O6KZR1FsF1rB7yjCDIEtF/qhkgeeqOTjT2Ioa8C9E=
-gopkg.in/go-on/lib.v3 v3.2.13 h1:8eRbqJOjO/AY4E4SwiYaDvT5/TqUJQPkZhpSQhQiHBI=
 gopkg.in/go-on/lib.v3 v3.2.13/go.mod h1:MrX4DngGBZGtIev8nHyCiI389rtw1s1yM2JF9n7SOS8=
 gopkg.in/go-on/manners.v1 v1.0.0-20140331143616-d86c2a5e749b h1:BHyrKFsRS9V3oJE5FCpaSKUWvNFIXjMpZcEFhy2JscQ=
 gopkg.in/go-on/manners.v1 v1.0.0-20140331143616-d86c2a5e749b/go.mod h1:pKTM5dWD7uzNcegByY8TVupRHNRlWv+EfSw5v/sqAT0=
