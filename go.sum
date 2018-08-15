@@ -1,3 +1,7 @@
+github.com/go-on/builtin v1.3.3/go.mod h1:OI37wdi1UuaCrQEeqe1Czk/m88dbdTzEUqN/PcFgK2M=
+github.com/go-on/cdncache v1.2.1/go.mod h1:KIOgk+TuKskuJXceUv/0T62vFVpoC1NZT8TPEa+GAL8=
+github.com/go-on/go.uuid v0.0.0-20140819143144-a07c134f8289/go.mod h1:oh+a9Y3uKjQUrGQl0NeZF/mBSGqSvC8fDAYXTPONpWM=
+github.com/go-on/lib v0.0.0-20180815200542-9f11fb9f56b8/go.mod h1:VKMj7r5SNUQwYA7gOa8mZ9tj9tPXkcgF1KNIP1R5oYA=
 github.com/go-on/lib v3.2.13+incompatible h1:sWfwo+nwUS/5zKpIQiKyWjeAd2g1rW05yMxeukQ3AgU=
 github.com/go-on/lib v3.2.13+incompatible/go.mod h1:AK96tJrhZUKqplP1/NiU6N0Ft4zIJAEUHRndbk74eHg=
 github.com/go-on/mannersagain v0.0.0-20141215130541-dea8fca0792d h1:Afc1fBa5tlsvLza/474csHAKIhU2VNnh9qL+PObu2+Y=
@@ -6,6 +10,7 @@ github.com/go-on/method v1.0.1 h1:ZM5uZxI+VsWfmzukL8RtAYngHhwOHydySi5iVX4sr2k=
 github.com/go-on/method v1.0.1/go.mod h1:ivZsF6eo4tx8pX+Iy6lQRzi4VzRSexkusH6EP9vhCMg=
 github.com/go-on/pq v0.0.0-20141218142246-0d009c09e638 h1:Fh6PJnkskaXKxEI4C4/2q0umhKgSrl3ewts2hiCcMTY=
 github.com/go-on/pq v0.0.0-20141218142246-0d009c09e638/go.mod h1:xFkcJjWiWn7p+5DKgK79fLbW5V03PuoOb3VT0XWkZu0=
+github.com/go-on/router v0.0.0-20180815195830-05bdc85190af/go.mod h1:watDqSV1eK0z4mepXveoSAI8SAgi9a4+mzbZnAi5sbA=
 github.com/go-on/wrap v0.0.0-20180815192933-d1ac8ae9b5e2 h1:j/VeKjGI9sDoTxFZBEvoVPHa1UOiELJLcrg4zxwtQMo=
 github.com/go-on/wrap v0.0.0-20180815192933-d1ac8ae9b5e2/go.mod h1:44iXyI9gYqkLpd1IgONysG3iTNET2A1wxkDx84ZVr6U=
 github.com/go-on/wrap-contrib v2.7.1+incompatible h1:A6qs600tcFS1NdMRLzq7X369dCq/enOdN6YXwGIXsYI=
@@ -16,6 +21,8 @@ github.com/metakeule/backtrace v1.3.2 h1:qvRTVulWJHgizepoyI0rP4B1AsUPpNZE7rCgQWD
 github.com/metakeule/backtrace v1.3.2/go.mod h1:oYKQW/JG2nAd1ayTmtH2sfRsqwHcjSYql84XAj+byFw=
 github.com/metakeule/dbwrap v0.0.0-20141218143229-6de813dcb3db h1:3uu22KlyTTyTyrEtSUE+bMBBit10AUs2FWN35vDHEDc=
 github.com/metakeule/dbwrap v0.0.0-20141218143229-6de813dcb3db/go.mod h1:bFOfNrwDJsTxZsMY9UtKfJG4Cye4EoSX2adfSbGF69U=
+github.com/metakeule/fmtdate v1.1.2/go.mod h1:2JyMFlKxeoGy1qS6obQukT0AL0Y4iNANQL8scbSdT4E=
+github.com/metakeule/nil v0.0.0-20141216084250-9ae444737776/go.mod h1:9b7Je8k3ymh8icrvHF4YzTobAuK+rRluIUVvYVpsz78=
 golang.org/x/sys v0.0.0-20180815093151-14742f9018cd h1:Vdp9FdQnZJQQF78wgpudgkchp80Nu37AWr8+mprtgAo=
 golang.org/x/sys v0.0.0-20180815093151-14742f9018cd/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 gopkg.in/fsnotify.v1 v1.4.7 h1:xOHLXZwVvI9hhs+cLKq5+I5onOuwQLhQwiu63xxlHs4=
@@ -30,3 +37,4 @@ gopkg.in/go-on/manners.v1 v1.0.0-20140331143616-d86c2a5e749b h1:BHyrKFsRS9V3oJE5
 gopkg.in/go-on/manners.v1 v1.0.0-20140331143616-d86c2a5e749b/go.mod h1:pKTM5dWD7uzNcegByY8TVupRHNRlWv+EfSw5v/sqAT0=
 gopkg.in/go-on/pq.v2 v2.0.0-20141218142246-0d009c09e638 h1:jBsAq2dOD1zhKVNq2CGxwdMtsbhYcv6e597+IMuJibI=
 gopkg.in/go-on/pq.v2 v2.0.0-20141218142246-0d009c09e638/go.mod h1:vKOBr5pmGgiYdAZQIPWvAh+D2VLh/82PrA1gP5O4cec=
+gopkg.in/go-on/router.v2 v2.12.3/go.mod h1:So/EO1+YHzXuhKmxVYYSniwMOiOmIoLFUwHR+40jB9Q=
