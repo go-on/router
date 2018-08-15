@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"gopkg.in/go-on/method.v1"
+	"github.com/go-on/method"
 )
 
 func errorMustBe(err interface{}, class interface{}) string {

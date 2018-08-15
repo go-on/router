@@ -3,7 +3,7 @@ package route
 import (
 	"net/http"
 
-	"gopkg.in/go-on/method.v1"
+	"github.com/go-on/method"
 
 	"testing"
 )

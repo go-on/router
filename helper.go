@@ -5,8 +5,8 @@ import (
 	"net/url"
 	"strings"
 
-	"gopkg.in/go-on/wrap-contrib.v2/wraps"
-	"gopkg.in/go-on/wrap.v2"
+	"github.com/go-on/wrap"
+	"github.com/go-on/wrap-contrib/wraps"
 )
 
 func GetRouteId(req *http.Request) (id string) {

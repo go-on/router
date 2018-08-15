@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	"gopkg.in/go-on/method.v1"
+	"github.com/go-on/method"
 )
 
 type writeParam struct {

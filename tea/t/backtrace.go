@@ -14,8 +14,8 @@ import (
 	. "github.com/go-on/lib/html"
 	"github.com/go-on/lib/html/element"
 	"github.com/go-on/lib/types"
-	"gopkg.in/go-on/wrap-contrib.v2/wraps"
-	"gopkg.in/metakeule/backtrace.v1"
+	"github.com/go-on/wrap-contrib/wraps"
+	"github.com/metakeule/backtrace"
 )
 
 func goPath() string {

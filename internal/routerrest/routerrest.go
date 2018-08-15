@@ -3,7 +3,7 @@ package routerrest
 import (
 	"net/http"
 
-	"gopkg.in/go-on/method.v1"
+	"github.com/go-on/method"
 
 	"github.com/go-on/router"
 	"github.com/go-on/router/route"

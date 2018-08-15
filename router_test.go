@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	"github.com/go-on/router/route"
-	"gopkg.in/go-on/wrap.v2"
+	"github.com/go-on/wrap"
 
-	"gopkg.in/go-on/wrap-contrib.v2/wraps"
+	"github.com/go-on/wrap-contrib/wraps"
 
-	"gopkg.in/go-on/method.v1"
+	"github.com/go-on/method"
 )
 
 type routetest struct {

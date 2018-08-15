@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"gopkg.in/go-on/method.v1"
+	"github.com/go-on/method"
 )
 
 var gopath = build.Default.GOPATH

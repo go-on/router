@@ -7,7 +7,7 @@ import (
 	"github.com/go-on/router/route/new_idea/db"
 	"github.com/go-on/router/route/new_idea/person"
 	"github.com/go-on/router/route/new_idea/router"
-	"gopkg.in/metakeule/dbwrap.v2"
+	"github.com/metakeule/dbwrap"
 )
 
 /*

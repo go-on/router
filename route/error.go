@@ -1,6 +1,6 @@
 package route
 
-import "gopkg.in/go-on/method.v1"
+import "github.com/go-on/method"
 
 // ErrPairParams is raised if a variadic parameter group has no pairs.
 type ErrPairParams struct{}

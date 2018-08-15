@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"gopkg.in/go-on/wrap.v2"
+	"github.com/go-on/wrap"
 )
 
 type Context struct {

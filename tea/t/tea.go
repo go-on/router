@@ -7,11 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"gopkg.in/go-on/mannersagain.v1"
+	"github.com/go-on/mannersagain"
 	"github.com/go-on/router"
 	"github.com/go-on/router/route"
-	"gopkg.in/go-on/wrap.v2"
-	"gopkg.in/go-on/wrap-contrib.v2/wraps"
+	"github.com/go-on/wrap"
+	"github.com/go-on/wrap-contrib/wraps"
 )
 
 var DEVELOPMENT = true

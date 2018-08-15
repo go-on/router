@@ -7,10 +7,10 @@ import (
 	"path"
 	"strings"
 
-	"gopkg.in/go-on/method.v1"
+	"github.com/go-on/method"
 	"github.com/go-on/router/route"
-	"gopkg.in/go-on/wrap.v2"
-	"gopkg.in/go-on/wrap-contrib.v2/wraps"
+	"github.com/go-on/wrap"
+	"github.com/go-on/wrap-contrib/wraps"
 )
 
 // Router is a mountable router routing paths to routes.

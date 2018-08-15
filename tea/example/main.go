@@ -6,8 +6,8 @@ import (
 	"github.com/go-on/router/route"
 	"github.com/go-on/router/route/routehtml"
 	"github.com/go-on/router/tea/t"
-	"gopkg.in/go-on/wrap-contrib.v2/wraps"
-	"gopkg.in/go-on/wrap.v2"
+	"github.com/go-on/wrap-contrib/wraps"
+	"github.com/go-on/wrap"
 )
 
 var (

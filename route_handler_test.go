@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-on/router/route"
 
-	"gopkg.in/go-on/method.v1"
+	"github.com/go-on/method"
 )
 
 var allMethods = []method.Method{method.GET, method.POST, method.PATCH, method.PUT, method.DELETE}

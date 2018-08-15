@@ -3,11 +3,11 @@ package main
 import (
 	"net/http"
 
-	"gopkg.in/go-on/wrap.v2"
-	"gopkg.in/go-on/wrap-contrib.v2/wraps"
+	"github.com/go-on/wrap"
+	"github.com/go-on/wrap-contrib/wraps"
 
 	"github.com/go-on/router"
-	// "gopkg.in/go-on/wrap-contrib.v2/helper"
+	// "github.com/go-on/wrap-contrib/helper"
 )
 
 func missing(rw http.ResponseWriter, req *http.Request) {

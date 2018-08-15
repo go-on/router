@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/go-on/wsi"
-	_ "gopkg.in/go-on/pq.v2"
+	_ "github.com/go-on/pq"
 	"net/http"
 	"strconv"
 )

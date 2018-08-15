@@ -4,7 +4,7 @@ import (
 	"github.com/go-on/lib/misc/menu"
 	"github.com/go-on/router"
 	"github.com/go-on/router/route"
-	"gopkg.in/go-on/method.v1"
+	"github.com/go-on/method"
 )
 
 type MenuParameter interface {
